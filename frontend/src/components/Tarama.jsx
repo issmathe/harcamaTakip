@@ -13,7 +13,7 @@ function OCRComponent() {
     if (!image) return;
     Tesseract.recognize(
       image,
-      'eng', // İngilizce; Türkçe için 'tur' kullanabilirsin
+      'deu', // Fiş Almanca ise 'deu'
       { logger: m => console.log(m) }
     ).then(({ data: { text } }) => {
       setText(text);
