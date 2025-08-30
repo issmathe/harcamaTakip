@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 const Gelir = () => {
@@ -6,33 +6,28 @@ const Gelir = () => {
   const [gelirler, setGelirler] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showList, setShowList] = useState(false);
-
   const [toplamGelir, setToplamGelir] = useState(0);
 
-  const API_URL = "http://localhost:5001/gelir";
+  const API_URL = process.env.REACT_APP_SERVER_URL + "/gelir";
 
   // Gelirleri getir
-  const fetchGelirler = async () => {
+  const fetchGelirler = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(API_URL);
       setGelirler(res.data);
-      // toplam hesapla (Number() dönüşümü eklendi)
-      const toplam = res.data.reduce(
-        (acc, g) => acc + Number(g.miktar),
-        0
-      );
+      const toplam = res.data.reduce((acc, g) => acc + Number(g.miktar), 0);
       setToplamGelir(toplam);
     } catch (err) {
       console.error("Gelirleri çekerken hata:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
 
   useEffect(() => {
     fetchGelirler();
-  }, []);
+  }, [fetchGelirler]);
 
   // Form submit
   const handleSubmit = async (e) => {
@@ -40,10 +35,7 @@ const Gelir = () => {
     if (!form.miktar) return;
 
     try {
-      const res = await axios.post(API_URL, {
-        ...form,
-        miktar: Number(form.miktar), // backend'e de number olarak gönder
-      });
+      const res = await axios.post(API_URL, form);
       setGelirler([res.data, ...gelirler]);
       setToplamGelir((prev) => prev + Number(res.data.miktar));
       setForm({ miktar: "", kategori: "maaş", not: "" });
@@ -65,10 +57,8 @@ const Gelir = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      {/* Başlık */}
       <h1 className="text-2xl font-bold text-center mb-6">💰 Gelir Takip</h1>
 
-      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-2xl p-5 mb-6"
@@ -117,12 +107,10 @@ const Gelir = () => {
         </button>
       </form>
 
-      {/* Toplam Gelir Alanı */}
       <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl mb-6 text-center font-semibold text-lg">
         Toplam Gelir: {toplamGelir} €
       </div>
 
-      {/* Gelirleri Göster Butonu */}
       <div className="text-center mb-4">
         <button
           onClick={() => setShowList(!showList)}
@@ -132,7 +120,6 @@ const Gelir = () => {
         </button>
       </div>
 
-      {/* Liste (opsiyonel açılır kapanır) */}
       {showList && (
         <div className="bg-white shadow-md rounded-2xl p-5">
           <h2 className="text-lg font-semibold mb-4">📋 Gelir Listesi</h2>
@@ -149,7 +136,7 @@ const Gelir = () => {
                 >
                   <div>
                     <p className="font-semibold">
-                      {Number(g.miktar)} €{" "}
+                      {g.miktar} €{" "}
                       <span className="text-sm text-gray-500">({g.kategori})</span>
                     </p>
                     {g.not && (
