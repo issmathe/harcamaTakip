@@ -17,8 +17,11 @@ const Gelir = () => {
       setLoading(true);
       const res = await axios.get(API_URL);
       setGelirler(res.data);
-      // toplam hesapla
-      const toplam = res.data.reduce((acc, g) => acc + g.miktar, 0);
+      // toplam hesapla (Number() dönüşümü eklendi)
+      const toplam = res.data.reduce(
+        (acc, g) => acc + Number(g.miktar),
+        0
+      );
       setToplamGelir(toplam);
     } catch (err) {
       console.error("Gelirleri çekerken hata:", err);
@@ -37,7 +40,10 @@ const Gelir = () => {
     if (!form.miktar) return;
 
     try {
-      const res = await axios.post(API_URL, form);
+      const res = await axios.post(API_URL, {
+        ...form,
+        miktar: Number(form.miktar), // backend'e de number olarak gönder
+      });
       setGelirler([res.data, ...gelirler]);
       setToplamGelir((prev) => prev + Number(res.data.miktar));
       setForm({ miktar: "", kategori: "maaş", not: "" });
@@ -143,7 +149,7 @@ const Gelir = () => {
                 >
                   <div>
                     <p className="font-semibold">
-                      {g.miktar} €{" "}
+                      {Number(g.miktar)} €{" "}
                       <span className="text-sm text-gray-500">({g.kategori})</span>
                     </p>
                     {g.not && (
