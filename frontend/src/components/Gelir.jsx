@@ -4,6 +4,10 @@ import axios from "axios";
 
 const { Option } = Select;
 
+// Backend URL'i .env veya Vercel environment variable'dan al
+const API_URL = process.env.REACT_APP_SERVER_URL; // CRA için
+// Vite kullanıyorsan: const API_URL = import.meta.env.VITE_API_URL;
+
 const Gelir = () => {
   const [gelirler, setGelirler] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +16,7 @@ const Gelir = () => {
   const fetchGelirler = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5001/gelir");
+      const res = await axios.get(`${API_URL}/gelir`);
       setGelirler(res.data);
     } catch (err) {
       message.error("Gelirler alınırken hata oluştu");
@@ -28,7 +32,7 @@ const Gelir = () => {
   // Yeni gelir ekle
   const onFinish = async (values) => {
     try {
-      await axios.post("http://localhost:5001/gelir", values);
+      await axios.post(`${API_URL}/gelir`, values);
       message.success("Gelir eklendi!");
       fetchGelirler();
     } catch (err) {
