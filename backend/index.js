@@ -6,6 +6,7 @@ const database = require('./database.js');
 
 // Route imports
 const gelirRoute=require("./routes/gelirs.js")  
+const harcamaRoutes = require("./routes/harcamas.js");
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const PORT = process.env.PORT ||  5001;
 
 // Use Routes
 app.use("/gelir",gelirRoute)
+app.use("/harcama", harcamaRoutes);
 
 app.listen(PORT, () => {
 database()
