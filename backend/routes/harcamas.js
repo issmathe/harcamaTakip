@@ -23,4 +23,30 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 🗑 Harcama sil
+router.delete("/:id", async (req, res) => {
+  try {
+    const silinen = await Harcama.findByIdAndDelete(req.params.id);
+    if (!silinen) return res.status(404).json({ error: "Harcama bulunamadı" });
+    res.json({ message: "Harcama silindi", silinen });
+  } catch (err) {
+    res.status(500).json({ error: "Silme başarısız", details: err.message });
+  }
+});
+
+// ✏️ Harcama düzenle
+router.put("/:id", async (req, res) => {
+  try {
+    const guncellenen = await Harcama.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!guncellenen) return res.status(404).json({ error: "Harcama bulunamadı" });
+    res.json(guncellenen);
+  } catch (err) {
+    res.status(400).json({ error: "Düzenleme başarısız", details: err.message });
+  }
+});
+
 module.exports = router;
