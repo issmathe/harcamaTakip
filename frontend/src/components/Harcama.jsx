@@ -15,8 +15,7 @@ import axios from "axios";
 
 const { Option } = Select;
 
-const API_URL = process.env.REACT_APP_SERVER_URL; 
-// Vite kullanıyorsan: const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = process.env.REACT_APP_SERVER_URL;
 
 const Harcama = () => {
   const [harcamalar, setHarcamalar] = useState([]);
@@ -25,7 +24,6 @@ const Harcama = () => {
   const [editForm] = Form.useForm();
   const [editId, setEditId] = useState(null);
 
-  // Harcamaları getir
   const fetchHarcamalar = async () => {
     try {
       setLoading(true);
@@ -42,7 +40,6 @@ const Harcama = () => {
     fetchHarcamalar();
   }, []);
 
-  // Yeni harcama ekle
   const onFinish = async (values) => {
     try {
       await axios.post(`${API_URL}/harcama`, values);
@@ -53,7 +50,6 @@ const Harcama = () => {
     }
   };
 
-  // Harcama sil
   const handleDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
@@ -64,14 +60,12 @@ const Harcama = () => {
     }
   };
 
-  // Düzenleme modalını aç
   const openEditModal = (item) => {
     setEditId(item._id);
     editForm.setFieldsValue(item);
     setEditModalOpen(true);
   };
 
-  // Düzenlemeyi kaydet
   const handleEditSave = async () => {
     try {
       const values = await editForm.validateFields();
@@ -84,6 +78,14 @@ const Harcama = () => {
     }
   };
 
+  // sadece sayı girilebilmesi için props
+  const numberInputProps = {
+    min: 1,
+    onKeyPress: (e) => {
+      if (!/[0-9]/.test(e.key)) e.preventDefault();
+    },
+  };
+
   return (
     <div className="p-4 max-w-md mx-auto">
       {/* Form */}
@@ -94,7 +96,7 @@ const Harcama = () => {
             label="Miktar"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber className="w-full" min={1} />
+            <InputNumber className="w-full" {...numberInputProps} />
           </Form.Item>
 
           <Form.Item
@@ -154,7 +156,9 @@ const Harcama = () => {
                   cancelText="Hayır"
                   onConfirm={() => handleDelete(item._id)}
                 >
-                  <Button danger size="small">Sil</Button>
+                  <Button danger size="small">
+                    Sil
+                  </Button>
                 </Popconfirm>
               </div>
             </List.Item>
@@ -179,7 +183,7 @@ const Harcama = () => {
             label="Miktar"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber className="w-full" min={1} />
+            <InputNumber className="w-full" {...numberInputProps} />
           </Form.Item>
 
           <Form.Item
