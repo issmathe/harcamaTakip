@@ -6,9 +6,6 @@ const { Title, Text } = Typography;
 
 const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
   const balance = totalIncome - totalExpense;
-  
-  // balanceColor değişkeni silindi.
-  // Uyarıya neden olan Line 11: 'balanceColor' is assigned a value but never used artık mevcut değil.
 
   return (
     <header className="px-4 pt-6 pb-2 bg-white sticky top-0 z-10 shadow-lg">
@@ -29,16 +26,16 @@ const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
       </div>
       
       {/* ANA BAKİYE KARTI */}
-      {/* Kartın rengi doğrudan balance değerine göre belirleniyor. */}
       <Card 
-        className="rounded-2xl shadow-xl border-none p-2" 
+        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center" // Yeni: h-28, flex, items-center, justify-center eklendi
         style={{ 
           background: balance >= 0 
             ? 'linear-gradient(to right, #4c51bf, #667eea)' // Mavi/Mor (Pozitif Bakiye)
             : 'linear-gradient(to right, #f56565, #fc8181)'  // Kırmızı (Negatif Bakiye)
         }}
       >
-        <div className="flex flex-col text-white">
+        {/* İçeriği ortalamak için h-full w-full eklenip flex ayarları yapıldı */}
+        <div className="flex flex-col text-white h-full w-full items-center justify-center">
           <Text className="!text-white/90 text-sm mb-1">Güncel Bakiye</Text>
           <Title level={2} className="!text-white !mb-0 font-extrabold">
             <EuroOutlined className="mr-1 text-xl" />
