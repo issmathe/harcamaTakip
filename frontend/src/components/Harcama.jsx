@@ -17,7 +17,8 @@ const { Option } = Select;
 
 const API_URL = process.env.REACT_APP_SERVER_URL;
 
-const Harcama = () => {
+// Home.jsx'ten gelen onHarcamaChange prop'unu alıyoruz
+const Harcama = ({ onHarcamaChange }) => { 
   const [harcamalar, setHarcamalar] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -45,6 +46,11 @@ const Harcama = () => {
       await axios.post(`${API_URL}/harcama`, values);
       message.success("Harcama eklendi!");
       fetchHarcamalar();
+      
+      // Harcama eklendi, toplamları yenile
+      if (onHarcamaChange) {
+        onHarcamaChange(); 
+      }
     } catch (err) {
       message.error("Harcama eklenirken hata oluştu");
     }
@@ -55,6 +61,11 @@ const Harcama = () => {
       await axios.delete(`${API_URL}/harcama/${id}`);
       message.success("Harcama silindi!");
       fetchHarcamalar();
+      
+      // Harcama silindi, toplamları yenile
+      if (onHarcamaChange) {
+        onHarcamaChange(); 
+      }
     } catch (err) {
       message.error("Silme sırasında hata oluştu");
     }
@@ -73,6 +84,11 @@ const Harcama = () => {
       message.success("Harcama güncellendi!");
       setEditModalOpen(false);
       fetchHarcamalar();
+
+      // Harcama güncellendi, toplamları yenile
+      if (onHarcamaChange) {
+        onHarcamaChange();
+      }
     } catch (err) {
       message.error("Güncelleme sırasında hata oluştu");
     }
@@ -217,14 +233,11 @@ const Harcama = () => {
       </Modal>
 
       {/* iOS tarzı modal için özel CSS */}
-      <style>{`
-        .ios-modal .ant-modal-content {
+      <style>{`.ios-modal .ant-modal-content {
           backdrop-filter: blur(20px);
           background: rgba(255, 255, 255, 0.7);
           border-radius: 20px;
-        }
-      `}</style>
-    </div>
+        }`}</style>    </div>
   );
 };
 

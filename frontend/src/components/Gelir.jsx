@@ -16,7 +16,8 @@ const { Option } = Select;
 
 const API_URL = process.env.REACT_APP_SERVER_URL; 
 
-const Gelir = () => {
+// Home.jsx'ten gelen onGelirChange prop'unu alıyoruz
+const Gelir = ({ onGelirChange }) => {
   const [gelirler, setGelirler] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -44,6 +45,11 @@ const Gelir = () => {
       await axios.post(`${API_URL}/gelir`, values);
       message.success("Gelir eklendi!");
       fetchGelirler();
+      
+      // *** Yeni Gelir eklendiğinde genel toplamları yenile ***
+      if (onGelirChange) {
+        onGelirChange();
+      }
     } catch (err) {
       message.error("Gelir eklenirken hata oluştu");
     }
@@ -61,6 +67,11 @@ const Gelir = () => {
           await axios.delete(`${API_URL}/gelir/${id}`);
           message.success("Gelir silindi!");
           fetchGelirler();
+          
+          // *** Gelir silindiğinde genel toplamları yenile ***
+          if (onGelirChange) {
+            onGelirChange();
+          }
         } catch (err) {
           message.error("Silme sırasında hata oluştu");
         }
@@ -81,6 +92,11 @@ const Gelir = () => {
       message.success("Gelir güncellendi!");
       setEditModalOpen(false);
       fetchGelirler();
+      
+      // *** Gelir güncellendiğinde genel toplamları yenile ***
+      if (onGelirChange) {
+        onGelirChange();
+      }
     } catch (err) {
       message.error("Güncelleme sırasında hata oluştu");
     }

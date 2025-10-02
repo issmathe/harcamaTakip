@@ -8,33 +8,36 @@ export const useTotals = () => {
   const [totalExpense, setTotalExpense] = useState(0);
   const [totalToday, setTotalToday] = useState(0);
 
+  // Bu fonksiyonu dışarıya döndürüp çağırabilmek için dışarı aldık
+  const fetchTotals = async () => {
+    try {
+      const [gelirRes, harcamaRes] = await Promise.all([
+        axios.get(`${API_URL}/gelir`),
+        axios.get(`${API_URL}/harcama`),
+      ]);
+
+      const gelirler = gelirRes.data || [];
+      const harcamalar = harcamaRes.data || [];
+
+      setTotalIncome(gelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
+      setTotalExpense(harcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
+
+      const today = new Date().toISOString().split("T")[0];
+      setTotalToday(
+        harcamalar
+          .filter((i) => i.createdAt?.startsWith(today))
+          .reduce((sum, i) => sum + Number(i.miktar || 0), 0)
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Bileşen ilk yüklendiğinde ve sadece ilk seferde çalışır
   useEffect(() => {
-    const fetchTotals = async () => {
-      try {
-        const [gelirRes, harcamaRes] = await Promise.all([
-          axios.get(`${API_URL}/gelir`),
-          axios.get(`${API_URL}/harcama`),
-        ]);
-
-        const gelirler = gelirRes.data || [];
-        const harcamalar = harcamaRes.data || [];
-
-        setTotalIncome(gelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
-        setTotalExpense(harcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
-
-        const today = new Date().toISOString().split("T")[0];
-        setTotalToday(
-          harcamalar
-            .filter((i) => i.createdAt?.startsWith(today))
-            .reduce((sum, i) => sum + Number(i.miktar || 0), 0)
-        );
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     fetchTotals();
-  }, []);
+  }, []); // Bağımlılık dizisi boş olduğu için sadece ilk render'da çalışır
 
-  return { totalIncome, totalExpense, totalToday };
+  // Yeni değerlere ek olarak yenileme fonksiyonunu da dışarıya döndürüyoruz
+  return { totalIncome, totalExpense, totalToday, fetchTotals };
 };
