@@ -2,9 +2,21 @@ import React from "react";
 import { Card, Typography, Statistic } from "antd";
 import { ArrowUpOutlined, ArrowDownOutlined, EuroOutlined } from '@ant-design/icons';
 
+// useTotals hook'unu import etmelisin. 
+// Not: Sen, useTotals'ı MainContent.jsx dosyasında (export const useTotals = ...) tanımladığın için
+// projenin dosya yapısına göre doğru yolu ayarlamalısın.
+// Varsayım: MainContent ile aynı dizin veya erişilebilir bir yoldan import ediliyor.
+import { useTotals } from "./MainContent"; 
+// EĞER useTotals'ı ayrı bir hooks/useTotals.js dosyasına taşırsan, import yolu şöyle olmalı:
+// import { useTotals } from "../../hooks/useTotals"; 
+
 const { Title, Text } = Typography;
 
-const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
+// Header bileşeni artık dışarıdan prop beklemiyor
+const Header = () => {
+  // useTotals hook'undan güncel verileri çekiyoruz
+  const { totalIncome, totalExpense, totalToday } = useTotals();
+
   const balance = totalIncome - totalExpense;
 
   return (
@@ -27,14 +39,13 @@ const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
       
       {/* ANA BAKİYE KARTI */}
       <Card 
-        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center" // Yeni: h-28, flex, items-center, justify-center eklendi
+        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center" 
         style={{ 
           background: balance >= 0 
             ? 'linear-gradient(to right, #4c51bf, #667eea)' // Mavi/Mor (Pozitif Bakiye)
             : 'linear-gradient(to right, #f56565, #fc8181)'  // Kırmızı (Negatif Bakiye)
         }}
       >
-        {/* İçeriği ortalamak için h-full w-full eklenip flex ayarları yapıldı */}
         <div className="flex flex-col text-white h-full w-full items-center justify-center">
           <Text className="!text-white/90 text-sm mb-1">Güncel Bakiye</Text>
           <Title level={2} className="!text-white !mb-0 font-extrabold">
@@ -51,7 +62,7 @@ const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-green-500">
           <Statistic
             title="Aylık Gelir"
-            value={totalIncome}
+            value={totalIncome} // Hook'tan gelen veri
             precision={2}
             valueStyle={{ color: '#38a169', fontWeight: 'bold' }}
             prefix={<ArrowUpOutlined />}
@@ -63,7 +74,7 @@ const Header = ({ totalToday = 0, totalIncome = 0, totalExpense = 0 }) => {
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-red-500">
           <Statistic
             title="Aylık Gider"
-            value={totalExpense}
+            value={totalExpense} // Hook'tan gelen veri
             precision={2}
             valueStyle={{ color: '#e53e3e', fontWeight: 'bold' }}
             prefix={<ArrowDownOutlined />}
