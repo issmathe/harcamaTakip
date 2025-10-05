@@ -12,10 +12,10 @@ const Home = () => {
     <TotalsProvider>
       <div className="relative min-h-screen bg-gray-100">
         <Header />
-        
+
         <main className="pb-20">
-          <MainContent />
           <CategorySelect />
+          <MainContent />
           <Harcama />
           <Gelir />
         </main>
