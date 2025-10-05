@@ -17,7 +17,7 @@ const BottomNav = () => {
 
         <button className="flex flex-col items-center text-indigo-600">
           <PlusCircleOutlined className="text-2xl" />
-          <span className="text-xs">Ekle</span>
+          <span className="text-xs">Düzenle</span>
         </button>
 
         <button className="flex flex-col items-center text-gray-600 hover:text-indigo-600">

@@ -3,8 +3,6 @@ import Header from "../components/Home/Header.jsx";
 import MainContent from "../components/Home/MainContent.jsx";
 import CategorySelect from "../components/Home/CategorySelect.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
-import Harcama from "../components/kaynak/Harcama.jsx";
-import Gelir from "../components/kaynak/Gelir.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
 
 const Home = () => {
@@ -16,8 +14,7 @@ const Home = () => {
         <main className="pb-20">
           <CategorySelect />
           <MainContent />
-          <Harcama />
-          <Gelir />
+
         </main>
 
         <BottomNav />
