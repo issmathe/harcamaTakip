@@ -1,43 +1,29 @@
-import { useState, useEffect } from "react";
+// hooks/useTotals.js
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_SERVER_URL;
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
-export const useTotals = () => {
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpense, setTotalExpense] = useState(0);
-  const [totalToday, setTotalToday] = useState(0);
+export const fetchTotalsFromAPI = async () => {
+  try {
+    const [gelirRes, harcamaRes] = await Promise.all([
+      axios.get(`${API_URL}/gelir`),
+      axios.get(`${API_URL}/harcama`),
+    ]);
 
-  // Bu fonksiyonu dışarıya döndürüp çağırabilmek için dışarı aldık
-  const fetchTotals = async () => {
-    try {
-      const [gelirRes, harcamaRes] = await Promise.all([
-        axios.get(`${API_URL}/gelir`),
-        axios.get(`${API_URL}/harcama`),
-      ]);
+    const gelirler = gelirRes.data || [];
+    const harcamalar = harcamaRes.data || [];
 
-      const gelirler = gelirRes.data || [];
-      const harcamalar = harcamaRes.data || [];
+    const totalIncome = gelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    const totalExpense = harcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-      setTotalIncome(gelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
-      setTotalExpense(harcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0));
+    const today = new Date().toISOString().split("T")[0];
+    const totalToday = harcamalar
+      .filter(i => i.createdAt?.startsWith(today))
+      .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-      const today = new Date().toISOString().split("T")[0];
-      setTotalToday(
-        harcamalar
-          .filter((i) => i.createdAt?.startsWith(today))
-          .reduce((sum, i) => sum + Number(i.miktar || 0), 0)
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Bileşen ilk yüklendiğinde ve sadece ilk seferde çalışır
-  useEffect(() => {
-    fetchTotals();
-  }, []); // Bağımlılık dizisi boş olduğu için sadece ilk render'da çalışır
-
-  // Yeni değerlere ek olarak yenileme fonksiyonunu da dışarıya döndürüyoruz
-  return { totalIncome, totalExpense, totalToday, fetchTotals };
+    return { totalIncome, totalExpense, totalToday };
+  } catch (err) {
+    console.error("Toplamlar çekilirken hata:", err);
+    return { totalIncome: 0, totalExpense: 0, totalToday: 0 };
+  }
 };

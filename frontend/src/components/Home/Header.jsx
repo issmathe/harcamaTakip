@@ -1,28 +1,16 @@
 import React from "react";
 import { Card, Typography, Statistic } from "antd";
 import { ArrowUpOutlined, ArrowDownOutlined, EuroOutlined } from '@ant-design/icons';
-
-// useTotals hook'unu import etmelisin. 
-// Not: Sen, useTotals'ı MainContent.jsx dosyasında (export const useTotals = ...) tanımladığın için
-// projenin dosya yapısına göre doğru yolu ayarlamalısın.
-// Varsayım: MainContent ile aynı dizin veya erişilebilir bir yoldan import ediliyor.
-import { useTotals } from "./MainContent"; 
-// EĞER useTotals'ı ayrı bir hooks/useTotals.js dosyasına taşırsan, import yolu şöyle olmalı:
-// import { useTotals } from "../../hooks/useTotals"; 
+import { useTotalsContext } from "../../context/TotalsContext"; // Context'ten alıyoruz
 
 const { Title, Text } = Typography;
 
-// Header bileşeni artık dışarıdan prop beklemiyor
 const Header = () => {
-  // useTotals hook'undan güncel verileri çekiyoruz
-  const { totalIncome, totalExpense, totalToday } = useTotals();
-
+  const { totalIncome, totalExpense, totalToday } = useTotalsContext();
   const balance = totalIncome - totalExpense;
 
   return (
     <header className="px-4 pt-6 pb-2 bg-white sticky top-0 z-10 shadow-lg">
-      
-      {/* BAŞLIK VE BUGÜN TOPLAMI */}
       <div className="flex items-start justify-between mb-4">
         <div>
           <Title level={4} className="!text-gray-900 !mb-0 font-bold">Finans Takibi</Title>
@@ -36,14 +24,13 @@ const Header = () => {
           </div>
         </div>
       </div>
-      
-      {/* ANA BAKİYE KARTI */}
-      <Card 
-        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center" 
-        style={{ 
-          background: balance >= 0 
-            ? 'linear-gradient(to right, #4c51bf, #667eea)' // Mavi/Mor (Pozitif Bakiye)
-            : 'linear-gradient(to right, #f56565, #fc8181)'  // Kırmızı (Negatif Bakiye)
+
+      <Card
+        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center"
+        style={{
+          background: balance >= 0
+            ? 'linear-gradient(to right, #4c51bf, #667eea)'
+            : 'linear-gradient(to right, #f56565, #fc8181)'
         }}
       >
         <div className="flex flex-col text-white h-full w-full items-center justify-center">
@@ -55,14 +42,11 @@ const Header = () => {
         </div>
       </Card>
 
-      {/* GELİR VE GİDER KARTLARI */}
       <div className="mt-4 grid grid-cols-2 gap-3">
-        
-        {/* Gelir Kartı */}
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-green-500">
           <Statistic
             title="Aylık Gelir"
-            value={totalIncome} // Hook'tan gelen veri
+            value={totalIncome}
             precision={2}
             valueStyle={{ color: '#38a169', fontWeight: 'bold' }}
             prefix={<ArrowUpOutlined />}
@@ -70,11 +54,10 @@ const Header = () => {
           />
         </Card>
 
-        {/* Gider Kartı */}
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-red-500">
           <Statistic
             title="Aylık Gider"
-            value={totalExpense} // Hook'tan gelen veri
+            value={totalExpense}
             precision={2}
             valueStyle={{ color: '#e53e3e', fontWeight: 'bold' }}
             prefix={<ArrowDownOutlined />}

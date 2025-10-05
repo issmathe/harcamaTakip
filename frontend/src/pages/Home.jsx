@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import React from "react";
 import Header from "../components/Home/Header.jsx";
 import MainContent from "../components/Home/MainContent.jsx";
@@ -5,27 +6,20 @@ import CategorySelect from "../components/Home/CategorySelect.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 import Harcama from "../components/Harcama.jsx";
 import Gelir from "../components/Gelir.jsx";
-import { useTotals } from "../hooks/useTotals"; // Hook'u buraya taşıdık
+import { TotalsProvider } from "../context/TotalsContext"; // Context sağlayıcısını ekliyoruz
 
 const Home = () => {
-  // fetchTotals'ı hook'tan alıyoruz
-  const { totalIncome, totalExpense, totalToday, fetchTotals } = useTotals(); 
-
   return (
-    <div>
-      <Header
-        totalToday={totalToday}
-        totalIncome={totalIncome}
-        totalExpense={totalExpense}
-      />
-      <MainContent />
-      <CategorySelect />
-      <BottomNav />
-      {/* Harcama bileşenine fetchTotals'ı prop olarak iletiyoruz */}
-      <Harcama onHarcamaChange={fetchTotals} /> 
-      {/* Gelir bileşenine de iletiyoruz (ileride gerekebilir) */}
-      <Gelir onGelirChange={fetchTotals} /> 
-    </div>
+    <TotalsProvider>
+      <div className="flex flex-col min-h-screen bg-gray-100">
+        <Header />
+        <MainContent />
+        <CategorySelect />
+        <BottomNav />
+        <Harcama />
+        <Gelir />
+      </div>
+    </TotalsProvider>
   );
 };
 
