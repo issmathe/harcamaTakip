@@ -1,7 +1,6 @@
 import React from "react";
 import Header from "../components/Home/Header.jsx";
 import MainContent from "../components/Home/MainContent.jsx";
-import CategorySelect from "../components/Home/CategorySelect.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
 
@@ -12,11 +11,8 @@ const Home = () => {
         <Header />
 
         <main className="pb-20">
-          <CategorySelect />
           <MainContent />
-
         </main>
-
         <BottomNav />
       </div>
     </TotalsProvider>

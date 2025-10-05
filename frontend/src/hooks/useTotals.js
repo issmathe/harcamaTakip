@@ -21,9 +21,9 @@ export const fetchTotalsFromAPI = async () => {
       .filter(i => i.createdAt?.startsWith(today))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    return { totalIncome, totalExpense, totalToday };
+    return { totalIncome, totalExpense, totalToday, gelirler, harcamalar }; // harcamalar eklendi
   } catch (err) {
     console.error("Toplamlar çekilirken hata:", err);
-    return { totalIncome: 0, totalExpense: 0, totalToday: 0 };
+    return { totalIncome: 0, totalExpense: 0, totalToday: 0, gelirler: [], harcamalar: [] };
   }
 };

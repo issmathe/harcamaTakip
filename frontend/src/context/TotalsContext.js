@@ -1,3 +1,4 @@
+// context/TotalsContext.jsx
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { fetchTotalsFromAPI } from "../hooks/useTotals";
 
@@ -7,7 +8,9 @@ export const TotalsProvider = ({ children }) => {
   const [totals, setTotals] = useState({
     totalIncome: 0,
     totalExpense: 0,
-    totalToday: 0
+    totalToday: 0,
+    gelirler: [],
+    harcamalar: []
   });
 
   const fetchTotals = async () => {
