@@ -99,7 +99,7 @@ const MainContent = ({ radius = 30, center = 50, onCategoryClick }) => {
             <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
                 <div
                     onClick={handleCenterClick}
-                    className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center text-center shadow-lg cursor-pointer transition-all duration-300 hover:scale-[1.05]"
+                    className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center text-center z-0 shadow-lg cursor-pointer transition-all duration-300 hover:scale-[1.05]"
                 >
                     {showIcons ? (
                         <>
