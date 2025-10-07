@@ -22,6 +22,13 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
+// Market alt kategorileri
+const MARKETLER = [
+    "Lidl", "Rewe",  "Aldi", "Netto", "DM",
+    "Kaufland",  "Norma","Edeka", "Tegut", "Hit", "Famila",
+    "Nahkauf", "Biomarkt", "Penny", "Rossmann","Real", "Diğer"
+];
+
 const CategoryIcons = {
     Giyim: <ShoppingOutlined className="text-pink-600 text-xl" />,
     Gıda: <ForkOutlined className="text-orange-500 text-xl" />,
@@ -49,6 +56,7 @@ const CATEGORIES = [
 const MainContent = ({ radius = 40, center = 50 }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedMarket, setSelectedMarket] = useState(""); 
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
 
@@ -57,9 +65,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
     const { fetchTotals } = useTotalsContext();
 
-    // Harcama ikonları
     const handleIconClick = (category) => {
         setSelectedCategory(category);
+        setSelectedMarket("");
         setIsModalVisible(true);
         form.resetFields();
     };
@@ -67,10 +75,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const handleModalCancel = () => {
         setIsModalVisible(false);
         setSelectedCategory(null);
+        setSelectedMarket("");
         form.resetFields();
     };
 
-    // Gelir modal aç
     const handleGelirClick = () => {
         setIsGelirModalVisible(true);
         gelirForm.resetFields();
@@ -91,7 +99,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setLoading(true);
         try {
             await axios.post(`${API_URL}/gelir`, gelirData);
-            message.success(`${gelirData.kategori} kategorisine ${gelirData.miktar} ₺ gelir başarıyla eklendi!`);
+            message.success(`${gelirData.kategori} kategorisine ${gelirData.miktar} ₺ gelir eklendi!`);
             await fetchTotals();
             handleGelirCancel();
         } catch (error) {
@@ -105,7 +113,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     return (
         <main className="flex-1 px-4 pt-4 pb-24">
             <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-                {/* Gelir Ekle Butonu */}
                 <div
                     onClick={handleGelirClick}
                     className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center text-center shadow-lg cursor-pointer transition-all duration-300 hover:scale-[1.05] z-10"
@@ -113,7 +120,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
 
-                {/* Sabit Kategori İkonları */}
                 {CATEGORIES.map((category, index) => {
                     const angle = (360 / CATEGORIES.length) * index;
                     const rad = (angle * Math.PI) / 180;
@@ -141,7 +147,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             {/* Harcama Modal */}
             <Modal
                 title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
-                visible={isModalVisible}
+                open={isModalVisible}
                 onCancel={handleModalCancel}
                 footer={null}
                 maskClosable={!loading}
@@ -153,12 +159,16 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         const harcamaData = {
                             miktar: values.miktar,
                             kategori: selectedCategory || "Diğer",
-                            not: values.not,
+                            altKategori: selectedCategory === "Market" ? selectedMarket : "",
+                            not: values.not || "",
                         };
+
                         setLoading(true);
                         try {
                             await axios.post(`${API_URL}/harcama`, harcamaData);
-                            message.success(`${harcamaData.kategori} kategorisine ${values.miktar} ₺ harcama başarıyla eklendi!`);
+                            message.success(
+                                `${harcamaData.kategori}${harcamaData.altKategori ? " - " + harcamaData.altKategori : ""} kategorisine ${values.miktar} ₺ harcama eklendi!`
+                            );
                             await fetchTotals();
                             handleModalCancel();
                         } catch (error) {
@@ -168,25 +178,41 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             setLoading(false);
                         }
                     }}
-                    initialValues={{ miktar: null, not: "" }}
                 >
                     <Form.Item
                         name="miktar"
                         label="Miktar (₺)"
                         rules={[
                             { required: true, message: 'Lütfen harcama miktarını girin!' },
-                            { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalıdır!' }
+                            { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
                         <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} placeholder="Örn: 50.75" />
                     </Form.Item>
 
+{selectedCategory === "Market" && (
+  <Form.Item
+    name="altKategori"
+    label="Market Seç"
+    rules={[{ required: true, message: 'Lütfen bir market seçin!' }]}
+  >
+    <Select
+      placeholder="Market seçin"
+      value={selectedMarket}
+      onChange={setSelectedMarket}
+      allowClear={false} // allowClear kapatıldı, seçim zorunlu
+    >
+      {MARKETLER.map(m => <Option key={m} value={m}>{m}</Option>)}
+    </Select>
+  </Form.Item>
+)}
+
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        <Input.TextArea rows={4} placeholder="Harcama ile ilgili kısa bir not ekle" maxLength={100} />
+                        <Input.TextArea rows={3} placeholder="Harcama ile ilgili kısa bir not ekle" />
                     </Form.Item>
 
-                    <Form.Item className="mt-6">
-                        <Button type="primary" htmlType="submit" block size="large" loading={loading} disabled={loading}>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" block loading={loading}>
                             {loading ? "Kaydediliyor..." : "Harcamayı Kaydet"}
                         </Button>
                     </Form.Item>
@@ -196,7 +222,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             {/* Gelir Modal */}
             <Modal
                 title="Gelir Ekle"
-                visible={isGelirModalVisible}
+                open={isGelirModalVisible}
                 onCancel={handleGelirCancel}
                 footer={null}
                 maskClosable={!loading}
@@ -212,7 +238,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         label="Miktar (₺)"
                         rules={[
                             { required: true, message: 'Lütfen gelir miktarını girin!' },
-                            { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalıdır!' }
+                            { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
                         <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} placeholder="Örn: 1500" />
@@ -231,11 +257,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     </Form.Item>
 
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        <Input.TextArea rows={4} maxLength={100} placeholder="Gelir ile ilgili kısa bir not ekle" />
+                        <Input.TextArea rows={3} placeholder="Gelir ile ilgili kısa bir not ekle" />
                     </Form.Item>
 
-                    <Form.Item className="mt-6">
-                        <Button type="primary" htmlType="submit" block size="large" loading={loading} disabled={loading}>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" block loading={loading}>
                             {loading ? "Kaydediliyor..." : "Geliri Kaydet"}
                         </Button>
                     </Form.Item>

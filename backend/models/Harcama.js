@@ -27,6 +27,9 @@ const HarcamaSchema = new mongoose.Schema(
       ],
       required: true,
     },
+    altKategori: {
+      type: String, // sadece Market seçilince doldurulacak
+    },
     not: {
       type: String,
     },

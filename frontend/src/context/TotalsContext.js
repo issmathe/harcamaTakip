@@ -1,4 +1,3 @@
-// context/TotalsContext.jsx
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { fetchTotalsFromAPI } from "../hooks/useTotals";
 
@@ -29,4 +28,5 @@ export const TotalsProvider = ({ children }) => {
   );
 };
 
+// Hook olarak context erişimi
 export const useTotalsContext = () => useContext(TotalsContext);
