@@ -236,18 +236,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
 
-                {/* Top category indicator - Çarkıfelek göstergesi */}
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-12 z-30">
-                    <div className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-lg border-4 border-blue-200">
+                {/* Top category indicator - Sadece yazı */}
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-30">
+                    <div className="text-blue-600 font-bold text-xl">
                         {currentTopCategory}
                     </div>
-                    <div className="w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-blue-600 mx-auto mt-1"></div>
-                </div>
-
-                {/* Fixed pointer at 12 o'clock */}
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-25">
-                    <div className="w-1 h-8 bg-blue-600 rounded-full shadow-lg"></div>
-                    <div className="w-3 h-3 bg-blue-600 rounded-full mx-auto -mt-1 shadow-lg"></div>
                 </div>
 
                 {/* Rotatable wheel */}
