@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Typography, Statistic } from "antd";
-import { ArrowUpOutlined, ArrowDownOutlined, EuroOutlined } from '@ant-design/icons';
-import { useTotalsContext } from "../../context/TotalsContext"; // Context'ten alıyoruz
+import { ArrowUpOutlined, ArrowDownOutlined, EuroOutlined, WalletOutlined, FireOutlined } from '@ant-design/icons';
+import { useTotalsContext } from "../../context/TotalsContext";
 
 const { Title, Text } = Typography;
 
@@ -10,39 +10,65 @@ const Header = () => {
   const balance = totalIncome - totalExpense;
 
   return (
-    <header className="px-4 pt-6 pb-2 bg-white sticky top-0 z-10 shadow-lg">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <Title level={4} className="!text-gray-900 !mb-0 font-bold">Finans Takibi</Title>
-          <Text className="!text-gray-500 text-sm">Genel Bakış</Text>
-        </div>
-        <div className="text-right">
-          <Text className="!text-gray-500 text-xs">Bugün Harcama</Text>
-          <div className="text-xl font-extrabold text-red-600">
-            <ArrowDownOutlined className="mr-1" />
-            €{totalToday.toFixed(2)}
-          </div>
-        </div>
-      </div>
-
+    // **1. ADIM: Header Padding'i Azaltıldı**
+    <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
+      
+      {/* Güncel Bakiye Kartı - KOMPAKT DÜZEN */}
       <Card
-        className="rounded-2xl shadow-xl border-none p-2 h-28 flex items-center justify-center"
+        // **2. ADIM: Kart Padding'i Azaltıldı**
+        className="rounded-xl shadow-xl border-none p-3" 
+        bodyStyle={{ padding: '12px' }} // Ant Design'ın varsayılan padding'ini ezer
         style={{
           background: balance >= 0
             ? 'linear-gradient(to right, #4c51bf, #667eea)'
             : 'linear-gradient(to right, #f56565, #fc8181)'
         }}
       >
-        <div className="flex flex-col text-white h-full w-full items-center justify-center">
-          <Text className="!text-white/90 text-sm mb-1">Güncel Bakiye</Text>
-          <Title level={2} className="!text-white !mb-0 font-extrabold">
-            <EuroOutlined className="mr-1 text-xl" />
-            {balance.toFixed(2)}
-          </Title>
+        
+        {/* Başlık ve Genel Bakış (Daha Kompakt) */}
+        <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+                <WalletOutlined className="!text-white text-xl mr-2" />
+                <Title 
+                    // **3. ADIM: Title Margin/Padding Sıfırlandı**
+                    level={5} 
+                    className="!text-white !mb-0 !mt-0 !py-0 font-bold"
+                >
+                    Finans Takibi
+                </Title>
+            </div>
+        </div>
+
+        {/* Bakiye Değeri ve Bugün Harcama (Yan Yana) */}
+        <div className="flex justify-between items-end mt-2">
+            {/* Güncel Bakiye Bloğu */}
+            <div className="flex flex-col text-white">
+                <Text className="!text-white/90 text-xs mb-1">Güncel Bakiye</Text>
+                <Title 
+                    // **3. ADIM: Title Margin/Padding Sıfırlandı & Font Küçültüldü**
+                    level={2} 
+                    className="!text-white !mb-0 !mt-0 !py-0 font-extrabold !text-3xl"
+                > 
+                    <EuroOutlined className="mr-1 text-2xl" />
+                    {balance.toFixed(2)}
+                </Title>
+            </div>
+
+            {/* Bugün Harcama Bloğu (Daha küçük) */}
+            <div className="text-right bg-white/10 p-1 rounded-md">
+                <Text className="!text-white/80 text-xs">Bugün Harcama</Text>
+                <div className="text-lg font-bold !text-white flex items-center justify-end">
+                    <FireOutlined className="mr-1 text-sm text-amber-300" />
+                    €{totalToday.toFixed(2)}
+                </div>
+            </div>
         </div>
       </Card>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      {/* Aylık Gelir ve Gider Kartları */}
+      {/* **4. ADIM: Üst Margin Azaltıldı** */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {/* ... (Kartlar burası zaten kompakttı) ... */}
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-green-500">
           <Statistic
             title="Aylık Gelir"
@@ -53,7 +79,6 @@ const Header = () => {
             suffix="€"
           />
         </Card>
-
         <Card size="small" className="rounded-xl shadow-md border-t-4 border-red-500">
           <Statistic
             title="Aylık Gider"
