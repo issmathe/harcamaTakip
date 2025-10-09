@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { HomeOutlined, PieChartOutlined, PlusCircleOutlined, MenuOutlined } from "@ant-design/icons";
+import {
+  HomeOutlined,
+  PieChartOutlined,
+  PlusCircleOutlined,
+  MenuOutlined,
+} from "@ant-design/icons";
 import { Modal, Button } from "antd";
 import { useNavigate } from "react-router-dom";
 
@@ -20,10 +25,15 @@ const BottomNav = () => {
     navigate("/harcamalar");
   };
 
+  const goToRaporlar = () => {
+    navigate("/raporlar");
+  };
+
   return (
     <>
       <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md">
         <div className="flex justify-around items-center py-2">
+          {/* Ana Sayfa */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={() => navigate("/")}
@@ -32,32 +42,36 @@ const BottomNav = () => {
             <span className="text-xs">Ana Sayfa</span>
           </button>
 
+          {/* Raporlar */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
-            onClick={() => navigate("/raporlar")}
+            onClick={goToRaporlar}
           >
             <PieChartOutlined className="text-xl" />
             <span className="text-xs">Raporlar</span>
           </button>
 
+          {/* Ekle */}
           <button className="flex flex-col items-center text-gray-600 hover:text-indigo-600">
             <PlusCircleOutlined className="text-2xl" />
             <span className="text-xs">Ekle</span>
           </button>
 
+          {/* Dosya (önceden işlemlerdi) */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={showModal}
           >
             <MenuOutlined className="text-xl" />
-            <span className="text-xs">İşlemler</span>
+            <span className="text-xs">Dosya</span>
           </button>
         </div>
       </nav>
 
+      {/* Modal */}
       <Modal
-        title="İşlemler"
-        open={isModalVisible} // visible yerine open kullandık
+        title="Dosya"
+        open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
       >

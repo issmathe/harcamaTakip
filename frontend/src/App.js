@@ -4,6 +4,7 @@ import { TotalsProvider } from "./context/TotalsContext";
 import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
+import Raporlar from "./pages/Raporlar"; // ✅ yeni eklenen sayfa
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/gelirler" element={<Gelirler />} />
             <Route path="/harcamalar" element={<Harcamalar />} />
+            <Route path="/raporlar" element={<Raporlar />} /> {/* ✅ yeni rota */}
           </Routes>
         </div>
       </Router>

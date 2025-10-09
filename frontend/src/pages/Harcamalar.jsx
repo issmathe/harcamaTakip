@@ -68,6 +68,11 @@ const HarcamalarContent = () => {
     return ayFiltreli.filter(h => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
 
+  // 🔹 Seçilen kategorinin toplamını hesapla
+  const kategoriToplam = useMemo(() => {
+    return filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+  }, [filteredHarcamalar]);
+
   const changeMonth = useCallback((direction) => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
     const newDate = direction === 'prev' ? current.subtract(1,'month') : current.add(1,'month');
@@ -126,7 +131,7 @@ const HarcamalarContent = () => {
     <div className="p-4 md:p-6 lg:p-8">
       <Title level={3} className="text-center text-gray-700 mb-6">Harcamalarınız</Title>
 
-      {/* Filtre Card */}
+      {/* 🔹 Filtre Card */}
       <Card className="shadow-lg rounded-xl mb-6 bg-white" styles={{ body: { padding:'16px' } }}>
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
           <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
@@ -142,9 +147,19 @@ const HarcamalarContent = () => {
             {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
           </Select>
         </div>
+
+        {/* 🔹 Kategori toplam gösterimi */}
+        {selectedCategory !== "Tümü" && (
+          <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
+            {getCategoryDetails(selectedCategory).icon}
+            <span className="ml-2 text-gray-700 font-medium">
+              {selectedCategory} Toplamı: <span className="text-blue-600 font-bold">{kategoriToplam.toFixed(2)} ₺</span>
+            </span>
+          </div>
+        )}
       </Card>
 
-      {/* Harcama Listesi */}
+      {/* 🔹 Harcama Listesi */}
       <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding:0 } }}>
         <List
           itemLayout="horizontal"
@@ -199,7 +214,7 @@ const HarcamalarContent = () => {
         />
       </Card>
 
-      {/* Düzenleme Modal */}
+      {/* 🔹 Düzenleme Modal */}
       <Modal
         title={<Title level={4} className="text-center text-blue-600">Harcamayı Düzenle</Title>}
         open={editModalVisible}
@@ -207,7 +222,7 @@ const HarcamalarContent = () => {
         onOk={handleEditSave}
         okText="Kaydet"
         cancelText="İptal"
-        destroyOnHidden={true} // eski destroyOnClose yerine
+        destroyOnClose
       >
         <div className="space-y-4 pt-4">
           <div>
