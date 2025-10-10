@@ -68,6 +68,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [lastAngle, setLastAngle] = useState(0);
     const wheelRef = useRef(null);
+    const touchStartTime = useRef(0);
+    const touchStartPos = useRef({ x: 0, y: 0 });
 
     const { fetchTotals } = useTotalsContext();
 
@@ -127,49 +129,72 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
     // Touch events
     const handleTouchStart = (e) => {
-        e.preventDefault();
         const touch = e.touches[0];
         const rect = wheelRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
-        setIsDragging(true);
+        
+        touchStartTime.current = Date.now();
+        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
         setLastAngle(angle);
+        setIsDragging(false); // Start with false, will set to true if movement detected
     };
 
     const handleTouchMove = useCallback((e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        
         const touch = e.touches[0];
-        const rect = wheelRef.current.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
+        const dx = touch.clientX - touchStartPos.current.x;
+        const dy = touch.clientY - touchStartPos.current.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
-        let deltaAngle = angle - lastAngle;
-        
-        // Handle angle wrap-around
-        if (deltaAngle > 180) deltaAngle -= 360;
-        if (deltaAngle < -180) deltaAngle += 360;
-        
-        setRotation(prev => prev + deltaAngle);
-        setLastAngle(angle);
+        // If moved more than 10px, consider it a drag
+        if (distance > 10) {
+            if (!isDragging) {
+                setIsDragging(true);
+            }
+            e.preventDefault(); // Only prevent default when actually dragging
+            
+            const rect = wheelRef.current.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
+            
+            let deltaAngle = angle - lastAngle;
+            
+            // Handle angle wrap-around
+            if (deltaAngle > 180) deltaAngle -= 360;
+            if (deltaAngle < -180) deltaAngle += 360;
+            
+            setRotation(prev => prev + deltaAngle);
+            setLastAngle(angle);
+        }
     }, [isDragging, lastAngle]);
 
     const handleTouchEnd = useCallback((e) => {
-        e.preventDefault();
+        const touchDuration = Date.now() - touchStartTime.current;
+        
+        // If touch was short (<200ms) and didn't move much (isDragging is false), it's a tap
+        if (!isDragging && touchDuration < 200) {
+            // This is a tap, let the click event handle it
+            // Don't prevent default here to allow click event to fire
+        } else {
+            // This was a drag, prevent any click
+            e.preventDefault();
+        }
+        
         setIsDragging(false);
-    }, []);
+    }, [isDragging]);
 
     // Add global event listeners
     React.useEffect(() => {
         if (isDragging) {
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
-            document.addEventListener('touchmove', handleTouchMove, { passive: false });
-            document.addEventListener('touchend', handleTouchEnd);
         }
+        
+        // Touch listeners are always active but handleTouchMove decides when to prevent default
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
