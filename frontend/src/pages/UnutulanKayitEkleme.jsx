@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Input,
@@ -74,6 +74,36 @@ const UnutulanKayitEklemeContent = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  // 🔹 iPhone/Android'de zoom yapılmasını engelle
+  useEffect(() => {
+    const meta = document.querySelector("meta[name=viewport]");
+    if (meta) {
+      meta.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      );
+    } else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "viewport";
+      newMeta.content =
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+      document.head.appendChild(newMeta);
+    }
+
+    // Input focus olduğunda zoom yapmasını engellemek için font büyüklüğü sabit tut
+    const style = document.createElement("style");
+    style.innerHTML = `
+      input, select, textarea, button {
+        font-size: 16px !important; /* Safari zoom fix */
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const handleSubmit = async () => {
     if (!formData.miktar || !formData.kategori || !formData.tarih) {
       return message.warning("Lütfen miktar, kategori ve tarihi doldurun!");
@@ -83,15 +113,11 @@ const UnutulanKayitEklemeContent = () => {
       setLoading(true);
       const payload = { ...formData };
 
-      // Market kategorisinde alt kategori birleştiriliyor
       if (formData.kategori === "Market" && formData.altKategori) {
         payload.kategori = `Market - ${formData.altKategori}`;
       }
 
-      // Tarih ISO formatına çevrilir
       payload.createdAt = formData.tarih.toISOString();
-
-      // API'ye gönder
       await axios.post(`${API_URL}/harcama`, payload);
 
       message.success("Unutulan harcama başarıyla eklendi!");
@@ -118,7 +144,8 @@ const UnutulanKayitEklemeContent = () => {
             Miktar (₺):
           </Text>
           <Input
-            type="number"
+            inputMode="decimal"
+            pattern="[0-9]*"
             value={formData.miktar}
             onChange={(e) => setFormData({ ...formData, miktar: e.target.value })}
             placeholder="Örn: 45.50"
@@ -137,6 +164,7 @@ const UnutulanKayitEklemeContent = () => {
             }
             style={{ width: "100%" }}
             placeholder="Kategori seçin"
+            size="large"
           >
             {ALL_CATEGORIES.map((cat) => (
               <Option key={cat} value={cat}>
@@ -154,6 +182,7 @@ const UnutulanKayitEklemeContent = () => {
                 onChange={(v) => setFormData({ ...formData, altKategori: v })}
                 style={{ width: "100%" }}
                 placeholder="Market seçin"
+                size="large"
               >
                 {MARKETLER.map((m) => (
                   <Option key={m} value={m}>
