@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import {
     Typography,
     Tooltip,
@@ -17,16 +17,12 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
-// CSS'e eklenebilecek bir sınıf: .no-zoom { touch-action: pan-x pan-y; } veya body'ye
-// Genel projenin index.html <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-// eklenmesi en etkili çözümdür.
-// InputNumber'larda otomatik zoom'u engellemek için font boyutu artırılmıştır.
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// Market ve Kategori listeleri aynı kalmıştır.
+// Market ve Kategori listeleri (aynı kaldı)
 const MARKETLER = [
     "Lidl", "Rewe", "Aldi", "Netto", "DM",
     "Kaufland", "Norma", "Edeka", "Tegut", "Hit", "Famila",
@@ -58,6 +54,10 @@ const CATEGORIES = [
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
+    
+    // TotalsContext'ten harcamalar dizisini ve fetchTotals'ı alıyoruz
+    const { fetchTotals, harcamalar } = useTotalsContext();
+    
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedMarket, setSelectedMarket] = useState("");
@@ -71,17 +71,41 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const wheelRef = useRef(null);
     const touchStartTime = useRef(0);
     const touchStartPos = useRef({ x: 0, y: 0 });
-    const { fetchTotals } = useTotalsContext();
+    
+    // Yardımcı fonksiyon: Mevcut ayı (yyyy-mm) döndürür
+    const getCurrentMonthYear = () => {
+        return new Date().toISOString().slice(0, 7); // "2025-10" formatı
+    };
+    
+    // Kategorik Toplamları Hesapla
+    const monthlyCategoryTotals = useMemo(() => {
+        const currentMonth = getCurrentMonthYear();
+        
+        return harcamalar.reduce((acc, harcama) => {
+            // createdAt alanı API'den string olarak gelmeli
+            if (harcama.createdAt && harcama.createdAt.startsWith(currentMonth)) {
+                const kategori = harcama.kategori;
+                const miktar = Number(harcama.miktar || 0);
+                
+                if (kategori) {
+                    acc[kategori] = (acc[kategori] || 0) + miktar;
+                }
+            }
+            return acc;
+        }, {});
+    }, [harcamalar]); 
 
     const getTopCategory = useCallback(() => {
         const categoryAngle = 360 / CATEGORIES.length;
         const normalizedRotation = ((rotation % 360) + 360) % 360;
-        // Top index hesaplanırken 360'a göre ayarlama yapılıyor.
         const topIndex = (Math.round((-normalizedRotation) / categoryAngle) + CATEGORIES.length) % CATEGORIES.length;
         return CATEGORIES[topIndex];
     }, [rotation]);
 
     const currentTopCategory = getTopCategory();
+    
+    const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
+    const formattedTotal = currentCategoryTotal.toFixed(2).replace('.', ','); 
 
     const getAngle = (centerX, centerY, pointX, pointY) => {
         const dx = pointX - centerX;
@@ -89,7 +113,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         return Math.atan2(dy, dx) * (180 / Math.PI);
     };
 
-    // Mouse events (aynı kalmıştır)
+    // Mouse ve Touch event'leri (Aynı kaldı)
     const handleMouseDown = (e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -99,7 +123,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         const angle = getAngle(centerX, centerY, e.clientX, e.clientY);
         setLastAngle(angle);
     };
-
     const handleMouseMove = useCallback((e) => {
         if (!isDragging) return;
         const rect = wheelRef.current.getBoundingClientRect();
@@ -112,14 +135,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setRotation(prev => prev + deltaAngle);
         setLastAngle(angle);
     }, [isDragging, lastAngle]);
-
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
     }, []);
-
-    // **Touch events güncellendi**
     const handleTouchStart = (e) => {
-        // e.preventDefault(); // Burada engellersek scroll sorunu olabilir.
         const touch = e.touches[0];
         const rect = wheelRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -130,49 +149,35 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setLastAngle(angle);
         setIsDragging(false);
     };
-
     const handleTouchMove = useCallback((e) => {
         const touch = e.touches[0];
         const dx = touch.clientX - touchStartPos.current.x;
         const dy = touch.clientY - touchStartPos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Bir miktar hareket eşiği (10 piksel) aşıldıysa, döndürmeyi başlat
-        // ve varsayılan davranışı engelle (zoom/kaydırma engelleme)
         if (distance > 10 || isDragging) {
-            e.preventDefault(); // 👈 Zoom'u ve kaydırmayı engellemek için
+            e.preventDefault(); 
             if (!isDragging) setIsDragging(true);
-
             const rect = wheelRef.current.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
             let deltaAngle = angle - lastAngle;
-
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
-
             setRotation(prev => prev + deltaAngle);
             setLastAngle(angle);
         }
     }, [isDragging, lastAngle]);
-
     const handleTouchEnd = useCallback(() => {
         setIsDragging(false);
     }, []);
-
     React.useEffect(() => {
         const wheel = wheelRef.current;
         if (!wheel) return;
-
-        // Mouse olayları
         wheel.addEventListener('mousemove', handleMouseMove);
         wheel.addEventListener('mouseup', handleMouseUp);
-
-        // Touch olayları: 'passive: false' zoom ve scroll engellemeyi mümkün kılar
         wheel.addEventListener('touchmove', handleTouchMove, { passive: false });
         wheel.addEventListener('touchend', handleTouchEnd);
-
         return () => {
             wheel.removeEventListener('mousemove', handleMouseMove);
             wheel.removeEventListener('mouseup', handleMouseUp);
@@ -182,7 +187,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
     const handleIconClick = (category) => {
-        // Eğer sürükleme (drag) işlemi aktifken tıklama olduysa, dikkate alma
         if (isDragging) return;
         setSelectedCategory(category);
         setSelectedMarket("");
@@ -190,13 +194,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         form.resetFields();
     };
 
-    // Modal kapatma işlemleri (aynı kalmıştır)
     const handleModalCancel = () => {
         setIsModalVisible(false);
         setSelectedCategory(null);
         setSelectedMarket("");
         form.resetFields();
-        // Odaklanmış elemanın odağını kaldırarak potansiyel klavye zoomunu engelle
         if (document.activeElement) document.activeElement.blur();
     };
 
@@ -210,14 +212,39 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         gelirForm.resetFields();
         if (document.activeElement) document.activeElement.blur();
     };
+    
+    // Harcama ekleme
+    const onHarcamaFinish = async (values) => {
+        const harcamaData = {
+            miktar: values.miktar,
+            kategori: selectedCategory || "Diğer",
+            altKategori: selectedCategory === "Market" ? selectedMarket : "",
+            not: values.not || "",
+        };
+        setLoading(true);
+        try {
+            await axios.post(`${API_URL}/harcama`, harcamaData);
+            message.success(
+                `${harcamaData.kategori}${harcamaData.altKategori ? " - " + harcamaData.altKategori : ""} kategorisine ${values.miktar} ₺ harcama eklendi!`
+            );
+            await fetchTotals(); 
+            handleModalCancel();
+        } catch (error) {
+            console.error(error.response?.data || error.message);
+            message.error(`Harcama eklenirken hata: ${error.response?.data?.message || "Sunucu hatası"}`);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // Gelir ekleme
     const onGelirFinish = async (values) => {
         const gelirData = { miktar: values.miktar, kategori: values.kategori, not: values.not || "" };
         setLoading(true);
         try {
             await axios.post(`${API_URL}/gelir`, gelirData);
             message.success(`${gelirData.kategori} kategorisine ${gelirData.miktar} ₺ gelir eklendi!`);
-            await fetchTotals();
+            await fetchTotals(); 
             handleGelirCancel();
         } catch (error) {
             console.error(error.response?.data || error.message);
@@ -226,6 +253,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             setLoading(false);
         }
     };
+
 
     return (
         <main className="flex-1 px-4 pt-4 pb-24">
@@ -236,25 +264,28 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 >
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-30">
-                    <div className="text-blue-600 font-bold text-xl">
+                {/* Kategori Adı ve Harcama Miktarı Gösterimi (ARKA PLAN KALDIRILDI) */}
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-12 z-30 w-40 text-center">
+                    <div className="text-blue-600 font-bold text-xl leading-snug">
                         {currentTopCategory}
+                    </div>
+                    {/* 👇 Sadece metin sınıfları kaldı: text-gray-700 font-semibold text-base mt-1 */}
+                    <div className="text-gray-700 font-semibold text-base mt-1">
+                        {formattedTotal} ₺
                     </div>
                 </div>
                 <div
                     ref={wheelRef}
-                    // Dokunmatik hareket için CSS özelliği eklendi: touch-action: none, parmakla kaydırma ve zoom'u engeller.
                     className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
                     style={{
                         transform: `rotate(${rotation}deg)`,
                         transition: isDragging ? 'none' : 'transform 0.3s ease-out',
-                        touchAction: 'none', // Mobil zoom'u tekerlek alanında engellemek için
+                        touchAction: 'none',
                     }}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
                 >
                     {CATEGORIES.map((category, index) => {
-                        // Kategori tekerlek görünümü (aynı kaldı)
                         const angle = (360 / CATEGORIES.length) * index - 90;
                         const rad = (angle * Math.PI) / 180;
                         const x = radius * Math.cos(rad);
@@ -284,7 +315,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     })}
                 </div>
             </div>
-            {/* Harcama Modal */}
+            {/* Harcama Modal (Aynı kaldı) */}
             <Modal
                 title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
                 open={isModalVisible}
@@ -296,28 +327,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 <Form
                     form={form}
                     layout="vertical"
-                    onFinish={async (values) => {
-                        const harcamaData = {
-                            miktar: values.miktar,
-                            kategori: selectedCategory || "Diğer",
-                            altKategori: selectedCategory === "Market" ? selectedMarket : "",
-                            not: values.not || "",
-                        };
-                        setLoading(true);
-                        try {
-                            await axios.post(`${API_URL}/harcama`, harcamaData);
-                            message.success(
-                                `${harcamaData.kategori}${harcamaData.altKategori ? " - " + harcamaData.altKategori : ""} kategorisine ${values.miktar} ₺ harcama eklendi!`
-                            );
-                            await fetchTotals();
-                            handleModalCancel();
-                        } catch (error) {
-                            console.error(error.response?.data || error.message);
-                            message.error(`Harcama eklenirken hata: ${error.response?.data?.message || "Sunucu hatası"}`);
-                        } finally {
-                            setLoading(false);
-                        }
-                    }}
+                    onFinish={onHarcamaFinish}
                 >
                     <Form.Item
                         name="miktar"
@@ -327,7 +337,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
-                        {/* ⚠️ Zoom'u engellemenin en etkili yollarından biri: font boyutunu artırmak! */}
                         <InputNumber
                             min={0.01}
                             step={0.01}
@@ -346,7 +355,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                                 value={selectedMarket}
                                 onChange={setSelectedMarket}
                                 allowClear={false}
-                                // ⚠️ Font boyutu artırıldı
                                 style={{ fontSize: '18px' }}
                             >
                                 {MARKETLER.map(m => <Option key={m} value={m}>{m}</Option>)}
@@ -354,7 +362,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         </Form.Item>
                     )}
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        {/* ⚠️ Font boyutu artırıldı */}
                         <Input.TextArea
                             rows={3}
                             placeholder="Harcama ile ilgili kısa bir not ekle"
@@ -368,7 +375,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     </Form.Item>
                 </Form>
             </Modal>
-            {/* Gelir Modal */}
+            {/* Gelir Modal (Aynı kaldı) */}
             <Modal
                 title="Gelir Ekle"
                 open={isGelirModalVisible}
@@ -391,7 +398,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
-                        {/* ⚠️ Zoom'u engellemenin en etkili yollarından biri: font boyutunu artırmak! */}
                         <InputNumber
                             min={0.01}
                             step={0.01}
@@ -404,7 +410,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         label="Kategori"
                         rules={[{ required: true, message: 'Lütfen kategori seçin!' }]}
                     >
-                        {/* ⚠️ Font boyutu artırıldı */}
                         <Select placeholder="Kategori seçin" style={{ fontSize: '18px' }}>
                             <Option value="maaş">maaş</Option>
                             <Option value="tasarruf">tasarruf</Option>
@@ -412,7 +417,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         </Select>
                     </Form.Item>
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        {/* ⚠️ Font boyutu artırıldı */}
                         <Input.TextArea
                             rows={3}
                             placeholder="Gelir ile ilgili kısa bir not ekle"

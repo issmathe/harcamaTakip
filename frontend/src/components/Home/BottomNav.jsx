@@ -36,47 +36,42 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md">
-        <div className="flex justify-around items-center py-2">
-          {/* Ana Sayfa */}
+      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md py-7">
+        <div className="flex justify-around items-center">
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={() => navigate("/")}
           >
-            <HomeOutlined className="text-xl" />
-            <span className="text-xs">Ana Sayfa</span>
+            <HomeOutlined className="text-3xl" />
+            <span className="text-sm">Ana Sayfa</span>
           </button>
 
-          {/* Raporlar */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={goToRaporlar}
           >
-            <PieChartOutlined className="text-xl" />
-            <span className="text-xs">Raporlar</span>
+            <PieChartOutlined className="text-3xl" />
+            <span className="text-sm">Raporlar</span>
           </button>
 
-          {/* Ekle */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
-            onClick={goToKayitEkleme} // yeni buton
+            onClick={goToKayitEkleme}
           >
-            <PlusCircleOutlined className="text-2xl" />
-            <span className="text-xs">Kayıt Ekle</span>
+            <PlusCircleOutlined className="text-4xl" />
+            <span className="text-sm">Kayıt Ekle</span>
           </button>
 
-          {/* Dosya */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={showModal}
           >
-            <MenuOutlined className="text-xl" />
-            <span className="text-xs">Dosya</span>
+            <MenuOutlined className="text-3xl" />
+            <span className="text-sm">Dosya</span>
           </button>
         </div>
       </nav>
 
-      {/* Modal */}
       <Modal
         title="Dosya"
         open={isModalVisible}
