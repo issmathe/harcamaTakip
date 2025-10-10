@@ -63,7 +63,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
     const [gelirForm] = Form.useForm();
 
-    // Rotation states
     const [rotation, setRotation] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [lastAngle, setLastAngle] = useState(0);
@@ -73,21 +72,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
     const { fetchTotals } = useTotalsContext();
 
-    // Calculate which category is at the top (12 o'clock position)
     const getTopCategory = useCallback(() => {
         const categoryAngle = 360 / CATEGORIES.length;
-        // Normalize rotation to 0-360 range
         const normalizedRotation = ((rotation % 360) + 360) % 360;
-        // Calculate which index is at the top (since we start from top and go clockwise)
-        // When rotation is 0, index 0 should be at top
-        // When rotation is positive (clockwise), we need to go backwards in the array
         const topIndex = (Math.round((-normalizedRotation) / categoryAngle) + CATEGORIES.length) % CATEGORIES.length;
         return CATEGORIES[topIndex];
     }, [rotation]);
 
     const currentTopCategory = getTopCategory();
 
-    // Calculate angle from center to point
     const getAngle = (centerX, centerY, pointX, pointY) => {
         const dx = pointX - centerX;
         const dy = pointY - centerY;
@@ -107,18 +100,13 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
     const handleMouseMove = useCallback((e) => {
         if (!isDragging) return;
-        
         const rect = wheelRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         const angle = getAngle(centerX, centerY, e.clientX, e.clientY);
-        
         let deltaAngle = angle - lastAngle;
-        
-        // Handle angle wrap-around
         if (deltaAngle > 180) deltaAngle -= 360;
         if (deltaAngle < -180) deltaAngle += 360;
-        
         setRotation(prev => prev + deltaAngle);
         setLastAngle(angle);
     }, [isDragging, lastAngle]);
@@ -127,18 +115,17 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setIsDragging(false);
     }, []);
 
-    // Touch events
+    // Touch events (wheel sadece)
     const handleTouchStart = (e) => {
         const touch = e.touches[0];
         const rect = wheelRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
-        
         touchStartTime.current = Date.now();
         touchStartPos.current = { x: touch.clientX, y: touch.clientY };
         setLastAngle(angle);
-        setIsDragging(false); // Start with false, will set to true if movement detected
+        setIsDragging(false);
     };
 
     const handleTouchMove = useCallback((e) => {
@@ -146,66 +133,46 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         const dx = touch.clientX - touchStartPos.current.x;
         const dy = touch.clientY - touchStartPos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // If moved more than 10px, consider it a drag
+
         if (distance > 10) {
-            if (!isDragging) {
-                setIsDragging(true);
-            }
-            e.preventDefault(); // Only prevent default when actually dragging
-            
+            if (!isDragging) setIsDragging(true);
+            e.preventDefault();
             const rect = wheelRef.current.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
-            
             let deltaAngle = angle - lastAngle;
-            
-            // Handle angle wrap-around
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
-            
             setRotation(prev => prev + deltaAngle);
             setLastAngle(angle);
         }
     }, [isDragging, lastAngle]);
 
-    const handleTouchEnd = useCallback((e) => {
-        const touchDuration = Date.now() - touchStartTime.current;
-        
-        // If touch was short (<200ms) and didn't move much (isDragging is false), it's a tap
-        if (!isDragging && touchDuration < 200) {
-            // This is a tap, let the click event handle it
-            // Don't prevent default here to allow click event to fire
-        } else {
-            // This was a drag, prevent any click
-            e.preventDefault();
-        }
-        
+    const handleTouchEnd = useCallback(() => {
         setIsDragging(false);
-    }, [isDragging]);
+    }, []);
 
-    // Add global event listeners
+    // Wheel eventleri sadece wheelRef üzerinde
     React.useEffect(() => {
-        if (isDragging) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-        
-        // Touch listeners are always active but handleTouchMove decides when to prevent default
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
+        const wheel = wheelRef.current;
+        if (!wheel) return;
+
+        wheel.addEventListener('mousemove', handleMouseMove);
+        wheel.addEventListener('mouseup', handleMouseUp);
+        wheel.addEventListener('touchmove', handleTouchMove, { passive: false });
+        wheel.addEventListener('touchend', handleTouchEnd);
 
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('touchmove', handleTouchMove);
-            document.removeEventListener('touchend', handleTouchEnd);
+            wheel.removeEventListener('mousemove', handleMouseMove);
+            wheel.removeEventListener('mouseup', handleMouseUp);
+            wheel.removeEventListener('touchmove', handleTouchMove);
+            wheel.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+    }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
     const handleIconClick = (category) => {
-        if (isDragging) return; // Prevent click during drag
+        if (isDragging) return;
         setSelectedCategory(category);
         setSelectedMarket("");
         setIsModalVisible(true);
@@ -230,12 +197,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     };
 
     const onGelirFinish = async (values) => {
-        const gelirData = {
-            miktar: values.miktar,
-            kategori: values.kategori,
-            not: values.not || "",
-        };
-
+        const gelirData = { miktar: values.miktar, kategori: values.kategori, not: values.not || "" };
         setLoading(true);
         try {
             await axios.post(`${API_URL}/gelir`, gelirData);
@@ -253,7 +215,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     return (
         <main className="flex-1 px-4 pt-4 pb-24">
             <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-                {/* Center button */}
                 <div
                     onClick={handleGelirClick}
                     className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center text-center shadow-lg cursor-pointer transition-all duration-300 hover:scale-[1.05] z-20"
@@ -261,14 +222,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
 
-                {/* Top category indicator - Sadece yazı */}
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-30">
                     <div className="text-blue-600 font-bold text-xl">
                         {currentTopCategory}
                     </div>
                 </div>
 
-                {/* Rotatable wheel */}
                 <div
                     ref={wheelRef}
                     className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
@@ -280,12 +239,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     onTouchStart={handleTouchStart}
                 >
                     {CATEGORIES.map((category, index) => {
-                        const angle = (360 / CATEGORIES.length) * index - 90; // Start from top
+                        const angle = (360 / CATEGORIES.length) * index - 90;
                         const rad = (angle * Math.PI) / 180;
                         const x = radius * Math.cos(rad);
                         const y = radius * Math.sin(rad);
-                        
-                        // Check if this category is at the top
                         const isTopCategory = category === currentTopCategory;
 
                         return (
@@ -300,7 +257,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                                     style={{
                                         top: `${center + y}%`,
                                         left: `${center + x}%`,
-                                        transform: `translate(-50%, -50%) rotate(${-rotation}deg)`, // Counter-rotate icons
+                                        transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
                                     }}
                                 >
                                     {React.cloneElement(CategoryIcons[category] || <QuestionCircleOutlined />, {
@@ -320,6 +277,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 onCancel={handleModalCancel}
                 footer={null}
                 maskClosable={!loading}
+                keyboard={true}
             >
                 <Form
                     form={form}
@@ -395,6 +353,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 onCancel={handleGelirCancel}
                 footer={null}
                 maskClosable={!loading}
+                keyboard={true}
             >
                 <Form
                     form={gelirForm}
