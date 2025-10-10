@@ -22,7 +22,6 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// Market alt kategorileri
 const MARKETLER = [
     "Lidl", "Rewe",  "Aldi", "Netto", "DM",
     "Kaufland",  "Norma","Edeka", "Tegut", "Hit", "Famila",
@@ -115,7 +114,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setIsDragging(false);
     }, []);
 
-    // Touch events (wheel sadece)
+    // Touch events
     const handleTouchStart = (e) => {
         const touch = e.touches[0];
         const rect = wheelRef.current.getBoundingClientRect();
@@ -153,7 +152,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setIsDragging(false);
     }, []);
 
-    // Wheel eventleri sadece wheelRef üzerinde
     React.useEffect(() => {
         const wheel = wheelRef.current;
         if (!wheel) return;
@@ -184,6 +182,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setSelectedCategory(null);
         setSelectedMarket("");
         form.resetFields();
+        if (document.activeElement) document.activeElement.blur();
+        window.scrollTo(0, 0);
     };
 
     const handleGelirClick = () => {
@@ -194,6 +194,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const handleGelirCancel = () => {
         setIsGelirModalVisible(false);
         gelirForm.resetFields();
+        if (document.activeElement) document.activeElement.blur();
+        window.scrollTo(0, 0);
     };
 
     const onGelirFinish = async (values) => {
@@ -314,7 +316,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
-                        <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} placeholder="Örn: 50.75" />
+                        <InputNumber
+                            min={0.01}
+                            step={0.01}
+                            style={{ width: '100%', fontSize: '16px' }}
+                            placeholder="Örn: 50.75"
+                        />
                     </Form.Item>
 
                     {selectedCategory === "Market" && (
@@ -328,6 +335,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                                 value={selectedMarket}
                                 onChange={setSelectedMarket}
                                 allowClear={false}
+                                style={{ fontSize: '16px' }}
                             >
                                 {MARKETLER.map(m => <Option key={m} value={m}>{m}</Option>)}
                             </Select>
@@ -335,7 +343,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     )}
 
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        <Input.TextArea rows={3} placeholder="Harcama ile ilgili kısa bir not ekle" />
+                        <Input.TextArea
+                            rows={3}
+                            placeholder="Harcama ile ilgili kısa bir not ekle"
+                            style={{ fontSize: '16px' }}
+                        />
                     </Form.Item>
 
                     <Form.Item>
@@ -369,7 +381,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
-                        <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} placeholder="Örn: 1500" />
+                        <InputNumber
+                            min={0.01}
+                            step={0.01}
+                            style={{ width: '100%', fontSize: '16px' }}
+                            placeholder="Örn: 1500"
+                        />
                     </Form.Item>
 
                     <Form.Item
@@ -377,7 +394,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         label="Kategori"
                         rules={[{ required: true, message: 'Lütfen kategori seçin!' }]}
                     >
-                        <Select placeholder="Kategori seçin">
+                        <Select placeholder="Kategori seçin" style={{ fontSize: '16px' }}>
                             <Option value="maaş">maaş</Option>
                             <Option value="tasarruf">tasarruf</Option>
                             <Option value="diğer">diğer</Option>
@@ -385,7 +402,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     </Form.Item>
 
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
-                        <Input.TextArea rows={3} placeholder="Gelir ile ilgili kısa bir not ekle" />
+                        <Input.TextArea
+                            rows={3}
+                            placeholder="Gelir ile ilgili kısa bir not ekle"
+                            style={{ fontSize: '16px' }}
+                        />
                     </Form.Item>
 
                     <Form.Item>
