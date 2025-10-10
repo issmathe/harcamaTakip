@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
     Typography,
     Tooltip,
@@ -70,6 +70,67 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const touchStartPos = useRef({ x: 0, y: 0 });
 
     const { fetchTotals } = useTotalsContext();
+
+    // Viewport zoom kontrolü için
+    useEffect(() => {
+        const preventZoom = (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        };
+
+        const preventDoubleTapZoom = (e) => {
+            const now = Date.now();
+            const DOUBLE_TAP_DELAY = 300;
+            if (now - touchStartTime.current < DOUBLE_TAP_DELAY) {
+                e.preventDefault();
+            }
+            touchStartTime.current = now;
+        };
+
+        document.addEventListener('touchstart', preventZoom, { passive: false });
+        document.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+
+        return () => {
+            document.removeEventListener('touchstart', preventZoom);
+            document.removeEventListener('touchend', preventDoubleTapZoom);
+        };
+    }, []);
+
+    // Modal açıldığında/kapandığında zoom kontrolü
+    useEffect(() => {
+        if (isModalVisible || isGelirModalVisible) {
+            // Modal açıldığında body'yi sabitle ve zoom'u engelle
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+            
+            // Viewport meta tag'ini güncelle
+            let viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            }
+        } else {
+            // Modal kapandığında sıfırla
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            
+            // Zoom'u sıfırla
+            window.scrollTo(0, 0);
+            
+            // Viewport'u eski haline getir
+            let viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+            }
+            
+            // Aktif elementi blur et
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+        }
+    }, [isModalVisible, isGelirModalVisible]);
 
     const getTopCategory = useCallback(() => {
         const categoryAngle = 360 / CATEGORIES.length;
@@ -182,8 +243,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setSelectedCategory(null);
         setSelectedMarket("");
         form.resetFields();
-        if (document.activeElement) document.activeElement.blur();
-        window.scrollTo(0, 0);
     };
 
     const handleGelirClick = () => {
@@ -194,8 +253,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const handleGelirCancel = () => {
         setIsGelirModalVisible(false);
         gelirForm.resetFields();
-        if (document.activeElement) document.activeElement.blur();
-        window.scrollTo(0, 0);
     };
 
     const onGelirFinish = async (values) => {
@@ -280,6 +337,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 footer={null}
                 maskClosable={!loading}
                 keyboard={true}
+                destroyOnClose={true}
             >
                 <Form
                     form={form}
@@ -319,8 +377,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         <InputNumber
                             min={0.01}
                             step={0.01}
-                            style={{ width: '100%', fontSize: '16px' }}
+                            className="w-full"
                             placeholder="Örn: 50.75"
+                            inputMode="decimal"
                         />
                     </Form.Item>
 
@@ -335,7 +394,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                                 value={selectedMarket}
                                 onChange={setSelectedMarket}
                                 allowClear={false}
-                                style={{ fontSize: '16px' }}
                             >
                                 {MARKETLER.map(m => <Option key={m} value={m}>{m}</Option>)}
                             </Select>
@@ -346,7 +404,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         <Input.TextArea
                             rows={3}
                             placeholder="Harcama ile ilgili kısa bir not ekle"
-                            style={{ fontSize: '16px' }}
                         />
                     </Form.Item>
 
@@ -366,6 +423,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 footer={null}
                 maskClosable={!loading}
                 keyboard={true}
+                destroyOnClose={true}
             >
                 <Form
                     form={gelirForm}
@@ -384,8 +442,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         <InputNumber
                             min={0.01}
                             step={0.01}
-                            style={{ width: '100%', fontSize: '16px' }}
+                            className="w-full"
                             placeholder="Örn: 1500"
+                            inputMode="decimal"
                         />
                     </Form.Item>
 
@@ -394,7 +453,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         label="Kategori"
                         rules={[{ required: true, message: 'Lütfen kategori seçin!' }]}
                     >
-                        <Select placeholder="Kategori seçin" style={{ fontSize: '16px' }}>
+                        <Select placeholder="Kategori seçin">
                             <Option value="maaş">maaş</Option>
                             <Option value="tasarruf">tasarruf</Option>
                             <Option value="diğer">diğer</Option>
@@ -405,7 +464,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         <Input.TextArea
                             rows={3}
                             placeholder="Gelir ile ilgili kısa bir not ekle"
-                            style={{ fontSize: '16px' }}
                         />
                     </Form.Item>
 
@@ -416,6 +474,20 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            <style jsx>{`
+                /* Input zoom engelleme için */
+                input[type="text"],
+                input[type="number"],
+                textarea,
+                select,
+                .ant-input,
+                .ant-input-number,
+                .ant-input-number-input,
+                .ant-select-selection-search-input {
+                    font-size: 16px !important;
+                }
+            `}</style>
         </main>
     );
 };

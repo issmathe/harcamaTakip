@@ -1,0 +1,130 @@
+// pages/UnutulanKayitEkleme.jsx
+import React, { useEffect, useMemo } from "react";
+import { Card, Typography } from "antd";
+import { TotalsProvider, useTotalsContext } from "../context/TotalsContext";
+import { Doughnut } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+
+import Header from "../components/Home/Header.jsx";
+import BottomNav from "../components/Home/BottomNav.jsx";
+
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+
+const { Title } = Typography;
+
+const ALL_CATEGORIES = [
+  "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", 
+  "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye", 
+  "Restoran / Kafe", "Diğer",
+];
+
+const categoryColors = {
+  "Giyim": "#FF6384",
+  "Gıda": "#36A2EB",
+  "Petrol": "#FFCE56",
+  "Kira": "#4BC0C0",
+  "Fatura": "#9966FF",
+  "Eğitim": "#FF9F40",
+  "Sağlık": "#C9CBCF",
+  "Ulaşım": "#8AFF33",
+  "Eğlence": "#FF33F6",
+  "Elektronik": "#33FFF3",
+  "Spor": "#FF8A33",
+  "Market": "#338AFF",
+  "Kırtasiye": "#FF3333",
+  "Restoran / Kafe": "#33FF8A",
+  "Diğer": "#AAAAAA"
+};
+
+const UnutulanKayitContent = () => {
+  const { harcamalar = [], fetchTotals } = useTotalsContext();
+
+  useEffect(() => {
+    fetchTotals();
+  }, [fetchTotals]);
+
+  const doughnutData = useMemo(() => {
+    const totals = {};
+    ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
+
+    harcamalar.forEach(h => {
+      // Örnek: unutulan kayıtları belirli bir filtre ile gösterebilirsin
+      if (h.unutulan) {
+        let key = h.kategori.startsWith("Market") ? "Market" : h.kategori;
+        if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
+        totals[key] += Number(h.miktar || 0);
+      }
+    });
+
+    const labels = Object.keys(totals).filter(k => totals[k] > 0);
+    const data = labels.map(l => totals[l]);
+    const backgroundColor = labels.map(l => categoryColors[l]);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Unutulan Harcamalar",
+          data,
+          backgroundColor,
+          borderWidth: 1,
+        }
+      ]
+    };
+  }, [harcamalar]);
+
+  const doughnutOptions = useMemo(() => ({
+    responsive: true,
+    cutout: "50%", // Ortayı boş bırak, simit gibi
+    plugins: {
+      legend: {
+        display: true,
+        position: "bottom",
+        labels: { boxWidth: 20, padding: 15 }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
+      datalabels: {
+        color: "#fff",
+        font: { weight: "bold", size: 14 },
+        formatter: (value, ctx) => {
+          const total = ctx.chart.data.datasets[0].data.reduce((sum, val) => sum + val, 0);
+          const percentage = total ? ((value / total) * 100).toFixed(1) : 0;
+          return `${percentage}%`;
+        }
+      }
+    }
+  }), []);
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8">
+      <Title level={3} className="text-center text-gray-700 mb-6">Unutulan Harcamalar</Title>
+      <Card className="shadow-lg rounded-xl p-6 bg-white">
+        <Doughnut data={doughnutData} options={doughnutOptions} height={300} />
+      </Card>
+    </div>
+  );
+};
+
+const UnutulanKayitEkleme = () => (
+  <TotalsProvider>
+    <div className="relative min-h-screen bg-gray-50">
+      <Header />
+      <main className="pb-20">
+        <UnutulanKayitContent />
+      </main>
+      <BottomNav />
+    </div>
+  </TotalsProvider>
+);
+
+export default UnutulanKayitEkleme;
