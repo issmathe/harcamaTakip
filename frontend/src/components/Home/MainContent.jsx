@@ -17,15 +17,20 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
+// CSS'e eklenebilecek bir sınıf: .no-zoom { touch-action: pan-x pan-y; } veya body'ye
+// Genel projenin index.html <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+// eklenmesi en etkili çözümdür.
+// InputNumber'larda otomatik zoom'u engellemek için font boyutu artırılmıştır.
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
+// Market ve Kategori listeleri aynı kalmıştır.
 const MARKETLER = [
-    "Lidl", "Rewe",  "Aldi", "Netto", "DM",
-    "Kaufland",  "Norma","Edeka", "Tegut", "Hit", "Famila",
-    "Nahkauf", "Biomarkt", "Penny", "Rossmann","Real", "Diğer"
+    "Lidl", "Rewe", "Aldi", "Netto", "DM",
+    "Kaufland", "Norma", "Edeka", "Tegut", "Hit", "Famila",
+    "Nahkauf", "Biomarkt", "Penny", "Rossmann", "Real", "Diğer"
 ];
 
 const CategoryIcons = {
@@ -55,25 +60,23 @@ const CATEGORIES = [
 const MainContent = ({ radius = 40, center = 50 }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedMarket, setSelectedMarket] = useState(""); 
+    const [selectedMarket, setSelectedMarket] = useState("");
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
-
     const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
     const [gelirForm] = Form.useForm();
-
     const [rotation, setRotation] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [lastAngle, setLastAngle] = useState(0);
     const wheelRef = useRef(null);
     const touchStartTime = useRef(0);
     const touchStartPos = useRef({ x: 0, y: 0 });
-
     const { fetchTotals } = useTotalsContext();
 
     const getTopCategory = useCallback(() => {
         const categoryAngle = 360 / CATEGORIES.length;
         const normalizedRotation = ((rotation % 360) + 360) % 360;
+        // Top index hesaplanırken 360'a göre ayarlama yapılıyor.
         const topIndex = (Math.round((-normalizedRotation) / categoryAngle) + CATEGORIES.length) % CATEGORIES.length;
         return CATEGORIES[topIndex];
     }, [rotation]);
@@ -86,7 +89,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         return Math.atan2(dy, dx) * (180 / Math.PI);
     };
 
-    // Mouse events
+    // Mouse events (aynı kalmıştır)
     const handleMouseDown = (e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -114,8 +117,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setIsDragging(false);
     }, []);
 
-    // Touch events
+    // **Touch events güncellendi**
     const handleTouchStart = (e) => {
+        // e.preventDefault(); // Burada engellersek scroll sorunu olabilir.
         const touch = e.touches[0];
         const rect = wheelRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -133,16 +137,21 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         const dy = touch.clientY - touchStartPos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance > 10) {
+        // Bir miktar hareket eşiği (10 piksel) aşıldıysa, döndürmeyi başlat
+        // ve varsayılan davranışı engelle (zoom/kaydırma engelleme)
+        if (distance > 10 || isDragging) {
+            e.preventDefault(); // 👈 Zoom'u ve kaydırmayı engellemek için
             if (!isDragging) setIsDragging(true);
-            e.preventDefault();
+
             const rect = wheelRef.current.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
             let deltaAngle = angle - lastAngle;
+
             if (deltaAngle > 180) deltaAngle -= 360;
             if (deltaAngle < -180) deltaAngle += 360;
+
             setRotation(prev => prev + deltaAngle);
             setLastAngle(angle);
         }
@@ -156,8 +165,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         const wheel = wheelRef.current;
         if (!wheel) return;
 
+        // Mouse olayları
         wheel.addEventListener('mousemove', handleMouseMove);
         wheel.addEventListener('mouseup', handleMouseUp);
+
+        // Touch olayları: 'passive: false' zoom ve scroll engellemeyi mümkün kılar
         wheel.addEventListener('touchmove', handleTouchMove, { passive: false });
         wheel.addEventListener('touchend', handleTouchEnd);
 
@@ -170,6 +182,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
     const handleIconClick = (category) => {
+        // Eğer sürükleme (drag) işlemi aktifken tıklama olduysa, dikkate alma
         if (isDragging) return;
         setSelectedCategory(category);
         setSelectedMarket("");
@@ -177,13 +190,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         form.resetFields();
     };
 
+    // Modal kapatma işlemleri (aynı kalmıştır)
     const handleModalCancel = () => {
         setIsModalVisible(false);
         setSelectedCategory(null);
         setSelectedMarket("");
         form.resetFields();
+        // Odaklanmış elemanın odağını kaldırarak potansiyel klavye zoomunu engelle
         if (document.activeElement) document.activeElement.blur();
-        window.scrollTo(0, 0);
     };
 
     const handleGelirClick = () => {
@@ -195,7 +209,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         setIsGelirModalVisible(false);
         gelirForm.resetFields();
         if (document.activeElement) document.activeElement.blur();
-        window.scrollTo(0, 0);
     };
 
     const onGelirFinish = async (values) => {
@@ -223,37 +236,37 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 >
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
-
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 z-30">
                     <div className="text-blue-600 font-bold text-xl">
                         {currentTopCategory}
                     </div>
                 </div>
-
                 <div
                     ref={wheelRef}
+                    // Dokunmatik hareket için CSS özelliği eklendi: touch-action: none, parmakla kaydırma ve zoom'u engeller.
                     className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
                     style={{
                         transform: `rotate(${rotation}deg)`,
                         transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+                        touchAction: 'none', // Mobil zoom'u tekerlek alanında engellemek için
                     }}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
                 >
                     {CATEGORIES.map((category, index) => {
+                        // Kategori tekerlek görünümü (aynı kaldı)
                         const angle = (360 / CATEGORIES.length) * index - 90;
                         const rad = (angle * Math.PI) / 180;
                         const x = radius * Math.cos(rad);
                         const y = radius * Math.sin(rad);
                         const isTopCategory = category === currentTopCategory;
-
                         return (
                             <Tooltip key={category} title={category} placement="top">
                                 <button
                                     onClick={() => handleIconClick(category)}
                                     className={`absolute w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                                        isTopCategory 
-                                            ? 'bg-blue-600 text-white scale-150 shadow-2xl ring-4 ring-blue-200 ring-opacity-75 border-2 border-white' 
+                                        isTopCategory
+                                            ? 'bg-blue-600 text-white scale-150 shadow-2xl ring-4 ring-blue-200 ring-opacity-75 border-2 border-white'
                                             : 'bg-white text-gray-700 hover:bg-gray-50 active:bg-indigo-100'
                                     }`}
                                     style={{
@@ -271,7 +284,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     })}
                 </div>
             </div>
-
             {/* Harcama Modal */}
             <Modal
                 title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
@@ -291,7 +303,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             altKategori: selectedCategory === "Market" ? selectedMarket : "",
                             not: values.not || "",
                         };
-
                         setLoading(true);
                         try {
                             await axios.post(`${API_URL}/harcama`, harcamaData);
@@ -316,14 +327,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
+                        {/* ⚠️ Zoom'u engellemenin en etkili yollarından biri: font boyutunu artırmak! */}
                         <InputNumber
                             min={0.01}
                             step={0.01}
-                            style={{ width: '100%', fontSize: '16px' }}
+                            style={{ width: '100%', fontSize: '18px', height: '40px' }}
                             placeholder="Örn: 50.75"
                         />
                     </Form.Item>
-
                     {selectedCategory === "Market" && (
                         <Form.Item
                             name="altKategori"
@@ -335,21 +346,21 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                                 value={selectedMarket}
                                 onChange={setSelectedMarket}
                                 allowClear={false}
-                                style={{ fontSize: '16px' }}
+                                // ⚠️ Font boyutu artırıldı
+                                style={{ fontSize: '18px' }}
                             >
                                 {MARKETLER.map(m => <Option key={m} value={m}>{m}</Option>)}
                             </Select>
                         </Form.Item>
                     )}
-
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
+                        {/* ⚠️ Font boyutu artırıldı */}
                         <Input.TextArea
                             rows={3}
                             placeholder="Harcama ile ilgili kısa bir not ekle"
-                            style={{ fontSize: '16px' }}
+                            style={{ fontSize: '18px' }}
                         />
                     </Form.Item>
-
                     <Form.Item>
                         <Button type="primary" htmlType="submit" block loading={loading}>
                             {loading ? "Kaydediliyor..." : "Harcamayı Kaydet"}
@@ -357,7 +368,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     </Form.Item>
                 </Form>
             </Modal>
-
             {/* Gelir Modal */}
             <Modal
                 title="Gelir Ekle"
@@ -381,34 +391,34 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                             { type: 'number', min: 0.01, message: 'Miktar 0\'dan büyük olmalı!' }
                         ]}
                     >
+                        {/* ⚠️ Zoom'u engellemenin en etkili yollarından biri: font boyutunu artırmak! */}
                         <InputNumber
                             min={0.01}
                             step={0.01}
-                            style={{ width: '100%', fontSize: '16px' }}
+                            style={{ width: '100%', fontSize: '18px', height: '40px' }}
                             placeholder="Örn: 1500"
                         />
                     </Form.Item>
-
                     <Form.Item
                         name="kategori"
                         label="Kategori"
                         rules={[{ required: true, message: 'Lütfen kategori seçin!' }]}
                     >
-                        <Select placeholder="Kategori seçin" style={{ fontSize: '16px' }}>
+                        {/* ⚠️ Font boyutu artırıldı */}
+                        <Select placeholder="Kategori seçin" style={{ fontSize: '18px' }}>
                             <Option value="maaş">maaş</Option>
                             <Option value="tasarruf">tasarruf</Option>
                             <Option value="diğer">diğer</Option>
                         </Select>
                     </Form.Item>
-
                     <Form.Item name="not" label="Not (İsteğe Bağlı)">
+                        {/* ⚠️ Font boyutu artırıldı */}
                         <Input.TextArea
                             rows={3}
                             placeholder="Gelir ile ilgili kısa bir not ekle"
-                            style={{ fontSize: '16px' }}
+                            style={{ fontSize: '18px' }}
                         />
                     </Form.Item>
-
                     <Form.Item>
                         <Button type="primary" htmlType="submit" block loading={loading}>
                             {loading ? "Kaydediliyor..." : "Geliri Kaydet"}
