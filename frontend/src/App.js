@@ -5,7 +5,7 @@ import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; // ✅ yeni eklenen sayfa
-import Kayitekleme from "./pages/UnutulanKayitEkleme"; // ✅ yeni eklenen sayfa
+import Kayitekleme from "./pages/KayitEkleme"; // ✅ yeni eklenen sayfa
 
 function App() {
   return (

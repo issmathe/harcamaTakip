@@ -16,7 +16,7 @@ import {
 } from "@ant-design/icons";
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
-import { TotalsProvider } from "../context/TotalsContext";
+import { TotalsProvider } from "../context/TotalsContext.js";
 import axios from "axios";
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
