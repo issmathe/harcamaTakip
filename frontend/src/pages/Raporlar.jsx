@@ -1,13 +1,13 @@
 // pages/Raporlar.jsx
 import React, { useEffect, useMemo } from "react";
-import { Card, Typography, Empty } from "antd"; // Empty ekledik
+import { Card, Typography, Empty } from "antd";
 import { TotalsProvider, useTotalsContext } from "../context/TotalsContext";
-import { Bar } from "react-chartjs-2"; // Doughnut yerine Bar
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  CategoryScale, // X ekseni için (kategoriler)
-  LinearScale,   // Y ekseni için (miktarlar)
-  BarElement,    // Sütunlar
+  CategoryScale,
+  LinearScale,
+  BarElement,
   Tooltip,
   Legend
 } from "chart.js";
@@ -16,26 +16,16 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 
-// Gerekli Chart.js bileşenlerini kaydediyoruz
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-  ChartDataLabels
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
 
 const { Title } = Typography;
 
 const ALL_CATEGORIES = [
-  "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", 
-  "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye", 
+  "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
+  "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
   "Restoran / Kafe", "Diğer",
 ];
 
-// Sütun rengi için tek bir ana renk kullanabiliriz ya da kategori bazlı renklerimizi koruyabiliriz.
-// Bar grafiğinde genelde tek renk tercih edilir, ancak kategorik renkleri koruyalım.
 const categoryColors = {
   "Giyim": "#FF6384",
   "Gıda": "#36A2EB",
@@ -61,7 +51,6 @@ const RaporlarContent = () => {
     fetchTotals();
   }, [fetchTotals]);
 
-  // Harcama verilerini sütun grafiği formatına dönüştürüyoruz
   const barData = useMemo(() => {
     const totals = {};
     ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
@@ -72,20 +61,24 @@ const RaporlarContent = () => {
       totals[key] += Number(h.miktar || 0);
     });
 
-    // Sadece harcama yapılan kategorileri alıyoruz (sadece veri varsa)
-    const filteredLabels = Object.keys(totals).filter(k => totals[k] > 0);
-    const filteredData = filteredLabels.map(l => totals[l]);
-    // Her sütunun rengini kategoriye göre belirliyoruz
-    const backgroundColors = filteredLabels.map(l => categoryColors[l]);
+    // 🔹 En küçük üstte, en büyük altta olacak şekilde sıralama (artan)
+    const chartDataItems = Object.keys(totals)
+      .filter(k => totals[k] > 0)
+      .map(label => ({
+        label,
+        data: totals[label],
+        color: categoryColors[label]
+      }))
+      .sort((a, b) => a.data - b.data); // Artan sıralama
 
     return {
-      labels: filteredLabels,
+      labels: chartDataItems.map(item => item.label),
       datasets: [
         {
           label: "Toplam Harcama (₺)",
-          data: filteredData,
-          backgroundColor: backgroundColors,
-          borderColor: backgroundColors.map(c => c + 'AA'), // Biraz saydam border
+          data: chartDataItems.map(item => item.data),
+          backgroundColor: chartDataItems.map(item => item.color),
+          borderColor: chartDataItems.map(item => item.color + 'AA'),
           borderWidth: 1,
         }
       ]
@@ -94,8 +87,8 @@ const RaporlarContent = () => {
 
   const barOptions = useMemo(() => ({
     responsive: true,
-    indexAxis: 'y', // Grafiği yatay sütun yapmak için (mobil için daha iyi)
-    maintainAspectRatio: false, // Yüksekliği kontrol etmemize izin verir
+    indexAxis: 'y',
+    maintainAspectRatio: false,
     scales: {
       x: {
         beginAtZero: true,
@@ -108,18 +101,15 @@ const RaporlarContent = () => {
         grid: { display: false }
       },
       y: {
+        reverse: true, // ✅ Yukarıdan aşağı artan sıralama
         title: {
-          display: true,
-          text: 'Kategori',
-          color: '#4A5568'
+          display: false, // "Kategori" yazısı kaldırıldı
         },
         ticks: { color: '#4A5568' }
       }
     },
     plugins: {
-      legend: {
-        display: false, // Bar grafiğinde legend genelde gereksiz
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
@@ -136,22 +126,20 @@ const RaporlarContent = () => {
     }
   }), []);
 
-  // Harcama verisi yoksa grafiği gösterme
   const hasData = barData.datasets[0]?.data.length > 0;
-  const chartHeight = hasData ? (barData.labels.length * 30) + 100 : 300; // Veri sayısına göre dinamik yükseklik
+  const chartHeight = hasData ? (barData.labels.length * 35) + 100 : 300;
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <Title level={3} className="text-center text-gray-700 mb-6">Harcamalar Raporu</Title>
+      <Title level={3} className="text-center text-gray-700 mb-6">
+        Harcamalar Raporu
+      </Title>
       <Card className="shadow-lg rounded-xl p-4 bg-white">
         {hasData ? (
-          // Sütun grafiğini göster
           <div style={{ height: `${chartHeight}px`, minHeight: '300px', width: '100%' }}>
-             {/* Grafiğin boyutu için bir div içine sardık */}
             <Bar data={barData} options={barOptions} />
           </div>
         ) : (
-          // Veri yoksa Ant Design'in Empty bileşenini göster
           <Empty
             description="Henüz görüntüleyecek bir harcama verisi yok."
             className="p-10"
