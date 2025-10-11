@@ -265,15 +265,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                     <Text className="block !text-white font-bold text-lg">Gelir Ekle</Text>
                 </div>
                 {/* Kategori Adı ve Harcama Miktarı Gösterimi (ARKA PLAN KALDIRILDI) */}
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-12 z-30 w-40 text-center">
-                    <div className="text-blue-600 font-bold text-xl leading-snug">
-                        {currentTopCategory}
-                    </div>
-                    {/* 👇 Sadece metin sınıfları kaldı: text-gray-700 font-semibold text-base mt-1 */}
-                    <div className="text-gray-700 font-semibold text-base mt-1">
-                        {formattedTotal} ₺
-                    </div>
-                </div>
+<div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-24 z-30 w-40 text-center">
+    <div className="text-blue-600 font-bold text-xl leading-snug">
+        {currentTopCategory}
+    </div>
+    {/* 👇 Sadece metin sınıfları kaldı: text-gray-700 font-semibold text-base mt-1 */}
+    <div className="text-gray-700 font-semibold text-base mt-1">
+        {formattedTotal} €
+    </div>
+</div>
                 <div
                     ref={wheelRef}
                     className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
