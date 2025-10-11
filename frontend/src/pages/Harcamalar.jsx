@@ -20,7 +20,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const ALL_CATEGORIES = [
   "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", 
   "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye", 
-  "Restoran / Kafe", "Diğer",
+  "Restoran", "Diğer",
 ];
 
 const MARKETLER = [
@@ -31,7 +31,7 @@ const MARKETLER = [
 
 const getCategoryDetails = (kategori) => {
   switch (kategori.toLowerCase()) {
-    case 'gıda': case 'market': case 'restoran / kafe':
+    case 'gıda': case 'market': case 'restoran':
       return { icon: <DollarCircleOutlined />, color: 'bg-red-100 text-red-600' };
     case 'kira': case 'fatura':
       return { icon: <TagOutlined />, color: 'bg-blue-100 text-blue-600' };
@@ -222,7 +222,7 @@ const HarcamalarContent = () => {
         onOk={handleEditSave}
         okText="Kaydet"
         cancelText="İptal"
-        destroyOnClose
+        destroyOnHidden
       >
         <div className="space-y-4 pt-4">
           <div>

@@ -134,7 +134,7 @@ const Harcama = ({ onHarcamaChange }) => {
               <Option value="Spor">Spor</Option>
               <Option value="Market">Market</Option>
               <Option value="Kırtasiye">Kırtasiye</Option>
-              <Option value="Restoran / Kafe">Restoran / Kafe</Option>
+              <Option value="Restoran">Restoran</Option>
               <Option value="Diğer">Diğer</Option>
             </Select>
           </Form.Item>
@@ -221,7 +221,7 @@ const Harcama = ({ onHarcamaChange }) => {
               <Option value="Spor">Spor</Option>
               <Option value="Market">Market</Option>
               <Option value="Kırtasiye">Kırtasiye</Option>
-              <Option value="Restoran / Kafe">Restoran / Kafe</Option>
+              <Option value="Restoran">Restoran</Option>
               <Option value="Diğer">Diğer</Option>
             </Select>
           </Form.Item>

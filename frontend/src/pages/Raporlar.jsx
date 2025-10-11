@@ -23,7 +23,7 @@ const { Title } = Typography;
 const ALL_CATEGORIES = [
   "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
   "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
-  "Restoran / Kafe", "Diğer",
+  "Restoran", "Diğer",
 ];
 
 const categoryColors = {
@@ -40,7 +40,7 @@ const categoryColors = {
   "Spor": "#FF8A33",
   "Market": "#338AFF",
   "Kırtasiye": "#FF3333",
-  "Restoran / Kafe": "#33FF8A",
+  "Restoran": "#33FF8A",
   "Diğer": "#AAAAAA"
 };
 

@@ -40,7 +40,7 @@ const ALL_CATEGORIES = [
   "Spor",
   "Market",
   "Kırtasiye",
-  "Restoran / Kafe",
+  "Restoran",
   "Diğer",
 ];
 

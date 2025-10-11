@@ -43,14 +43,14 @@ const CategoryIcons = {
     Spor: <ThunderboltOutlined className="text-xl" />,
     Market: <ShoppingOutlined className="text-xl" />,
     Kırtasiye: <ReadOutlined className="text-xl" />,
-    "Restoran / Kafe": <ForkOutlined className="text-xl" />,
+    "Restoran": <ForkOutlined className="text-xl" />,
     Diğer: <QuestionCircleOutlined className="text-xl" />,
 };
 
 const CATEGORIES = [
     "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
     "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
-    "Restoran / Kafe", "Diğer"
+    "Restoran", "Diğer"
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
