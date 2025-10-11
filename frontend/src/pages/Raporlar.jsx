@@ -83,6 +83,9 @@ const RaporlarContent = () => {
     responsive: true,
     indexAxis: 'y',
     maintainAspectRatio: false,
+    animation: {
+      duration: 0, // ✅ Sütunlar ani gelsin
+    },
     scales: {
       x: {
         beginAtZero: true,
