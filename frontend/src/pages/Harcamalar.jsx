@@ -1,5 +1,5 @@
 // pages/Harcamalar.jsx
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { List, Typography, Button, Modal, Input, Select, message, Card, Popconfirm } from "antd";
 import { 
   EditOutlined, DeleteOutlined, DollarCircleOutlined, TagOutlined, CalendarOutlined, SolutionOutlined, 
@@ -7,10 +7,11 @@ import {
 } from '@ant-design/icons';
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
-import { TotalsProvider, useTotalsContext } from "../context/TotalsContext";
+import { useTotalsContext } from "../context/TotalsContext";
 import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
+
 dayjs.locale(tr);
 
 const { Text, Title } = Typography;
@@ -43,7 +44,8 @@ const getCategoryDetails = (kategori) => {
 };
 
 const HarcamalarContent = () => {
-  const { harcamalar = [], fetchTotals } = useTotalsContext();
+  const { harcamalar = [], refetch } = useTotalsContext();
+
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
   const [formData, setFormData] = useState({ miktar: "", kategori: "", altKategori: "", not: "" });
@@ -52,10 +54,6 @@ const HarcamalarContent = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
-
-  useEffect(() => {
-    fetchTotals();
-  }, [fetchTotals]);
 
   const filteredHarcamalar = useMemo(() => {
     const ayFiltreli = harcamalar.filter(h => {
@@ -68,10 +66,7 @@ const HarcamalarContent = () => {
     return ayFiltreli.filter(h => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
 
-  // 🔹 Seçilen kategorinin toplamını hesapla
-  const kategoriToplam = useMemo(() => {
-    return filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-  }, [filteredHarcamalar]);
+  const kategoriToplam = useMemo(() => filteredHarcamalar.reduce((sum,h) => sum + Number(h.miktar||0),0), [filteredHarcamalar]);
 
   const changeMonth = useCallback((direction) => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
@@ -107,7 +102,7 @@ const HarcamalarContent = () => {
       await axios.put(`${API_URL}/harcama/${editingHarcama._id}`, payload);
       message.success("Harcama güncellendi!");
       setEditModalVisible(false);
-      fetchTotals();
+      refetch();
     } catch (err) {
       console.error(err);
       message.error("Güncelleme başarısız!");
@@ -118,7 +113,7 @@ const HarcamalarContent = () => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
       message.success("Harcama silindi!");
-      fetchTotals();
+      refetch();
     } catch (err) {
       console.error(err);
       message.error("Silme başarısız!");
@@ -131,8 +126,7 @@ const HarcamalarContent = () => {
     <div className="p-4 md:p-6 lg:p-8">
       <Title level={3} className="text-center text-gray-700 mb-6">Harcamalarınız</Title>
 
-      {/* 🔹 Filtre Card */}
-      <Card className="shadow-lg rounded-xl mb-6 bg-white" styles={{ body: { padding:'16px' } }}>
+      <Card className="shadow-lg rounded-xl mb-6 bg-white" bodyStyle={{ padding:'16px' }}>
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
           <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
           <Title level={5} className="m-0 text-blue-600">{displayMonth}</Title>
@@ -148,7 +142,6 @@ const HarcamalarContent = () => {
           </Select>
         </div>
 
-        {/* 🔹 Kategori toplam gösterimi */}
         {selectedCategory !== "Tümü" && (
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
             {getCategoryDetails(selectedCategory).icon}
@@ -159,14 +152,11 @@ const HarcamalarContent = () => {
         )}
       </Card>
 
-      {/* 🔹 Harcama Listesi */}
-      <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding:0 } }}>
+      <Card className="shadow-lg rounded-xl overflow-hidden" bodyStyle={{ padding:0 }}>
         <List
           itemLayout="horizontal"
           dataSource={filteredHarcamalar}
-          locale={{ emptyText: filteredHarcamalar.length === 0 
-            ? `${displayMonth} ayında ${selectedCategory !== 'Tümü' ? selectedCategory + ' kategorisinde ' : ''}harcama bulunmamaktadır.` 
-            : "Lütfen bekleyin..." }}
+          locale={{ emptyText: filteredHarcamalar.length === 0 ? `${displayMonth} ayında harcama bulunmamaktadır.` : "Lütfen bekleyin..." }}
           renderItem={(harcama) => {
             const { icon, color } = getCategoryDetails(harcama.kategori);
             return (
@@ -214,7 +204,6 @@ const HarcamalarContent = () => {
         />
       </Card>
 
-      {/* 🔹 Düzenleme Modal */}
       <Modal
         title={<Title level={4} className="text-center text-blue-600">Harcamayı Düzenle</Title>}
         open={editModalVisible}
@@ -222,7 +211,7 @@ const HarcamalarContent = () => {
         onOk={handleEditSave}
         okText="Kaydet"
         cancelText="İptal"
-        destroyOnHidden
+        destroyOnClose
       >
         <div className="space-y-4 pt-4">
           <div>
@@ -256,8 +245,8 @@ const HarcamalarContent = () => {
   );
 };
 
-const Harcamalar = () => (
-  <TotalsProvider>
+const Harcamalar = () => {
+  return (
     <div className="relative min-h-screen bg-gray-50">
       <Header />
       <main className="pb-20">
@@ -265,7 +254,7 @@ const Harcamalar = () => (
       </main>
       <BottomNav />
     </div>
-  </TotalsProvider>
-);
+  );
+};
 
 export default Harcamalar;
