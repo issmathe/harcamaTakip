@@ -1,7 +1,6 @@
-// pages/Raporlar.jsx
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Card, Typography, Empty } from "antd";
-import { TotalsProvider, useTotalsContext } from "../context/TotalsContext";
+import { useTotalsContext } from "../context/TotalsContext";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -45,11 +44,7 @@ const categoryColors = {
 };
 
 const RaporlarContent = () => {
-  const { harcamalar = [], fetchTotals } = useTotalsContext();
-
-  useEffect(() => {
-    fetchTotals();
-  }, [fetchTotals]);
+  const { harcamalar = [] } = useTotalsContext();
 
   const barData = useMemo(() => {
     const totals = {};
@@ -61,7 +56,6 @@ const RaporlarContent = () => {
       totals[key] += Number(h.miktar || 0);
     });
 
-    // 🔹 En küçük üstte, en büyük altta olacak şekilde sıralama (artan)
     const chartDataItems = Object.keys(totals)
       .filter(k => totals[k] > 0)
       .map(label => ({
@@ -69,7 +63,7 @@ const RaporlarContent = () => {
         data: totals[label],
         color: categoryColors[label]
       }))
-      .sort((a, b) => a.data - b.data); // Artan sıralama
+      .sort((a, b) => a.data - b.data);
 
     return {
       labels: chartDataItems.map(item => item.label),
@@ -101,10 +95,8 @@ const RaporlarContent = () => {
         grid: { display: false }
       },
       y: {
-        reverse: true, // ✅ Yukarıdan aşağı artan sıralama
-        title: {
-          display: false, // "Kategori" yazısı kaldırıldı
-        },
+        reverse: true,
+        title: { display: false },
         ticks: { color: '#4A5568' }
       }
     },
@@ -151,15 +143,13 @@ const RaporlarContent = () => {
 };
 
 const Raporlar = () => (
-  <TotalsProvider>
-    <div className="relative min-h-screen bg-gray-50">
-      <Header />
-      <main className="pb-20">
-        <RaporlarContent />
-      </main>
-      <BottomNav />
-    </div>
-  </TotalsProvider>
+  <div className="relative min-h-screen bg-gray-50">
+    <Header />
+    <main className="pb-20">
+      <RaporlarContent />
+    </main>
+    <BottomNav />
+  </div>
 );
 
 export default Raporlar;
