@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   HomeOutlined,
   PieChartOutlined,
-  PlusCircleOutlined,
+  PlusCircleOutlined, // Merkezi ekle butonu için kalacak
   MenuOutlined,
 } from "@ant-design/icons";
 import { Modal, Button } from "antd";
@@ -14,6 +14,8 @@ const BottomNav = () => {
 
   const showModal = () => setIsModalVisible(true);
   const handleCancel = () => setIsModalVisible(false);
+
+  // Silinen fonksiyon: goToKayitEkleme
 
   const goToGelirler = () => {
     setIsModalVisible(false);
@@ -29,8 +31,8 @@ const BottomNav = () => {
     navigate("/raporlar");
   };
 
-  const goToKayitEkleme = () => {
-    setIsModalVisible(false);
+  // Yeni butona atanacak olan, doğrudan kaydı ekleme sayfasına gitme fonksiyonu
+  const goToEkle = () => {
     navigate("/kayitekleme");
   };
 
@@ -56,16 +58,16 @@ const BottomNav = () => {
             <span className="text-xs">Raporlar</span>
           </button>
 
-          {/* Ekle */}
+          {/* Ekle (Merkezi Kayıt Ekleme butonu olarak yeniden konumlandırıldı) */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
-            onClick={goToKayitEkleme} // yeni buton
+            onClick={goToEkle} // Merkezi butonu direkt sayfaya yönlendiriyoruz.
           >
             <PlusCircleOutlined className="text-2xl" />
-            <span className="text-xs">Kayıt Ekle</span>
+            <span className="text-xs">Ekle</span> 
           </button>
 
-          {/* Dosya */}
+          {/* Dosya (Modal Açan Buton) */}
           <button
             className="flex flex-col items-center text-gray-600 hover:text-indigo-600"
             onClick={showModal}
@@ -89,9 +91,7 @@ const BottomNav = () => {
         <Button block className="mb-2" onClick={goToHarcamalar}>
           Harcamaları Göster
         </Button>
-        <Button block onClick={goToKayitEkleme}>
-          Kayıt Ekle
-        </Button>
+        {/* Silinen buton: Kayıt Ekle butonu modal içinden kaldırıldı */}
       </Modal>
     </>
   );

@@ -16,7 +16,7 @@ import {
 } from "@ant-design/icons";
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
-import { TotalsProvider } from "../context/TotalsContext.js";
+import { useTotalsContext } from "../context/TotalsContext";
 import axios from "axios";
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
@@ -64,17 +64,19 @@ const MARKETLER = [
   "Diğer",
 ];
 
-const UnutulanKayitEklemeContent = () => {
+const KayitEklemeContent = () => {
+  const { fetchTotals } = useTotalsContext();
+
   const [formData, setFormData] = useState({
     miktar: "",
     kategori: "",
     altKategori: "",
     not: "",
-    tarih: null,
+    tarih: dayjs(),
   });
   const [loading, setLoading] = useState(false);
 
-  // 🔹 iPhone/Android'de zoom yapılmasını engelle
+  // iPhone/Android zoom engelleme
   useEffect(() => {
     const meta = document.querySelector("meta[name=viewport]");
     if (meta) {
@@ -90,11 +92,10 @@ const UnutulanKayitEklemeContent = () => {
       document.head.appendChild(newMeta);
     }
 
-    // Input focus olduğunda zoom yapmasını engellemek için font büyüklüğü sabit tut
     const style = document.createElement("style");
     style.innerHTML = `
       input, select, textarea, button {
-        font-size: 16px !important; /* Safari zoom fix */
+        font-size: 16px !important; 
       }
     `;
     document.head.appendChild(style);
@@ -113,17 +114,28 @@ const UnutulanKayitEklemeContent = () => {
       setLoading(true);
       const payload = { ...formData };
 
+      payload.miktar = Number(formData.miktar.replace(",", "."));
+      payload.createdAt = formData.tarih.toISOString();
+
       if (formData.kategori === "Market" && formData.altKategori) {
-        payload.kategori = `Market - ${formData.altKategori}`;
+        // Alt kategori varsa payload içinde bırak
+      } else {
+        delete payload.altKategori;
       }
 
-      payload.createdAt = formData.tarih.toISOString();
+      delete payload.tarih;
+
       await axios.post(`${API_URL}/harcama`, payload);
 
-      message.success("Unutulan harcama başarıyla eklendi!");
-      setFormData({ miktar: "", kategori: "", altKategori: "", not: "", tarih: null });
+      message.success("Harcama kaydı başarıyla eklendi!");
+
+      // Header ve context anlık güncelleme
+      await fetchTotals();
+
+      // Form sıfırlama
+      setFormData({ miktar: "", kategori: "", altKategori: "", not: "", tarih: dayjs() });
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       message.error("Kayıt eklenemedi!");
     } finally {
       setLoading(false);
@@ -133,11 +145,10 @@ const UnutulanKayitEklemeContent = () => {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <Title level={3} className="text-center text-gray-700 mb-6">
-        Unutulan Kayıt Ekle
+        Yeni Kayıt Ekle
       </Title>
 
       <Card className="shadow-lg rounded-xl bg-white">
-        {/* Miktar */}
         <div className="mb-4">
           <Text strong className="block mb-1">
             <DollarOutlined className="mr-1 text-green-600" />
@@ -152,28 +163,20 @@ const UnutulanKayitEklemeContent = () => {
           />
         </div>
 
-        {/* Kategori */}
         <div className="mb-4">
-          <Text strong className="block mb-1">
-            Kategori:
-          </Text>
+          <Text strong className="block mb-1">Kategori:</Text>
           <Select
             value={formData.kategori}
-            onChange={(v) =>
-              setFormData({ ...formData, kategori: v, altKategori: "" })
-            }
+            onChange={(v) => setFormData({ ...formData, kategori: v, altKategori: "" })}
             style={{ width: "100%" }}
             placeholder="Kategori seçin"
             size="large"
           >
             {ALL_CATEGORIES.map((cat) => (
-              <Option key={cat} value={cat}>
-                {cat}
-              </Option>
+              <Option key={cat} value={cat}>{cat}</Option>
             ))}
           </Select>
 
-          {/* Alt kategori sadece Market için */}
           {formData.kategori === "Market" && (
             <div className="mt-3">
               <Text strong className="block mb-1">Market Seç:</Text>
@@ -185,16 +188,13 @@ const UnutulanKayitEklemeContent = () => {
                 size="large"
               >
                 {MARKETLER.map((m) => (
-                  <Option key={m} value={m}>
-                    {m}
-                  </Option>
+                  <Option key={m} value={m}>{m}</Option>
                 ))}
               </Select>
             </div>
           )}
         </div>
 
-        {/* Tarih */}
         <div className="mb-4">
           <Text strong className="block mb-1">
             <CalendarOutlined className="mr-1 text-blue-600" />
@@ -210,7 +210,6 @@ const UnutulanKayitEklemeContent = () => {
           />
         </div>
 
-        {/* Not */}
         <div className="mb-6">
           <Text strong className="block mb-1">
             <EditOutlined className="mr-1 text-gray-600" />
@@ -224,7 +223,6 @@ const UnutulanKayitEklemeContent = () => {
           />
         </div>
 
-        {/* Kaydet Butonu */}
         <Button
           type="primary"
           block
@@ -240,16 +238,14 @@ const UnutulanKayitEklemeContent = () => {
   );
 };
 
-const UnutulanKayitEkleme = () => (
-  <TotalsProvider>
-    <div className="relative min-h-screen bg-gray-50">
-      <Header />
-      <main className="pb-20">
-        <UnutulanKayitEklemeContent />
-      </main>
-      <BottomNav />
-    </div>
-  </TotalsProvider>
+const KayitEkleme = () => (
+  <div className="relative min-h-screen bg-gray-50">
+    <Header />
+    <main className="pb-20">
+      <KayitEklemeContent />
+    </main>
+    <BottomNav />
+  </div>
 );
 
-export default UnutulanKayitEkleme;
+export default KayitEkleme;

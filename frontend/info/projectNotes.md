@@ -15,11 +15,11 @@ src/
 │
 ├─ pages/                   # Router ile yönlendirilen tam sayfa bileşenleri
 │  ├─ Home.jsx              # Ana sayfa
-│  ├─ Gelirler.jsx          # Gelirleri listeleme sayfası
-│  ├─ Harcamalar.jsx        # Harcamaları listeleme sayfası
+│  ├─ Gelirler.jsx          # Gelirleri listeleme 
+│  ├─ Harcamalar.jsx        # Harcamaları 
 │  ├─ Raporlar.jsx          # Raporlama sayfası
-│  └─ KayitEkleme.jsx       # Gelir / Harcama ekleme sayfası
+│  └─ KayitEkleme.jsx       # Gelir / Harcama 
 │
-├─ App.jsx                  # Router ve genel layout
+├─ App.jsx                  # Router ve genel 
 ├─ index.js                 # React root
 └─ index.css / tailwind.css # Global stiller ve Tailwind ayarları
