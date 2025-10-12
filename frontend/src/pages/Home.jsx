@@ -7,20 +7,21 @@ import { TotalsProvider } from "../context/TotalsContext";
 const Home = () => {
   return (
     <TotalsProvider>
-      {/* Sabit ekran, taş gibi layout */}
-      <div className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none">
+      {/* Sabit ekran düzeni */}
+      <div className="relative h-screen w-screen bg-gray-100 overflow-hidden touch-none select-none">
+
         {/* Üst sabit header */}
-        <div className="z-[999]">
+        <div className="fixed top-0 left-0 w-full z-[999]">
           <Header />
         </div>
 
-        {/* Orta alan — scroll olmasın */}
-        <main className="flex-1 flex justify-center items-center relative z-[1]">
+        {/* Orta alan — scroll veya kaydırma yok */}
+        <main className="absolute top-[80px] bottom-[80px] left-0 right-0 flex justify-center items-center overflow-hidden z-[1]">
           <MainContent />
         </main>
 
         {/* Alt sabit navigasyon */}
-        <div className="z-[998]">
+        <div className="fixed bottom-0 left-0 w-full z-[998]">
           <BottomNav />
         </div>
       </div>
