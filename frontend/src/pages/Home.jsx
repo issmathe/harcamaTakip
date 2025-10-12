@@ -7,23 +7,47 @@ import { TotalsProvider } from "../context/TotalsContext";
 const Home = () => {
   return (
     <TotalsProvider>
-      {/* Sabit ekran düzeni */}
-      <div className="relative h-screen w-screen bg-gray-100 overflow-hidden touch-none select-none">
-
+      <div
+        className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none"
+        style={{
+          WebkitOverflowScrolling: "none",
+          overscrollBehavior: "none",
+        }}
+      >
         {/* Üst sabit header */}
-        <div className="fixed top-0 left-0 w-full z-[999]">
+        <header
+          className="fixed top-0 left-0 right-0 z-[999] bg-gray-100 shadow-md"
+          style={{
+            touchAction: "none",
+            overscrollBehavior: "none",
+          }}
+        >
           <Header />
-        </div>
+        </header>
 
-        {/* Orta alan — scroll veya kaydırma yok */}
-        <main className="absolute top-[80px] bottom-[80px] left-0 right-0 flex justify-center items-center overflow-hidden z-[1]">
+        {/* Orta içerik — header ve nav arasında kalan alan */}
+        <main
+          className="flex-1 flex justify-center items-center relative z-[1]"
+          style={{
+            marginTop: "80px", // Header yüksekliği kadar
+            marginBottom: "70px", // BottomNav yüksekliği kadar
+            overflow: "hidden",
+            touchAction: "none",
+          }}
+        >
           <MainContent />
         </main>
 
         {/* Alt sabit navigasyon */}
-        <div className="fixed bottom-0 left-0 w-full z-[998]">
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-[998] bg-gray-100 shadow-inner"
+          style={{
+            touchAction: "none",
+            overscrollBehavior: "none",
+          }}
+        >
           <BottomNav />
-        </div>
+        </nav>
       </div>
     </TotalsProvider>
   );
