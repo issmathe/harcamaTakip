@@ -1,5 +1,4 @@
 import React from "react";
-import Header from "../components/Home/Header.jsx";
 import MainContent from "../components/Home/MainContent.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
@@ -22,7 +21,7 @@ const Home = () => {
             overscrollBehavior: "none",
           }}
         >
-          <Header />
+
         </header>
 
         {/* Orta içerik — header ve nav arasında kalan alan */}
