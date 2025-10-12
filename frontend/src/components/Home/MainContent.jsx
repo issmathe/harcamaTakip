@@ -434,4 +434,4 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     );
 };
 
-export default MainContent;
+export default MainContent; 
