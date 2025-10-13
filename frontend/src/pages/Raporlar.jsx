@@ -147,7 +147,7 @@ const RaporlarContent = () => {
 
 const Raporlar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <Header />
+    <Header className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none"/>
     <main className="pb-20">
       <RaporlarContent />
     </main>
