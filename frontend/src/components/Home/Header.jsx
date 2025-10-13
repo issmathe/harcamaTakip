@@ -16,7 +16,7 @@ const Header = () => {
   const balance = totalIncome - totalExpense;
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-white shadow-lg px-4 pt-4 pb-2">
+    <header className="sticky top-0 left-0 w-full z-50 bg-white shadow-md px-4 pt-4 pb-2">
       {/* Güncel Bakiye Kartı */}
       <Card
         className="rounded-xl shadow-xl border-none p-3"
@@ -45,7 +45,6 @@ const Header = () => {
 
         {/* Güncel Bakiye ve Bugün Harcama */}
         <div className="flex justify-between items-end mt-2">
-          {/* Güncel Bakiye */}
           <div className="flex flex-col text-white">
             <Text className="!text-white/90 text-xs mb-1">Güncel Bakiye</Text>
             <Title
@@ -57,7 +56,6 @@ const Header = () => {
             </Title>
           </div>
 
-          {/* Bugün Harcama */}
           <div className="text-right bg-white/10 px-2 py-1 rounded-md">
             <Text className="!text-white/80 text-xs">Bugün Harcama</Text>
             <div className="text-lg font-bold !text-white flex items-center justify-end">
