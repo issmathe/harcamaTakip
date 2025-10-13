@@ -83,21 +83,33 @@ const RaporlarContent = () => {
     responsive: true,
     indexAxis: 'y',
     maintainAspectRatio: false,
-    animation: { duration: 0 },
+    animation: {
+      duration: 0, // ✅ Sütunlar ani gelsin
+    },
     scales: {
       x: {
         beginAtZero: true,
-        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
+        title: {
+          display: true,
+          text: 'Miktar (₺)',
+          color: '#4A5568'
+        },
         ticks: { color: '#4A5568' },
         grid: { display: false }
       },
       y: {
         reverse: true,
+        title: { display: false },
         ticks: { color: '#4A5568' }
       }
     },
     plugins: {
       legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
       datalabels: {
         anchor: 'end',
         align: 'end',
@@ -136,7 +148,7 @@ const RaporlarContent = () => {
 const Raporlar = () => (
   <div className="relative min-h-screen bg-gray-50">
     <Header />
-    <main className="pt-52 pb-20">
+    <main className="pb-20">
       <RaporlarContent />
     </main>
     <BottomNav />
