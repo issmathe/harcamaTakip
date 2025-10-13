@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
   Typography,
   Tooltip,
@@ -32,21 +32,8 @@ const { Text } = Typography;
 const { Option } = Select;
 
 const CATEGORIES = [
-  "Giyim",
-  "Gıda",
-  "Petrol",
-  "Kira",
-  "Fatura",
-  "Eğitim",
-  "Sağlık",
-  "Ulaşım",
-  "Eğlence",
-  "Elektronik",
-  "Spor",
-  "Market",
-  "Kırtasiye",
-  "Restoran / Kafe",
-  "Diğer",
+  "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", "Ulaşım",
+  "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye", "Restoran / Kafe", "Diğer",
 ];
 
 const MARKETLER = [
@@ -83,7 +70,6 @@ const fetchHarcamalar = async () => {
 const MainContent = ({ radius = 40, center = 50 }) => {
   const queryClient = useQueryClient();
 
-  // React Query: harcamalar verisini çek
   const { data: harcamalar = [] } = useQuery({
     queryKey: ["harcamalar"],
     queryFn: fetchHarcamalar,
@@ -102,6 +88,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
+  // 🔄 Modal açıkken scroll'u engelle
+  useEffect(() => {
+    document.body.style.overflow = (isModalVisible || isGelirModalVisible) ? "hidden" : "auto";
+  }, [isModalVisible, isGelirModalVisible]);
+
   // 🧠 Mutation: Harcama ekleme
   const addHarcama = useMutation({
     mutationFn: async (harcamaData) => {
@@ -110,7 +101,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     onSuccess: () => {
       message.success("Harcama eklendi!");
       queryClient.invalidateQueries(["harcamalar"]);
-      handleModalCancel();
+      handleModalCancel(); // ✅ modal kapat + kategori reset
     },
     onError: () => message.error("Harcama eklenirken hata oluştu."),
   });
@@ -214,7 +205,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const handleTouchEnd = useCallback(() => setIsDragging(false), []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const wheel = wheelRef.current;
     if (!wheel) return;
     wheel.addEventListener("mousemove", handleMouseMove);
@@ -239,7 +230,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const handleModalCancel = () => {
     setIsModalVisible(false);
-    setSelectedCategory(null);
+    setSelectedCategory(null); // ✅ kategori sıfırlama eklendi
     setSelectedMarket("");
     form.resetFields();
   };
@@ -336,8 +327,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         footer={null}
       >
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <Form.Item name="miktar" label="Miktar (₺)" rules={[{ required: true }]}>
-            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} />
+          <Form.Item name="miktar" label="Miktar (€)" rules={[{ required: true }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal" />
           </Form.Item>
           {selectedCategory === "Market" && (
             <Form.Item name="altKategori" label="Market Seç">
@@ -376,14 +367,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         footer={null}
       >
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <Form.Item name="miktar" label="Miktar (₺)" rules={[{ required: true }]}>
-            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} />
+          <Form.Item name="miktar" label="Miktar (€)" rules={[{ required: true }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal" />
           </Form.Item>
           <Form.Item name="kategori" label="Kategori" rules={[{ required: true }]}>
             <Select>
-              <Option value="maaş">maaş</Option>
-              <Option value="tasarruf">tasarruf</Option>
-              <Option value="diğer">diğer</Option>
+              <Option value="maaş">Maaş</Option>
+              <Option value="tasarruf">Tasarruf</Option>
+              <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>
           <Form.Item name="not" label="Not">
