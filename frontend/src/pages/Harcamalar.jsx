@@ -1,4 +1,3 @@
-// src/pages/Harcamalar.jsx
 import React, { useState, useMemo, useCallback } from "react";
 import {
   List,
@@ -23,8 +22,9 @@ import {
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import Header from "../components/Home/Header";
-import BottomNav from "../components/Home/BottomNav";
+// 💡 HATA DÜZELTME: Import yolları '../../' yerine '../' olarak değiştirildi
+import Header from "../components/Home/Header"; 
+import BottomNav from "../components/Home/BottomNav"; 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -52,7 +52,7 @@ const ALL_CATEGORIES = [
   "Spor",
   "Market",
   "Kırtasiye",
-  "Restoran",
+  "Restoran / Kafe",
   "Diğer",
 ];
 
@@ -77,10 +77,12 @@ const MARKETLER = [
 ];
 
 const getCategoryDetails = (kategori) => {
-  switch (kategori.toLowerCase()) {
+  const normalizedKategori = kategori === "Market" ? "Market" : kategori;
+  
+  switch (normalizedKategori.toLowerCase()) {
     case "gıda":
     case "market":
-    case "restoran":
+    case "restoran / kafe":
       return { icon: <DollarCircleOutlined />, color: "bg-red-100 text-red-600" };
     case "kira":
     case "fatura":
@@ -149,8 +151,7 @@ const HarcamalarContent = () => {
     });
 
     if (selectedCategory === "Tümü") return ayFiltreli;
-    if (selectedCategory === "Market")
-      return ayFiltreli.filter((h) => h.kategori.startsWith("Market"));
+    
     return ayFiltreli.filter((h) => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
 
@@ -182,13 +183,13 @@ const HarcamalarContent = () => {
     dayjs(dateString).format("DD.MM.YYYY HH:mm");
 
   const openEditModal = (harcama) => {
+    const isMarket = harcama.kategori === "Market";
+    
     setEditingHarcama(harcama);
     setFormData({
       miktar: harcama.miktar,
-      kategori: harcama.kategori.startsWith("Market")
-        ? "Market"
-        : harcama.kategori,
-      altKategori: harcama.altKategori || "",
+      kategori: harcama.kategori,
+      altKategori: isMarket ? harcama.altKategori || "" : "",
       not: harcama.not || "",
     });
     setEditModalVisible(true);
@@ -196,12 +197,17 @@ const HarcamalarContent = () => {
 
   const handleEditSave = () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
+    
+    if (formData.kategori === "Market" && !formData.altKategori) {
+        return message.error("Market seçimi boş bırakılamaz!");
+    }
+    
     const payload = {
       ...formData,
       _id: editingHarcama._id,
+      altKategori: formData.kategori !== "Market" ? "" : formData.altKategori
     };
-    if (formData.kategori === "Market")
-      payload.kategori = `Market - ${formData.altKategori}`;
+    
     updateMutation.mutate(payload);
   };
 
@@ -277,6 +283,11 @@ const HarcamalarContent = () => {
           }}
           renderItem={(harcama) => {
             const { icon, color } = getCategoryDetails(harcama.kategori);
+            
+            const displayCategory = harcama.kategori === "Market" && harcama.altKategori
+                ? `Market (${harcama.altKategori})`
+                : harcama.kategori;
+
             return (
               <List.Item
                 key={harcama._id}
@@ -289,7 +300,7 @@ const HarcamalarContent = () => {
                   <div className="flex-grow min-w-0">
                     <div className="flex justify-between items-center mb-1">
                       <Text strong className="text-lg text-gray-800 truncate">
-                        {harcama.kategori}
+                        {displayCategory}
                       </Text>
                       <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
                         {harcama.miktar} ₺
@@ -415,7 +426,7 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <Header />
+    <Header /> 
     <main className="pb-20">
       <HarcamalarContent />
     </main>

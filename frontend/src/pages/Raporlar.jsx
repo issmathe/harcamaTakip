@@ -25,7 +25,6 @@ const ALL_CATEGORIES = [
   "Restoran", "Diğer",
 ];
 
-// Market alt kategorileri (MainContent'ten alındı)
 const MARKETLER = [
   "Lidl", "Rewe", "Aldi", "Netto", "DM", "Kaufland", "Norma", "Edeka",
   "Tegut", "Hit", "Famila", "Nahkauf", "Biomarkt", "Penny", "Rossmann",
@@ -33,24 +32,12 @@ const MARKETLER = [
 ];
 
 const categoryColors = {
-  "Giyim": "#FF6384",
-  "Gıda": "#36A2EB",
-  "Petrol": "#FFCE56",
-  "Kira": "#4BC0C0",
-  "Fatura": "#9966FF",
-  "Eğitim": "#FF9F40",
-  "Sağlık": "#C9CBCF",
-  "Ulaşım": "#8AFF33",
-  "Eğlence": "#FF33F6",
-  "Elektronik": "#33FFF3",
-  "Spor": "#FF8A33",
-  "Market": "#338AFF", // Market ana kategori rengi
-  "Kırtasiye": "#FF3333",
-  "Restoran": "#33FF8A",
-  "Diğer": "#AAAAAA"
+  "Giyim": "#FF6384", "Gıda": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
+  "Fatura": "#9966FF", "Eğitim": "#FF9F40", "Sağlık": "#C9CBCF", "Ulaşım": "#8AFF33",
+  "Eğlence": "#FF33F6", "Elektronik": "#33FFF3", "Spor": "#FF8A33", "Market": "#338AFF",
+  "Kırtasiye": "#FF3333", "Restoran": "#33FF8A", "Diğer": "#AAAAAA"
 };
 
-// Market grafiği için sabit bir renk paleti
 const marketColors = [
   "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
   "#FF9F40", "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3",
@@ -67,12 +54,12 @@ const RaporlarContent = () => {
     ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
 
     harcamalar.forEach(h => {
-      let key = h.kategori.startsWith("Market") ? "Market" : h.kategori;
-      if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
-      // Restoran / Kafe harcamalarını Restoran olarak kabul et
-      if (key === "Restoran / Kafe") key = "Restoran";
+      let key = h.kategori;
+      if (key === "Market") key = "Market"; // Market ana kategori olarak kalır
+      else if (key === "Restoran / Kafe") key = "Restoran";
+      else if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
       
-      totals[key] += Number(h.miktar || 0);
+      totals[key] = (totals[key] || 0) + Number(h.miktar || 0);
     });
 
     const chartDataItems = Object.keys(totals)
@@ -101,11 +88,10 @@ const RaporlarContent = () => {
   // Market harcamaları grafiği için verilerin hesaplanması
   const marketBarData = useMemo(() => {
     const marketTotals = {};
-    // Sadece Market kategorisindeki harcamaları filtrele
     const marketHarcamalar = harcamalar.filter(h => h.kategori === "Market");
 
     marketHarcamalar.forEach(h => {
-      const altKategori = h.altKategori || "Diğer"; // altKategori yoksa "Diğer" kullan
+      const altKategori = h.altKategori || "Diğer";
       const key = MARKETLER.includes(altKategori) ? altKategori : "Diğer";
       marketTotals[key] = (marketTotals[key] || 0) + Number(h.miktar || 0);
     });
@@ -115,7 +101,7 @@ const RaporlarContent = () => {
       .map((label, index) => ({
         label,
         data: marketTotals[label],
-        color: marketColors[index % marketColors.length] // Renk paletinden renk seç
+        color: marketColors[index % marketColors.length]
       }))
       .sort((a, b) => a.data - b.data);
 
@@ -133,42 +119,48 @@ const RaporlarContent = () => {
     };
   }, [harcamalar]);
 
-  // Genel Bar Grafiği Seçenekleri
-  const barOptions = useMemo(() => ({
-    responsive: true,
-    indexAxis: 'y',
-    maintainAspectRatio: false,
-    animation: { duration: 0 },
-    scales: {
-      x: {
-        beginAtZero: true,
-        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
-        ticks: { color: '#4A5568' },
-        grid: { display: false }
-      },
-      y: {
-        reverse: true,
-        title: { display: false },
-        ticks: { color: '#4A5568' }
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
-        }
-      },
-      datalabels: {
-        anchor: 'end',
-        align: 'end',
-        offset: 4,
-        color: "#4A5568",
-        font: { weight: "bold", size: 12 },
-        formatter: (value) => `${value.toFixed(2)}₺`
-      }
-    }
-  }), []);
+// Genel Bar Grafiği Seçenekleri
+  const barOptions = useMemo(() => ({
+    responsive: true,
+    indexAxis: 'y',
+    maintainAspectRatio: false,
+    animation: { duration: 0 },
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
+        ticks: { color: '#4A5568' },
+        grid: { display: false }
+      },
+      y: {
+        reverse: true,
+        title: { display: false },
+        ticks: { color: '#4A5568' }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
+      datalabels: {
+        // BURASI GÜNCELLENDİ
+        // Etiketleri çubuğun içine, sol tarafa yakın hizala
+        anchor: 'start', // 'start' çubuğun başlangıcına (soluna) hizalar
+        align: 'end', // 'end' etiketin çubuk içine doğru hizalanmasını sağlar
+        offset: 8, // Çubuğun kenarından biraz boşluk bırak
+        color: "white", // Etiket rengini beyaz yap
+        font: { weight: "bold", size: 12 },
+        // Eğer miktar çok düşükse etiket çubuğun dışına taşmasın diye bir kontrol de eklenebilir.
+        formatter: (value) => `${value.toFixed(2)}₺`,
+        // Opsiyonel: Eğer çubuk rengini koyu kullanıyorsanız etiketin görünürlüğünü artırır
+        textShadowBlur: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.7)' 
+      }
+    }
+  }), []);
 
   // Market Bar Grafiği Seçenekleri (Genel seçeneklerle benzer, başlık farklı)
   const marketBarOptions = useMemo(() => ({
@@ -224,8 +216,6 @@ const RaporlarContent = () => {
         )}
       </Card>
 
-      {/* --- */}
-
       {/* Market Alt Kategori Harcamaları Grafiği */}
       {hasMarketData && (
         <Card className="shadow-lg rounded-xl p-4 bg-white">
@@ -238,21 +228,15 @@ const RaporlarContent = () => {
         </Card>
       )}
       
-      {!hasData && !hasMarketData && (
-        // Veri yoksa genel Empty mesajı gösterildiğinden bu kısım sadece Market datası yoksa görülür.
-        // Ancak yukarıdaki ana Empty mesajı bunu kapsadığı için burada ek bir Empty göstermeye gerek yok.
-        // Ana Empty mesajı zaten harcama verisi olmadığını kapsıyor.
-        <></>
-      )}
+      {!hasData && !hasMarketData && <></>}
     </div>
   );
 };
 
 const Raporlar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    {/* Header bileşeni, MainContent'te görünmediği için buraya sabitlenmiş (fixed) durumda */}
-    <Header className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none"/>
-    <main className="pt-20 pb-20"> {/* Header için boşluk bırakıldı */}
+    <Header />
+    <main className="pt-20 pb-20">
       <RaporlarContent />
     </main>
     <BottomNav />
