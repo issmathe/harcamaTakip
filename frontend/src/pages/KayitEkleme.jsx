@@ -76,7 +76,7 @@ const KayitEklemeContent = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // iPhone/Android zoom engelleme
+  // GÜNCELLENEN KISIM: Zoom engelleme ve global kaydırma engeli
   useEffect(() => {
     const meta = document.querySelector("meta[name=viewport]");
     if (meta) {
@@ -100,8 +100,16 @@ const KayitEklemeContent = () => {
     `;
     document.head.appendChild(style);
 
+    // Body ve HTML'de kaydırmayı tamamen engelle (overscroll/dalgalanmayı önler)
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+
+    // Cleanup fonksiyonu: Eski değerlere geri döndür
     return () => {
-      document.head.removeChild(style);
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      if (style) document.head.removeChild(style);
     };
   }, []);
 
@@ -143,7 +151,8 @@ const KayitEklemeContent = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    // İç padding basitçe korundu
+    <div className="p-4 md:p-6 lg:p-8"> 
       <Title level={3} className="text-center text-gray-700 mb-6">
         Yeni Kayıt Ekle
       </Title>
@@ -238,13 +247,21 @@ const KayitEklemeContent = () => {
   );
 };
 
+// GÜNCELLENEN KISIM: Header ve BottomNav'ı sabitleyen Flexbox yapısı
 const KayitEkleme = () => (
-  <div className="relative min-h-screen bg-gray-50">
-    <Header />
-    <main className="pb-20">
+  // Dikey flex container, ekranın tamamını kaplar.
+  <div className="flex flex-col h-screen bg-gray-50">
+    
+    {/* Header: Sabit yükseklik alır, büzülmez */}
+    <Header className="flex-shrink-0" />
+    
+    {/* Main: Geri kalan tüm alanı kaplar ve kendi içinde kaydırılabilir olur. */}
+    <main className="flex-grow overflow-y-auto">
       <KayitEklemeContent />
     </main>
-    <BottomNav />
+    
+    {/* BottomNav: Sabit yükseklik alır, büzülmez */}
+    <BottomNav className="flex-shrink-0" />
   </div>
 );
 
