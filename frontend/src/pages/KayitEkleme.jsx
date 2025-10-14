@@ -64,7 +64,6 @@ const MARKETLER = [
   "Diğer",
 ];
 
-// KayitEklemeContent bileşeni aynı kalır, sadece kaydırma yapısını kaldırırız.
 const KayitEklemeContent = () => {
   const { fetchTotals } = useTotalsContext();
 
@@ -77,7 +76,7 @@ const KayitEklemeContent = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // iPhone/Android zoom engelleme ve font fix (Aynı Kalır)
+  // iPhone/Android zoom engelleme
   useEffect(() => {
     const meta = document.querySelector("meta[name=viewport]");
     if (meta) {
@@ -102,7 +101,7 @@ const KayitEklemeContent = () => {
     document.head.appendChild(style);
 
     return () => {
-        if (style) document.head.removeChild(style);
+      document.head.removeChild(style);
     };
   }, []);
 
@@ -144,8 +143,7 @@ const KayitEklemeContent = () => {
   };
 
   return (
-    // İç padding bırakılır
-    <div className="p-4"> 
+    <div className="p-4 md:p-6 lg:p-8">
       <Title level={3} className="text-center text-gray-700 mb-6">
         Yeni Kayıt Ekle
       </Title>
@@ -240,24 +238,13 @@ const KayitEklemeContent = () => {
   );
 };
 
-// ---
-// KAYIT EKLEME YAPISININ DEĞİŞTİRİLDİĞİ YER BURASIDIR
-// ---
-
 const KayitEkleme = () => (
-  // 1. Dikey Flexbox Konteyneri: Ekranın tamamını kaplar (h-screen, flex flex-col)
-  <div className="flex flex-col h-screen bg-gray-50">
-    
-    {/* 2. Header: Sabit Yükseklik */}
-    <Header className="flex-shrink-0" /> {/* flex-shrink-0 bu bileşenin boyutunun sabit kalmasını sağlar */}
-    
-    {/* 3. Ana İçerik Alanı (main): Geri kalan tüm alanı kaplar ve kendi içinde kaydırılabilir olur (flex-grow, overflow-y-auto) */}
-    <main className="flex-grow overflow-y-auto">
+  <div className="relative min-h-screen bg-gray-50">
+    <Header />
+    <main className="pb-20">
       <KayitEklemeContent />
     </main>
-    
-    {/* 4. BottomNav: Sabit Yükseklik */}
-    <BottomNav className="flex-shrink-0" /> {/* flex-shrink-0 bu bileşenin boyutunun sabit kalmasını sağlar */}
+    <BottomNav />
   </div>
 );
 
