@@ -24,6 +24,7 @@ import tr from "dayjs/locale/tr";
 dayjs.locale(tr);
 const { Title, Text } = Typography;
 const { Option } = Select;
+// Lütfen buradaki API_URL'in doğru olduğundan emin olun
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_CATEGORIES = [
@@ -76,8 +77,9 @@ const KayitEklemeContent = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // GÜNCELLENEN KISIM: Zoom engelleme ve global kaydırma engeli
+  // GÜNCELLENEN KISIM: Global Kaydırma Engeli ve Klavye Desteği
   useEffect(() => {
+    // Zoom engelleme (mobil)
     const meta = document.querySelector("meta[name=viewport]");
     if (meta) {
       meta.setAttribute(
@@ -92,6 +94,7 @@ const KayitEklemeContent = () => {
       document.head.appendChild(newMeta);
     }
 
+    // Input font boyutu düzeltme
     const style = document.createElement("style");
     style.innerHTML = `
       input, select, textarea, button {
@@ -100,18 +103,20 @@ const KayitEklemeContent = () => {
     `;
     document.head.appendChild(style);
 
-    // Body ve HTML'de kaydırmayı tamamen engelle (overscroll/dalgalanmayı önler)
+    // Ana düzeltme: Body ve HTML'de kaydırmayı tamamen engelle.
+    // Bu, klavye açılsa bile header'ın kaymasını ve overscroll efektini önler.
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
 
-
-    // Cleanup fonksiyonu: Eski değerlere geri döndür
+    // Cleanup fonksiyonu: Component kaldırıldığında stilleri geri al
     return () => {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
-      if (style) document.head.removeChild(style);
+      if (style && style.parentNode) {
+        document.head.removeChild(style);
+      }
     };
-  }, []);
+  }, []); // Bağımlılık dizisi boş olduğu için sadece mount/unmount anında çalışır.
 
   const handleSubmit = async () => {
     if (!formData.miktar || !formData.kategori || !formData.tarih) {
@@ -151,8 +156,8 @@ const KayitEklemeContent = () => {
   };
 
   return (
-    // İç padding basitçe korundu
-    <div className="p-4 md:p-6 lg:p-8"> 
+    // Gereksiz büyük ekran dolguları kaldırıldı. Sadece mobil padding kaldı.
+    <div className="p-4"> 
       <Title level={3} className="text-center text-gray-700 mb-6">
         Yeni Kayıt Ekle
       </Title>
@@ -247,20 +252,20 @@ const KayitEklemeContent = () => {
   );
 };
 
-// GÜNCELLENEN KISIM: Header ve BottomNav'ı sabitleyen Flexbox yapısı
+// NİHAİ YAPI: Sabit Header/BottomNav, Kaydırılabilir İçerik
 const KayitEkleme = () => (
-  // Dikey flex container, ekranın tamamını kaplar.
-  <div className="flex flex-col h-screen bg-gray-50">
+  // Dikey flex container, minimum ekran yüksekliğini kaplar ve kaydırmayı engeller.
+  <div className="flex flex-col min-h-screen overflow-hidden bg-gray-50">
     
-    {/* Header: Sabit yükseklik alır, büzülmez */}
+    {/* Header: Sabit yükseklik alır */}
     <Header className="flex-shrink-0" />
     
-    {/* Main: Geri kalan tüm alanı kaplar ve kendi içinde kaydırılabilir olur. */}
+    {/* Main: Geri kalan tüm alanı kaplar ve sadece bu alan kendi içinde kaydırılabilir. */}
     <main className="flex-grow overflow-y-auto">
       <KayitEklemeContent />
     </main>
     
-    {/* BottomNav: Sabit yükseklik alır, büzülmez */}
+    {/* BottomNav: Sabit yükseklik alır */}
     <BottomNav className="flex-shrink-0" />
   </div>
 );
