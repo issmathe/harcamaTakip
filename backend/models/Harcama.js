@@ -10,7 +10,7 @@ const HarcamaSchema = new mongoose.Schema(
       type: String,
       enum: [
         "Giyim",
-        "Gıda",
+        "Bağış",
         "Petrol",
         "Kira",
         "Fatura",
