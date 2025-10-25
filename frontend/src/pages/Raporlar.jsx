@@ -20,7 +20,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartD
 const { Title } = Typography;
 
 const ALL_CATEGORIES = [
-  "Giyim", "Gıda", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
+  "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
   "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
   "Restoran", "Diğer",
 ];
@@ -32,7 +32,7 @@ const MARKETLER = [
 ];
 
 const categoryColors = {
-  "Giyim": "#FF6384", "Gıda": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
+  "Giyim": "#FF6384", "Bağış": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
   "Fatura": "#9966FF", "Eğitim": "#FF9F40", "Sağlık": "#C9CBCF", "Ulaşım": "#8AFF33",
   "Eğlence": "#FF33F6", "Elektronik": "#33FFF3", "Spor": "#FF8A33", "Market": "#338AFF",
   "Kırtasiye": "#FF3333", "Restoran": "#33FF8A", "Diğer": "#AAAAAA"

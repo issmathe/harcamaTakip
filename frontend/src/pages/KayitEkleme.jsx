@@ -28,7 +28,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_CATEGORIES = [
   "Giyim",
-  "Gıda",
+  "Bağış",
   "Petrol",
   "Kira",
   "Fatura",

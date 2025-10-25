@@ -122,7 +122,7 @@ const Harcama = ({ onHarcamaChange }) => {
           >
             <Select placeholder="Kategori seçiniz">
               <Option value="Giyim">Giyim</Option>
-              <Option value="Gıda">Gıda</Option>
+              <Option value="Bağış">Bağış</Option>
               <Option value="Petrol">Petrol</Option>
               <Option value="Kira">Kira</Option>
               <Option value="Fatura">Fatura</Option>
@@ -209,7 +209,7 @@ const Harcama = ({ onHarcamaChange }) => {
           >
             <Select>
               <Option value="Giyim">Giyim</Option>
-              <Option value="Gıda">Gıda</Option>
+              <Option value="Bağış">Bağış</Option>
               <Option value="Petrol">Petrol</Option>
               <Option value="Kira">Kira</Option>
               <Option value="Fatura">Fatura</Option>

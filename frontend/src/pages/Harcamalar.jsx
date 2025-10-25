@@ -40,7 +40,7 @@ const API_URL =
 
 const ALL_CATEGORIES = [
   "Giyim",
-  "Gıda",
+  "Bağış",
   "Petrol",
   "Kira",
   "Fatura",
@@ -80,7 +80,7 @@ const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
   
   switch (normalizedKategori.toLowerCase()) {
-    case "gıda":
+    case "Bağış":
     case "market":
     case "restoran / kafe":
       return { icon: <DollarCircleOutlined />, color: "bg-red-100 text-red-600" };

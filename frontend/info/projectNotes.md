@@ -1,3 +1,27 @@
+backend/
+│
+├─ models/                          # MongoDB modelleri (Mongoose şemaları)
+│  ├─ Gelir.js                      # Gelir verilerini tanımlayan model
+│  ├─ Harcama.js                    # Harcama verilerini tanımlayan model
+│
+├─ routes/                          # API endpoint dosyaları
+│  ├─ gelirs.js                     # /api/gelirs -> Gelir CRUD işlemleri
+│  ├─ harcama.js                    # /api/harcama -> Harcama CRUD işlemleri
+│
+├─ node_modules/                    # Bağımlılıkların bulunduğu klasör (otomatik)
+│
+├─ database.js                      # MongoDB bağlantısını yöneten dosya
+│
+├─ index.js                         # Uygulamanın ana giriş noktası (Express server)
+│
+├─ .env                             # Ortam değişkenleri (PORT, MONGO_URI, vb.)
+│
+└─ package.json                     # Proje bilgileri ve bağımlılık listesi
+
+
+
+
+
 src/
 ├─ assets/                  # Resimler, ikonlar, fontlar vb.
 │
@@ -23,3 +47,48 @@ src/
 ├─ App.jsx                  # Router ve genel 
 ├─ index.js                 # React root
 └─ index.css / tailwind.css # Global stiller ve Tailwind ayarları
+
+
+
+
+
+const mongoose = require("mongoose");
+
+const HarcamaSchema = new mongoose.Schema(
+  {
+    miktar: {
+      type: Number,
+      required: true,
+    },
+    kategori: {
+      type: String,
+      enum: [
+        "Giyim",
+        "Bağış",
+        "Petrol",
+        "Kira",
+        "Fatura",
+        "Eğitim",
+        "Sağlık",
+        "Ulaşım",
+        "Eğlence",
+        "Elektronik",
+        "Spor",
+        "Market",
+        "Kırtasiye",
+        "Restoran",
+        "Diğer",
+      ],
+      required: true,
+    },
+    altKategori: {
+      type: String, // sadece Market seçilince doldurulacak
+    },
+    not: {
+      type: String,
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Harcama", HarcamaSchema);

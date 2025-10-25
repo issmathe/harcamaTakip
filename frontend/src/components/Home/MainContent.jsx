@@ -34,7 +34,7 @@ const { Option } = Select;
 
 const CategoryIcons = {
   Giyim: <ShoppingOutlined className="text-xl" />,
-  Gıda: <ForkOutlined className="text-xl" />,
+  Bağış: <ForkOutlined className="text-xl" />,
   Petrol: <CarOutlined className="text-xl" />,
   Kira: <HomeOutlined className="text-xl" />,
   Fatura: <DollarOutlined className="text-xl" />,
@@ -52,7 +52,7 @@ const CategoryIcons = {
 
 const CATEGORIES = [
   "Giyim",
-  "Gıda",
+  "Bağış",
   "Petrol",
   "Kira",
   "Fatura",
