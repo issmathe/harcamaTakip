@@ -27,6 +27,7 @@ const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_CATEGORIES = [
+  "Market",
   "Giyim",
   "Bağış",
   "Petrol",
@@ -38,7 +39,6 @@ const ALL_CATEGORIES = [
   "Eğlence",
   "Elektronik",
   "Spor",
-  "Market",
   "Kırtasiye",
   "Restoran",
   "Diğer",
@@ -46,20 +46,17 @@ const ALL_CATEGORIES = [
 
 const MARKETLER = [
   "Lidl",
-  "Rewe",
-  "Edeka",
   "Aldi",
-  "Netto",
-  "Penny",
-  "Kaufland",
-  "Real",
-  "Norma",
-  "Tegut",
-  "Hit",
-  "Famila",
-  "Nahkauf",
-  "Biomarkt",
   "DM",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "Rewe",
+  "Netto",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
   "Rossmann",
   "Diğer",
 ];
@@ -133,7 +130,13 @@ const KayitEklemeContent = () => {
       await fetchTotals();
 
       // Form sıfırlama
-      setFormData({ miktar: "", kategori: "", altKategori: "", not: "", tarih: dayjs() });
+      setFormData({
+        miktar: "",
+        kategori: "",
+        altKategori: "",
+        not: "",
+        tarih: dayjs(),
+      });
     } catch (err) {
       console.error(err.response?.data || err.message);
       message.error("Kayıt eklenemedi!");
@@ -158,28 +161,38 @@ const KayitEklemeContent = () => {
             inputMode="decimal"
             pattern="[0-9]*"
             value={formData.miktar}
-            onChange={(e) => setFormData({ ...formData, miktar: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, miktar: e.target.value })
+            }
             placeholder="Örn: 45.50"
           />
         </div>
 
         <div className="mb-4">
-          <Text strong className="block mb-1">Kategori:</Text>
+          <Text strong className="block mb-1">
+            Kategori:
+          </Text>
           <Select
             value={formData.kategori}
-            onChange={(v) => setFormData({ ...formData, kategori: v, altKategori: "" })}
+            onChange={(v) =>
+              setFormData({ ...formData, kategori: v, altKategori: "" })
+            }
             style={{ width: "100%" }}
             placeholder="Kategori seçin"
             size="large"
           >
             {ALL_CATEGORIES.map((cat) => (
-              <Option key={cat} value={cat}>{cat}</Option>
+              <Option key={cat} value={cat}>
+                {cat}
+              </Option>
             ))}
           </Select>
 
           {formData.kategori === "Market" && (
             <div className="mt-3">
-              <Text strong className="block mb-1">Market Seç:</Text>
+              <Text strong className="block mb-1">
+                Market Seç:
+              </Text>
               <Select
                 value={formData.altKategori}
                 onChange={(v) => setFormData({ ...formData, altKategori: v })}
@@ -188,7 +201,9 @@ const KayitEklemeContent = () => {
                 size="large"
               >
                 {MARKETLER.map((m) => (
-                  <Option key={m} value={m}>{m}</Option>
+                  <Option key={m} value={m}>
+                    {m}
+                  </Option>
                 ))}
               </Select>
             </div>
@@ -206,7 +221,9 @@ const KayitEklemeContent = () => {
             style={{ width: "100%" }}
             placeholder="Tarih seçin"
             format="DD.MM.YYYY"
-            disabledDate={(current) => current && current > dayjs().endOf("day")}
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
+            }
           />
         </div>
 

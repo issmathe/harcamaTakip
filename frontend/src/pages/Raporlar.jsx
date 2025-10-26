@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
-import { Card, Typography, Empty } from "antd";
+import React, { useMemo, useState, useCallback } from "react";
+// 👇 Sadece kullanılan bileşenler kaldı: Card, Typography, Empty, Button
+import { Card, Typography, Empty, Button } from "antd"; 
+import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons"; 
 import { useTotalsContext } from "../context/TotalsContext";
 import { Bar } from "react-chartjs-2";
 import {
@@ -15,10 +17,15 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
+// dayjs importları
+import dayjs from "dayjs";
+import tr from "dayjs/locale/tr";
+dayjs.locale(tr);
 
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
 const { Title } = Typography;
 
+// Sabitler ve Renkler (Değişmedi)
 const ALL_CATEGORIES = [
   "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
   "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
@@ -26,20 +33,8 @@ const ALL_CATEGORIES = [
 ];
 
 const MARKETLER = [
-  "Lidl",
-  "Aldi",
-  "DM",
-  "Norma",
-  "Türk Market",
-  "Et-Tavuk",
-  "Kaufland",
-  "Rewe",
-  "Netto",
-  "Edeka",
-  "Biomarkt",
-  "Penny",
-  "Rossmann",
-  "Diğer",
+  "Lidl", "Aldi", "DM", "Norma", "Türk Market", "Et-Tavuk", "Kaufland",
+  "Rewe", "Netto", "Edeka", "Biomarkt", "Penny", "Rossmann", "Diğer",
 ];
 
 const categoryColors = {
@@ -50,23 +45,54 @@ const categoryColors = {
 };
 
 const marketColors = [
-  "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
-  "#FF9F40", "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3",
-  "#FF8A33", "#338AFF", "#FF3333", "#33FF8A", "#AAAAAA",
-  "#58508D", "#BC5090"
+  "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40",
+  "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF",
+  "#FF3333", "#33FF8A", "#AAAAAA", "#58508D", "#BC5090"
 ];
 
 const RaporlarContent = () => {
   const { harcamalar = [] } = useTotalsContext();
+  const now = dayjs();
+  
+  const [selectedMonth, setSelectedMonth] = useState(now.month());
+  const [selectedYear, setSelectedYear] = useState(now.year());
+
+  const filteredHarcamalar = useMemo(() => {
+    return harcamalar.filter((h) => {
+      const t = dayjs(h.createdAt); 
+      return t.month() === selectedMonth && t.year() === selectedYear;
+    });
+  }, [harcamalar, selectedMonth, selectedYear]);
+
+  const changeMonth = useCallback(
+    (direction) => {
+      const current = dayjs().year(selectedYear).month(selectedMonth);
+      const newDate =
+        direction === "prev"
+          ? current.subtract(1, "month")
+          : current.add(1, "month");
+      
+      setSelectedMonth(newDate.month());
+      setSelectedYear(newDate.year());
+    },
+    [selectedMonth, selectedYear]
+  );
+
+  const displayMonth = dayjs()
+    .year(selectedYear)
+    .month(selectedMonth)
+    .format("MMMM YYYY");
+
+  const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
   // Harcama toplamları grafiği için verilerin hesaplanması
   const barData = useMemo(() => {
     const totals = {};
     ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
 
-    harcamalar.forEach(h => {
+    filteredHarcamalar.forEach(h => {
       let key = h.kategori;
-      if (key === "Market") key = "Market"; // Market ana kategori olarak kalır
+      if (key === "Market") key = "Market"; 
       else if (key === "Restoran / Kafe") key = "Restoran";
       else if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
       
@@ -94,12 +120,12 @@ const RaporlarContent = () => {
         }
       ]
     };
-  }, [harcamalar]);
+  }, [filteredHarcamalar]);
 
   // Market harcamaları grafiği için verilerin hesaplanması
   const marketBarData = useMemo(() => {
     const marketTotals = {};
-    const marketHarcamalar = harcamalar.filter(h => h.kategori === "Market");
+    const marketHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Market");
 
     marketHarcamalar.forEach(h => {
       const altKategori = h.altKategori || "Diğer";
@@ -128,9 +154,9 @@ const RaporlarContent = () => {
         }
       ]
     };
-  }, [harcamalar]);
+  }, [filteredHarcamalar]);
 
-// Genel Bar Grafiği Seçenekleri
+// Genel Bar Grafiği Seçenekleri (Değişmedi)
   const barOptions = useMemo(() => ({
     responsive: true,
     indexAxis: 'y',
@@ -157,23 +183,19 @@ const RaporlarContent = () => {
         }
       },
       datalabels: {
-        // BURASI GÜNCELLENDİ
-        // Etiketleri çubuğun içine, sol tarafa yakın hizala
-        anchor: 'start', // 'start' çubuğun başlangıcına (soluna) hizalar
-        align: 'end', // 'end' etiketin çubuk içine doğru hizalanmasını sağlar
-        offset: 8, // Çubuğun kenarından biraz boşluk bırak
-        color: "white", // Etiket rengini beyaz yap
+        anchor: 'start', 
+        align: 'end', 
+        offset: 8, 
+        color: "white", 
         font: { weight: "bold", size: 12 },
-        // Eğer miktar çok düşükse etiket çubuğun dışına taşmasın diye bir kontrol de eklenebilir.
         formatter: (value) => `${value.toFixed(2)}₺`,
-        // Opsiyonel: Eğer çubuk rengini koyu kullanıyorsanız etiketin görünürlüğünü artırır
         textShadowBlur: 4,
         textShadowColor: 'rgba(0, 0, 0, 0.7)' 
       }
     }
   }), []);
 
-  // Market Bar Grafiği Seçenekleri (Genel seçeneklerle benzer, başlık farklı)
+  // Market Bar Grafiği Seçenekleri (Değişmedi)
   const marketBarOptions = useMemo(() => ({
     ...barOptions,
     scales: {
@@ -200,49 +222,99 @@ const RaporlarContent = () => {
   const hasData = barData.datasets[0]?.data.length > 0;
   const hasMarketData = marketBarData.datasets[0]?.data.length > 0;
   
-  // Grafik yüksekliklerini dinamik olarak ayarla
   const chartHeight = hasData ? (barData.labels.length * 35) + 100 : 300;
   const marketChartHeight = hasMarketData ? (marketBarData.labels.length * 35) + 100 : 300;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
-      <Card className="shadow-lg rounded-xl p-4 bg-white mb-8">
+    // Dış padding'i kaldırıldı, içerik tam kenara yapışık
+    <div className="w-full">
+      
+      {/* 1. AY GEZİNME KARTI (Ayrı Card Bileşeni) */}
+      {/* Dış boşluklar için sadece mb-4 kullanıldı. İç dolgu için p-4 kullanıldı. */}
+      <Card 
+        className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4" 
+        styles={{ body: { padding: '1rem' } }} // Antd card'ın iç dolgusunu 1rem'e ayarladık
+      >
+        <div className="flex justify-between items-center">
+          <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => changeMonth("prev")} 
+            type="primary" 
+            shape="circle" 
+            size="large"
+          />
+          <Title level={3} className="text-center text-gray-800 m-0 capitalize transition-all duration-300">
+            {displayMonth}
+          </Title>
+          <Button 
+            icon={<ArrowRightOutlined />} 
+            onClick={() => changeMonth("next")} 
+            disabled={isCurrentMonth}
+            type="primary" 
+            shape="circle" 
+            size="large"
+          />
+        </div>
+      </Card>
+
+      {/* 2. KATEGORİ GRAFİĞİ KARTI */}
+      {/* İlk karttan sonraki dikey boşluk ayarlandı. */}
+      <Card 
+        className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
+        styles={{ body: { padding: '1rem' } }} // İç dolgu 1rem
+      >
         <Title level={4} className="text-center text-gray-700 mb-4">
           Kategorilere Göre Harcama Dağılımı
         </Title>
+        
         {hasData ? (
-          <div style={{ height: `${chartHeight}px`, minHeight: '300px', width: '100%' }}>
+          // Grafik kapsayıcısına p-2 eklenebilir, grafiklerin kenarlara yapışmaması için
+          <div className="p-2" style={{ height: `${chartHeight}px`, minHeight: '300px', width: '100%' }}>
             <Bar data={barData} options={barOptions} />
           </div>
         ) : (
           <Empty
-            description="Henüz görüntüleyecek bir harcama verisi yok."
+            description={`Seçilen dönemde (${displayMonth}) görüntüleyecek bir harcama verisi yok.`}
             className="p-10"
           />
         )}
       </Card>
 
-      {/* Market Alt Kategori Harcamaları Grafiği */}
-      {hasMarketData && (
-        <Card className="shadow-lg rounded-xl p-4 bg-white">
+      {/* 3. MARKET ALT KATEGORİ GRAFİĞİ KARTI */}
+      {(hasData || hasMarketData) && (
+        <Card 
+          className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
+          styles={{ body: { padding: '1rem' } }} // İç dolgu 1rem
+        >
           <Title level={4} className="text-center text-gray-700 mb-4">
             Market Harcamaları Alt Kategori Dağılımı
           </Title>
-          <div style={{ height: `${marketChartHeight}px`, minHeight: '300px', width: '100%' }}>
-            <Bar data={marketBarData} options={marketBarOptions} />
-          </div>
+          {hasMarketData ? (
+            <div className="p-2" style={{ height: `${marketChartHeight}px`, minHeight: '300px', width: '100%' }}>
+              <Bar data={marketBarData} options={marketBarOptions} />
+            </div>
+          ) : (
+            <Empty
+              description={hasData 
+                ? "Bu ayda Market kategorisinde harcama yapılmamış." 
+                : `Seçilen dönemde (${displayMonth}) market harcaması verisi yok.`
+              }
+              className="p-10"
+            />
+          )}
         </Card>
       )}
-      
-      {!hasData && !hasMarketData && <></>}
     </div>
   );
 };
 
 const Raporlar = () => (
-  <div className="relative min-h-screen bg-gray-50">
-    <Header />
-    <main className="pt-20 pb-20">
+  <div className="relative min-h-screen bg-gray-50 flex flex-col">
+    <Header /> 
+    {/* main içeriği, header ve bottomNav'ı hesaba katacak şekilde boşluk bırakır */}
+    {/* pt-20 ve pb-20 boşlukları, sabit Header ve BottomNav için ZORUNLU BOŞLUKLARDIR. */}
+    <main className="flex-grow pt-5 pb-20 overflow-y-auto">
+      {/* RaporlarContent artık kendi dış boşluğunu ayarlamıyor, tam genişlikte çalışıyor. */}
       <RaporlarContent />
     </main>
     <BottomNav />
