@@ -26,9 +26,20 @@ const ALL_CATEGORIES = [
 ];
 
 const MARKETLER = [
-  "Lidl", "Rewe", "Aldi", "Netto", "DM", "Kaufland", "Norma", "Edeka",
-  "Tegut", "Hit", "Famila", "Nahkauf", "Biomarkt", "Penny", "Rossmann",
-  "Real", "Diğer",
+  "Lidl",
+  "Aldi",
+  "DM",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "Rewe",
+  "Netto",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
+  "Rossmann",
+  "Diğer",
 ];
 
 const categoryColors = {
@@ -195,11 +206,6 @@ const RaporlarContent = () => {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <Title level={3} className="text-center text-gray-700 mb-6">
-        Harcamalar Raporu
-      </Title>
-
-      {/* Ana Kategori Harcamaları Grafiği */}
       <Card className="shadow-lg rounded-xl p-4 bg-white mb-8">
         <Title level={4} className="text-center text-gray-700 mb-4">
           Kategorilere Göre Harcama Dağılımı

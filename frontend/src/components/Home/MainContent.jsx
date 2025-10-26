@@ -41,42 +41,64 @@ const { Option } = Select;
 
 // Modern ve renkli ikonlar ve Tailwind sınıfları
 const CategoryIcons = {
+  Market: {
+    icon: ShoppingCart,
+    color: "text-teal-500",
+    bgColor: "bg-teal-100",
+  },
   Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Bağış: { icon: HeartHandshake, color: "text-pink-500", bgColor: "bg-pink-100" },
+  Bağış: {
+    icon: HeartHandshake,
+    color: "text-pink-500",
+    bgColor: "bg-pink-100",
+  },
   Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" }, // Fuel ikonu
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
-  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
+  Fatura: {
+    icon: ReceiptText,
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-100",
+  },
   Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
-  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" }, // HeartPulse ikonu
+  Sağlık: {
+    icon: HeartPulse,
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-100",
+  }, // HeartPulse ikonu
   Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
   Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   Spor: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
+
   Kırtasiye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  "Restoran / Kafe": { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
-  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
+  "Restoran / Kafe": {
+    icon: Utensils,
+    color: "text-orange-500",
+    bgColor: "bg-orange-100",
+  },
+  Diğer: {
+    icon: HelpCircle,
+    color: "text-neutral-400",
+    bgColor: "bg-neutral-100",
+  },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
 
 const MARKETLER = [
   "Lidl",
-  "Rewe",
   "Aldi",
-  "Netto",
   "DM",
-  "Kaufland",
   "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "Rewe",
+  "Netto",
   "Edeka",
-  "Tegut",
-  "Hit",
-  "Famila",
-  "Nahkauf",
   "Biomarkt",
   "Penny",
   "Rossmann",
-  "Real",
   "Diğer",
 ];
 
@@ -97,7 +119,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   // --- Mutasyonlar ---
 
   const harcamaMutation = useMutation({
-    mutationFn: async (harcamaData) => axios.post(`${API_URL}/harcama`, harcamaData),
+    mutationFn: async (harcamaData) =>
+      axios.post(`${API_URL}/harcama`, harcamaData),
     onSuccess: async () => {
       message.success("Harcama eklendi!");
       await fetchTotals();
@@ -146,7 +169,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const currentTopCategory = getTopCategory();
   const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
   // Para birimini Euro (€) olarak tutuyorum.
-  const formattedTotal = (currentCategoryTotal ?? 0).toFixed(2).replace(".", ",");
+  const formattedTotal = (currentCategoryTotal ?? 0)
+    .toFixed(2)
+    .replace(".", ",");
 
   // --- Çark Döndürme Mantığı ---
 
@@ -158,7 +183,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setIsDragging(true);
     const rect = wheelRef.current.getBoundingClientRect();
     setLastAngle(
-      getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY)
+      getAngle(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        e.clientX,
+        e.clientY
+      )
     );
   };
 
@@ -235,7 +265,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const handleIconClick = (category) => {
     // Only open modal if not dragging
-    if (isDragging) return; 
+    if (isDragging) return;
     setSelectedCategory(category);
     setSelectedMarket("");
     setIsModalVisible(true);
@@ -270,7 +300,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onGelirFinish = (values) => {
-    const gelirData = { miktar: values.miktar, kategori: values.kategori, not: values.not || "" };
+    const gelirData = {
+      miktar: values.miktar,
+      kategori: values.kategori,
+      not: values.not || "",
+    };
     gelirMutation.mutate(gelirData);
   };
 
@@ -289,10 +323,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
         {/* Üst Kategori ve Toplam Göstergesi */}
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-24 z-30 w-40 text-center">
-          <div className="text-blue-600 font-bold text-xl leading-snug">{currentTopCategory}</div>
-          <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
+          <div className="text-blue-600 font-bold text-xl leading-snug">
+            {currentTopCategory}
+          </div>
+          <div className="text-gray-700 font-semibold text-base mt-1">
+            {formattedTotal} €
+          </div>
         </div>
-        
+
         {/* Dönen Çark Alanı */}
         <div
           ref={wheelRef}
@@ -320,18 +358,19 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                   className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
                     isTop
                       ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10"
-                      : `${bgColor} ${color} hover:${bgColor.replace('100', '200')}`
+                      : `${bgColor} ${color} hover:${bgColor.replace(
+                          "100",
+                          "200"
+                        )}`
                   }`}
                   style={{
                     // Position icons around the circle
-                    top: `${center + y}%`, 
+                    top: `${center + y}%`,
                     left: `${center + x}%`,
                     transform: `translate(-50%, -50%) rotate(${-rotation}deg)`, // Counter-rotate the icon
                   }}
                 >
-                  <Icon 
-                    className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} 
-                  />
+                  <Icon className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} />
                 </button>
               </Tooltip>
             );
@@ -352,21 +391,22 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber 
-                min={0.01} 
-                step={0.01} 
-                style={{ width: "100%" }} 
-                formatter={value => `${value} €`.replace('.', ',')}
-                parser={value => value.replace(' €', '').replace(',', '.')}
+            <InputNumber
+              min={0.01}
+              step={0.01}
+              style={{ width: "100%" }}
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
             />
           </Form.Item>
 
           {selectedCategory === "Market" && (
-            <Form.Item name="altKategori" label="Market Seç" initialValue={selectedMarket}>
-              <Select
-                placeholder="Market seçin"
-                onChange={setSelectedMarket}
-              >
+            <Form.Item
+              name="altKategori"
+              label="Market Seç"
+              initialValue={selectedMarket}
+            >
+              <Select placeholder="Market seçin" onChange={setSelectedMarket}>
                 {MARKETLER.map((m) => (
                   <Option key={m} value={m}>
                     {m}
@@ -377,7 +417,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           )}
 
           <Form.Item name="not" label="Not">
-            <Input.TextArea rows={3} placeholder="Açıklama ekle (isteğe bağlı)" />
+            <Input.TextArea
+              rows={3}
+              placeholder="Açıklama ekle (isteğe bağlı)"
+            />
           </Form.Item>
 
           <Button
@@ -400,23 +443,23 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         footer={null}
       >
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <Form.Item 
-            name="miktar" 
-            label="Miktar (€)" 
+          <Form.Item
+            name="miktar"
+            label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber 
-                min={0.01} 
-                step={0.01} 
-                style={{ width: "100%" }} 
-                formatter={value => `${value} €`.replace('.', ',')}
-                parser={value => value.replace(' €', '').replace(',', '.')}
+            <InputNumber
+              min={0.01}
+              step={0.01}
+              style={{ width: "100%" }}
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
             />
           </Form.Item>
-          
-          <Form.Item 
-            name="kategori" 
-            label="Kategori" 
+
+          <Form.Item
+            name="kategori"
+            label="Kategori"
             rules={[{ required: true, message: "Kategori gerekli" }]}
           >
             <Select placeholder="Gelir türü seçin">
@@ -427,9 +470,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           </Form.Item>
 
           <Form.Item name="not" label="Not">
-            <Input.TextArea rows={3} placeholder="Açıklama ekle (isteğe bağlı)" />
+            <Input.TextArea
+              rows={3}
+              placeholder="Açıklama ekle (isteğe bağlı)"
+            />
           </Form.Item>
-          
+
           <Button
             type="primary"
             htmlType="submit"
