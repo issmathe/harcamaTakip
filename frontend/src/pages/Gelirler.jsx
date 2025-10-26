@@ -1,4 +1,5 @@
-// pages/Gelirler.jsx
+// pages/Gelirler.jsx (KONTROL EDİLMİŞ VE KESİNLEŞTİRİLMİŞ)
+
 import React, { useState, useMemo, useCallback } from "react";
 import { List, Typography, Button, Modal, Input, Select, message, Card, Popconfirm } from "antd";
 import { 
@@ -7,7 +8,8 @@ import {
 } from '@ant-design/icons';
 import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
-import { useTotalsContext } from "../context/TotalsContext";
+// Context'ten doğru fonksiyonu çekiyoruz (artık TotalsContext'te 'refetch' var)
+import { useTotalsContext } from "../context/TotalsContext"; 
 import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
@@ -33,6 +35,7 @@ const getCategoryDetails = (kategori) => {
 };
 
 const GelirlerContent = () => {
+  // Artık TotalsContext'ten çekilen 'refetch' bir fonksiyon olacak.
   const { gelirler = [], refetch } = useTotalsContext();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -84,21 +87,41 @@ const GelirlerContent = () => {
       await axios.put(`${API_URL}/gelir/${editingGelir._id}`, formData);
       message.success("Gelir başarıyla güncellendi!");
       setEditModalVisible(false);
-      refetch();
+      // refetch çağrısı başarılı olursa listedeki veriyi günceller
+      if (typeof refetch === 'function') refetch(); 
     } catch (err) {
       console.error(err);
       message.error("Güncelleme başarısız!");
     }
   };
 
+  // Düzeltme mantığı korundu, artık uyarı almamamız bekleniyor.
   const handleDelete = async (id) => {
+    let success = false;
     try {
+      // 1. Silme işlemini yap
       await axios.delete(`${API_URL}/gelir/${id}`);
-      message.success("Gelir silindi!");
-      refetch();
+      success = true;
+      message.success("Gelir başarıyla silindi!");
+      
     } catch (err) {
-      console.error(err);
-      message.error("Silme işlemi başarısız!");
+      console.error("Silme işlemi sunucu hatası:", err);
+      // Silme işlemi başarısız olursa (örn: 4xx/5xx durum kodu)
+      message.error("Silme işlemi başarısız oldu! Lütfen tekrar deneyin.");
+      return; // Daha ileri gitme
+    }
+
+    // 2. Silme başarılıysa, listeyi yenile (refetch)
+    // Artık 'refetch' bir fonksiyon olacağı için bu koşul sağlanacak ve liste yenilenecek.
+    if (success && typeof refetch === 'function') {
+      try {
+         refetch();
+      } catch (refetchErr) {
+         console.warn("Silme başarılı, ancak liste yenileme (refetch) başarısız oldu:", refetchErr);
+      }
+    } else if (success) {
+        // Bu console.warn satırı, Context düzeltilince artık çalışmayacak.
+       console.warn("Silme başarılı ancak refetch fonksiyonu context'ten doğru gelmiyor.");
     }
   };
 
@@ -109,7 +132,10 @@ const GelirlerContent = () => {
       <Title level={3} className="text-center text-gray-700 mb-6">Gelir Kayıtlarınız</Title>
 
       {/* Filtreleme Card */}
-      <Card className="shadow-lg rounded-xl mb-6 bg-white" bodyStyle={{ padding:'16px' }}>
+      <Card 
+        className="shadow-lg rounded-xl mb-6 bg-white" 
+        styles={{ body: { padding: '16px' } }} 
+      >
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
           <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
           <Title level={5} className="m-0 text-green-600">{displayMonth}</Title>
@@ -127,7 +153,10 @@ const GelirlerContent = () => {
       </Card>
 
       {/* Gelir Listesi */}
-      <Card className="shadow-lg rounded-xl overflow-hidden" bodyStyle={{ padding:0 }}>
+      <Card 
+        className="shadow-lg rounded-xl overflow-hidden" 
+        styles={{ body: { padding: 0 } }} 
+      >
         <List
           itemLayout="horizontal"
           dataSource={filteredGelirler}
@@ -180,7 +209,7 @@ const GelirlerContent = () => {
         onOk={handleEditSave}
         okText="Kaydet"
         cancelText="İptal"
-        destroyOnClose
+        destroyOnHidden 
       >
         <div className="space-y-4 pt-4">
           <div>
@@ -205,9 +234,9 @@ const GelirlerContent = () => {
 
 const Gelirler = () => {
   return (
-    <div className="relative min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <main className="pb-20">
+      <main className="flex-grow pt-20 pb-20 overflow-y-auto">
         <GelirlerContent />
       </main>
       <BottomNav />

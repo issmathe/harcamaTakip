@@ -1,3 +1,5 @@
+// context/TotalsContext.jsx (DÜZELTİLMİŞ)
+
 import React, { createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTotalsFromAPI } from "../hooks/useTotals";
@@ -13,8 +15,9 @@ export const TotalsProvider = ({ children }) => {
     cacheTime: 1000 * 60 * 30, // 30 dakika boyunca cache saklanır
   });
 
+  // 👇 DÜZELTME: Context'e aktarırken key adını 'refetch' olarak değiştiriyoruz
   return (
-    <TotalsContext.Provider value={{ ...totals, fetchTotals: refetch }}>
+    <TotalsContext.Provider value={{ ...totals, refetch: refetch }}>
       {children}
     </TotalsContext.Provider>
   );

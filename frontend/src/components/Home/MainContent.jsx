@@ -11,22 +11,20 @@ import {
   Select,
 } from "antd";
 
-// Hata veren 'GasStation' yerine 'Fuel' kullanıldı.
-// 'MedicineBoxOutlined' karşılığı olarak estetik durması için 'HeartPulse' kullanıldı.
 import {
   Shirt,
   HeartHandshake,
-  Fuel, // DÜZELTİLDİ: Petrol için GasStation yerine Fuel
+  Fuel, 
   Home,
   ReceiptText,
   BookOpen,
-  HeartPulse, // Sağlık için daha estetik bir seçim
+  HeartPulse, 
   Car,
   Gift,
   Laptop,
   Zap,
   ShoppingCart,
-  Pencil, // Kırtasiye için Pencil, BookOpen da uygun, ikisi de mevcut.
+  Pencil, 
   Utensils,
   HelpCircle,
 } from "lucide-react";
@@ -39,7 +37,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// Modern ve renkli ikonlar ve Tailwind sınıfları
+// Modern ve renkli ikonlar ve Tailwind sınıfları (DEĞİŞMEDİ)
 const CategoryIcons = {
   Market: {
     icon: ShoppingCart,
@@ -52,7 +50,7 @@ const CategoryIcons = {
     color: "text-pink-500",
     bgColor: "bg-pink-100",
   },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" }, // Fuel ikonu
+  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" }, 
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
   Fatura: {
     icon: ReceiptText,
@@ -64,12 +62,11 @@ const CategoryIcons = {
     icon: HeartPulse,
     color: "text-emerald-500",
     bgColor: "bg-emerald-100",
-  }, // HeartPulse ikonu
+  }, 
   Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
   Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   Spor: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-
   Kırtasiye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
   "Restoran / Kafe": {
     icon: Utensils,
@@ -103,7 +100,9 @@ const MARKETLER = [
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
-  const { fetchTotals, harcamalar = [] } = useTotalsContext();
+  // 👇 DÜZELTME: Context'ten gelen doğru isim olan 'refetch' kullanıldı.
+  const { refetch, harcamalar = [] } = useTotalsContext(); 
+  
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedMarket, setSelectedMarket] = useState("");
@@ -123,7 +122,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       axios.post(`${API_URL}/harcama`, harcamaData),
     onSuccess: async () => {
       message.success("Harcama eklendi!");
-      await fetchTotals();
+      // 👇 DÜZELTME: refetch çağrısı
+      await refetch(); 
       handleModalCancel();
     },
     onError: () => message.error("Harcama eklenirken hata oluştu."),
@@ -133,7 +133,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     mutationFn: async (gelirData) => axios.post(`${API_URL}/gelir`, gelirData),
     onSuccess: async () => {
       message.success("Gelir eklendi!");
-      await fetchTotals();
+      // 👇 DÜZELTME: refetch çağrısı
+      await refetch(); 
       handleGelirCancel();
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
@@ -173,7 +174,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     .toFixed(2)
     .replace(".", ",");
 
-  // --- Çark Döndürme Mantığı ---
+  // --- Çark Döndürme Mantığı (DEĞİŞMEDİ) ---
 
   const getAngle = (centerX, centerY, pointX, pointY) =>
     Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
@@ -261,7 +262,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // --- Modal ve Form İşleyicileri ---
+  // --- Modal ve Form İşleyicileri (DEĞİŞMEDİ) ---
 
   const handleIconClick = (category) => {
     // Only open modal if not dragging
@@ -308,7 +309,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     gelirMutation.mutate(gelirData);
   };
 
-  // --- Render ---
+  // --- Render (DEĞİŞMEDİ) ---
 
   return (
     <main className="flex-1 px-4 pt-4 pb-24">
