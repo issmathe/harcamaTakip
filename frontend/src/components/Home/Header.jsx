@@ -16,13 +16,13 @@ const Header = () => {
   const balance = totalIncome - totalExpense;
 
   return (
-    // DEĞİŞİKLİK: 'sticky top-0 z-10' yerine 'fixed top-0 w-full z-50' kullanıldı.
-    <header className="px-4 pt-4 pb-1 bg-white fixed top-0 w-full z-50 shadow-lg">
+    // **1. ADIM: Header Padding'i Azaltıldı**
+    <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
       {/* Güncel Bakiye Kartı - KOMPAKT DÜZEN */}
       <Card
         className="rounded-xl shadow-xl border-none p-3"
         styles={{
-          body: { padding: "12px" },
+          body: { padding: "12px" }, // ✅ yeni sürümde bodyStyle yerine styles.body
         }}
         style={{
           background:
