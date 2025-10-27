@@ -33,8 +33,21 @@ const ALL_CATEGORIES = [
 ];
 
 const MARKETLER = [
-  "Lidl", "Aldi", "DM", "Norma", "Türk Market", "Et-Tavuk", "Kaufland",
-  "Rewe", "Netto", "Edeka", "Biomarkt", "Penny", "Rossmann", "Diğer",
+  "Lidl",
+  "Aldi",
+  "DM",
+  "Action",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "Rewe",
+  "Netto",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
+  "Rossmann",
+  "Diğer",
 ];
 
 const categoryColors = {

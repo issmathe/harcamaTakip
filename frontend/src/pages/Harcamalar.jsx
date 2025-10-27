@@ -23,8 +23,8 @@ import {
   RightOutlined,
 } from "@ant-design/icons";
 // 💡 HATA DÜZELTME: Import yolları '../../' yerine '../' olarak değiştirildi
-import Header from "../components/Home/Header"; 
-import BottomNav from "../components/Home/BottomNav"; 
+import Header from "../components/Home/Header";
+import BottomNav from "../components/Home/BottomNav";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -35,8 +35,7 @@ dayjs.locale(tr);
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const API_URL =
-  process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_CATEGORIES = [
   "Market",
@@ -60,6 +59,7 @@ const MARKETLER = [
   "Lidl",
   "Aldi",
   "DM",
+  "Action",
   "Norma",
   "Türk Market",
   "Et-Tavuk",
@@ -75,18 +75,24 @@ const MARKETLER = [
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
-  
+
   switch (normalizedKategori.toLowerCase()) {
     case "Bağış":
     case "market":
     case "restoran / kafe":
-      return { icon: <DollarCircleOutlined />, color: "bg-red-100 text-red-600" };
+      return {
+        icon: <DollarCircleOutlined />,
+        color: "bg-red-100 text-red-600",
+      };
     case "kira":
     case "fatura":
       return { icon: <TagOutlined />, color: "bg-blue-100 text-blue-600" };
     case "ulaşım":
     case "petrol":
-      return { icon: <CalendarOutlined />, color: "bg-green-100 text-green-600" };
+      return {
+        icon: <CalendarOutlined />,
+        color: "bg-green-100 text-green-600",
+      };
     default:
       return { icon: <SolutionOutlined />, color: "bg-gray-100 text-gray-600" };
   }
@@ -148,7 +154,7 @@ const HarcamalarContent = () => {
     });
 
     if (selectedCategory === "Tümü") return ayFiltreli;
-    
+
     return ayFiltreli.filter((h) => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
 
@@ -181,7 +187,7 @@ const HarcamalarContent = () => {
 
   const openEditModal = (harcama) => {
     const isMarket = harcama.kategori === "Market";
-    
+
     setEditingHarcama(harcama);
     setFormData({
       miktar: harcama.miktar,
@@ -194,17 +200,17 @@ const HarcamalarContent = () => {
 
   const handleEditSave = () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
-    
+
     if (formData.kategori === "Market" && !formData.altKategori) {
-        return message.error("Market seçimi boş bırakılamaz!");
+      return message.error("Market seçimi boş bırakılamaz!");
     }
-    
+
     const payload = {
       ...formData,
       _id: editingHarcama._id,
-      altKategori: formData.kategori !== "Market" ? "" : formData.altKategori
+      altKategori: formData.kategori !== "Market" ? "" : formData.altKategori,
     };
-    
+
     updateMutation.mutate(payload);
   };
 
@@ -222,7 +228,10 @@ const HarcamalarContent = () => {
         Harcamalarınız
       </Title>
 
-      <Card className="shadow-lg rounded-xl mb-6 bg-white" styles={{ body: { padding: "16px" } }}>
+      <Card
+        className="shadow-lg rounded-xl mb-6 bg-white"
+        styles={{ body: { padding: "16px" } }}
+      >
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
           <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")}>
             Önceki Ay
@@ -268,7 +277,10 @@ const HarcamalarContent = () => {
         )}
       </Card>
 
-      <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding: 0 } }}>
+      <Card
+        className="shadow-lg rounded-xl overflow-hidden"
+        styles={{ body: { padding: 0 } }}
+      >
         <List
           itemLayout="horizontal"
           dataSource={filteredHarcamalar}
@@ -280,8 +292,9 @@ const HarcamalarContent = () => {
           }}
           renderItem={(harcama) => {
             const { icon, color } = getCategoryDetails(harcama.kategori);
-            
-            const displayCategory = harcama.kategori === "Market" && harcama.altKategori
+
+            const displayCategory =
+              harcama.kategori === "Market" && harcama.altKategori
                 ? `Market (${harcama.altKategori})`
                 : harcama.kategori;
 
@@ -357,7 +370,9 @@ const HarcamalarContent = () => {
       >
         <div className="space-y-4 pt-4">
           <div>
-            <Text strong className="block mb-1">Miktar (₺):</Text>
+            <Text strong className="block mb-1">
+              Miktar (₺):
+            </Text>
             <Input
               type="number"
               value={formData.miktar}
@@ -368,7 +383,9 @@ const HarcamalarContent = () => {
           </div>
 
           <div>
-            <Text strong className="block mb-1">Kategori:</Text>
+            <Text strong className="block mb-1">
+              Kategori:
+            </Text>
             <Select
               value={formData.kategori}
               onChange={(v) =>
@@ -385,12 +402,12 @@ const HarcamalarContent = () => {
 
             {formData.kategori === "Market" && (
               <div className="mt-2">
-                <Text strong className="block mb-1">Market Seç:</Text>
+                <Text strong className="block mb-1">
+                  Market Seç:
+                </Text>
                 <Select
                   value={formData.altKategori}
-                  onChange={(v) =>
-                    setFormData({ ...formData, altKategori: v })
-                  }
+                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
                   style={{ width: "100%" }}
                   placeholder="Market seçin"
                 >
@@ -405,7 +422,9 @@ const HarcamalarContent = () => {
           </div>
 
           <div>
-            <Text strong className="block mb-1">Not:</Text>
+            <Text strong className="block mb-1">
+              Not:
+            </Text>
             <Input.TextArea
               rows={2}
               value={formData.not}
@@ -423,7 +442,7 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <Header /> 
+    <Header />
     <main className="pb-20">
       <HarcamalarContent />
     </main>

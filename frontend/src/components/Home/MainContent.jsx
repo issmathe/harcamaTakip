@@ -86,6 +86,7 @@ const MARKETLER = [
   "Lidl",
   "Aldi",
   "DM",
+  "Action",
   "Norma",
   "Türk Market",
   "Et-Tavuk",
