@@ -5,27 +5,31 @@ import BottomNav from "../components/Home/BottomNav.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
 
 const Home = () => {
-  return (
-    <TotalsProvider>
-      {/* Sabit ekran, taş gibi layout */}
-      <div className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none">
-        {/* Üst sabit header */}
-        <div className="z-[999]">
-          <Header />
-        </div>
+    // TAHMİNİ HEADER YÜKSEKLİĞİ İÇİN DAHA BÜYÜK DEĞER KULLANDIK (192px)
+    const headerOffset = "pt-48"; // Önceki pt-28 (112px) yerine pt-48 (192px)
+    const footerOffset = "pb-20"; // BottomNav için (80px)
 
-        {/* Orta alan — scroll olmasın */}
-        <main className="flex-1 flex justify-center items-center relative z-[1]">
-          <MainContent />
-        </main>
+    return (
+        <TotalsProvider>
+            {/* 1. ALAN: Header (Header.jsx içinde fixed) */}
+            <Header />
 
-        {/* Alt sabit navigasyon */}
-        <div className="z-[998]">
-          <BottomNav />
-        </div>
-      </div>
-    </TotalsProvider>
-  );
+            {/* ORTA ALAN: Sadece MainContent'i tutan kaydırılabilir kapsayıcı (2. Alan) */}
+            {/* w-full h-screen: Tüm ekranı kapla */}
+            {/* overflow-y-auto: Kaydırmayı etkinleştir */}
+            {/* pt-48: Header'ın yüksekliği kadar boşluk bırakıldı (ÖNEMLİ DEĞİŞİKLİK) */}
+            {/* pb-20: BottomNav için boşluk bırakıldı */}
+            <div 
+                className={`w-full h-screen overflow-y-auto bg-gray-100 ${headerOffset} ${footerOffset}`}
+            >
+                {/* MainContent içeriği */}
+                <MainContent />
+            </div>
+
+            {/* 3. ALAN: Footer (BottomNav.jsx içinde fixed) */}
+            <BottomNav />
+        </TotalsProvider>
+    );
 };
 
 export default Home;
