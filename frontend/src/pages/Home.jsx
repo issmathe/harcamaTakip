@@ -5,31 +5,36 @@ import BottomNav from "../components/Home/BottomNav.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
 
 const Home = () => {
-    // ÖNEMLİ DEĞİŞİKLİK: Header'ın tamamını geçmek için pt-48 yerine pt-56 (224px) kullanıldı.
-    const headerOffset = "pt-56"; // pt-48'den (192px) daha büyük bir değer
-    const footerOffset = "pb-20"; // BottomNav için (80px)
+  // ÖNEMLİ DEĞERLER: Header'ın yüksekliğini telafi etmek için
+  // Header'ınız oldukça yüksek (yaklaşık 200-224px) olduğu için pt-56 kullanıldı.
+  const headerOffset = "pt-56"; 
+  const footerOffset = "pb-20"; // BottomNav için güvenilir boşluk
 
-    return (
-        <TotalsProvider>
-            {/* 1. ALAN: Header (Header.jsx içinde fixed) */}
-            <Header />
+  return (
+    <TotalsProvider>
+      {/* DIŞ KAPSAYICI: fixed inset-0 ile ekranı kapla. flex-col kullanmaya gerek yok. */}
+      {/* Eski 'fixed inset-0 flex flex-col bg-gray-100 overflow-hidden...' kaldırıldı. */}
+      <div className="bg-gray-100 h-screen w-full">
+        
+        {/* 1. ALAN: Header (Artık Header.jsx içinde sabitlenmiştir) */}
+        <Header />
 
-            {/* ORTA ALAN: Sadece MainContent'i tutan kaydırılabilir kapsayıcı (2. Alan) */}
-            {/* w-full h-screen: Tüm ekranı kapla */}
-            {/* overflow-y-auto: Kaydırmayı etkinleştir */}
-            {/* pt-56: Header'ın yüksekliği kadar boşluk bırakıldı (EN SON VE EN BÜYÜK DEĞİŞİKLİK) */}
-            {/* pb-20: BottomNav için boşluk bırakıldı */}
-            <div 
-                className={`w-full h-screen overflow-y-auto bg-gray-100 ${headerOffset} ${footerOffset}`}
-            >
-                {/* MainContent içeriği */}
-                <MainContent />
-            </div>
+        {/* 2. ALAN: Ana Kaydırılabilir İçerik (MainContent'i barındırır) */}
+        {/* h-screen: Tam ekran yüksekliğini alır */}
+        {/* overflow-y-auto: Kendi içinde kaydırmayı etkinleştirir */}
+        {/* pt-56: Header'ın kapladığı alanı boş bırakır (MainContent'in başlangıcı) */}
+        {/* pb-20: BottomNav'ın kapladığı alanı boş bırakır */}
+        <div 
+          className={`relative w-full h-screen overflow-y-auto ${headerOffset} ${footerOffset}`}
+        >
+          <MainContent />
+        </div>
 
-            {/* 3. ALAN: Footer (BottomNav.jsx içinde fixed) */}
-            <BottomNav />
-        </TotalsProvider>
-    );
+        {/* 3. ALAN: BottomNav (BottomNav.jsx içinde sabitlenmiştir) */}
+        <BottomNav />
+      </div>
+    </TotalsProvider>
+  );
 };
 
 export default Home;
