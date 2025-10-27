@@ -7,23 +7,29 @@ import { TotalsProvider } from "../context/TotalsContext";
 const Home = () => {
   return (
     <TotalsProvider>
-      {/* 1. DEĞİŞİKLİK: 'overflow-hidden touch-none select-none' kaldırıldı. */}
-      <div className="fixed inset-0 flex flex-col bg-gray-100"> 
+      {/* DIŞ KAPSAYICI: fixed inset-0 ile ekranı kapla ve dikey flex yap. */}
+      {/* 'touch-none select-none' kaldırıldı. */}
+      <div className="fixed inset-0 flex flex-col bg-gray-100">
         
-        {/* Üst sabit header (1. alan) */}
-        <div className="z-[999] fixed top-0 left-0 right-0">
+        {/* Üst sabit Header (Header.jsx içinde fixed yaptık, burada sadece bileşeni çağırıyoruz) */}
+        {/* Z-index ve fixed tanımı Header bileşeninin içine taşındığı için bu div gereksizdir, ancak bırakmak sorun yaratmaz. */}
+        <div>
           <Header />
         </div>
 
-        <main className="flex-1 flex justify-center items-center relative z-[1]">
+        {/* ORTA ALAN: Ana Kaydırılabilir Bölüm (2. Alan) */}
+        {/* flex-1: Kalan dikey alanı kapla. */}
+        {/* overflow-y-auto: Dikey kaydırmayı etkinleştir. */}
+        {/* pt-28: Header'ın yüksekliği kadar boşluk bırak. */}
+        {/* pb-20: BottomNav'ın yüksekliği kadar boşluk bırak. */}
+        <main className="flex-1 relative z-[1] overflow-y-auto pt-28 pb-20">
           <MainContent />
         </main>
 
-        {/* Alt sabit navigasyon (3. alan) */}
-        <div className="z-[998] fixed bottom-0 left-0 right-0">
+        {/* Alt sabit navigasyon (BottomNav.jsx zaten fixed top-0, w-full sınıflarını içeriyor) */}
+        <div>
           <BottomNav />
         </div>
-        
       </div>
     </TotalsProvider>
   );
