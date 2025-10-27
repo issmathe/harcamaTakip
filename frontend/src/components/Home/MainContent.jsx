@@ -393,13 +393,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber
-              min={0.01}
-              step={0.01}
-              style={{ width: "100%" }}
-              formatter={(value) => `${value} €`.replace(".", ",")}
-              parser={(value) => value.replace(" €", "").replace(",", ".")}
-            />
+<InputNumber
+  min={0.01}
+  step={0.01}
+  style={{ width: "100%" }}
+  inputMode="decimal"   // 👈 ekledik
+  formatter={(value) => `${value} €`.replace(".", ",")}
+  parser={(value) => value.replace(" €", "").replace(",", ".")}
+/>
+
           </Form.Item>
 
           {selectedCategory === "Market" && (
