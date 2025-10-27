@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, Typography, Statistic } from "antd";
 import {
   ArrowUpOutlined,
@@ -16,13 +15,13 @@ const Header = () => {
   const balance = totalIncome - totalExpense;
 
   return (
-    // 🔹 Header sabit, tam genişlikte ve üstte çivi gibi durur
-    <header className="fixed top-0 left-0 w-full bg-white z-20 shadow-lg px-4 pt-4 pb-2">
-      {/* Güncel Bakiye Kartı */}
+    // **1. ADIM: Header Padding'i Azaltıldı**
+    <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
+      {/* Güncel Bakiye Kartı - KOMPAKT DÜZEN */}
       <Card
         className="rounded-xl shadow-xl border-none p-3"
         styles={{
-          body: { padding: "12px" },
+          body: { padding: "12px" }, // ✅ yeni sürümde bodyStyle yerine styles.body
         }}
         style={{
           background:
@@ -31,6 +30,7 @@ const Header = () => {
               : "linear-gradient(to right, #f56565, #fc8181)",
         }}
       >
+        {/* Başlık ve Genel Bakış */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <WalletOutlined className="!text-white text-xl mr-2" />
@@ -43,7 +43,9 @@ const Header = () => {
           </div>
         </div>
 
+        {/* Bakiye Değeri ve Bugün Harcama */}
         <div className="flex justify-between items-end mt-2">
+          {/* Güncel Bakiye */}
           <div className="flex flex-col text-white">
             <Text className="!text-white/90 text-xs mb-1">Güncel Bakiye</Text>
             <Title
@@ -55,6 +57,7 @@ const Header = () => {
             </Title>
           </div>
 
+          {/* Bugün Harcama */}
           <div className="text-right bg-white/10 p-1 rounded-md">
             <Text className="!text-white/80 text-xs">Bugün Harcama</Text>
             <div className="text-lg font-bold !text-white flex items-center justify-end">
@@ -65,8 +68,8 @@ const Header = () => {
         </div>
       </Card>
 
-      {/* Aylık Gelir / Gider Kartları */}
-      <div className="mt-3 grid grid-cols-2 gap-3 mb-2">
+      {/* Aylık Gelir ve Gider Kartları */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <Card
           size="small"
           className="rounded-xl shadow-md border-t-4 border-green-500"
