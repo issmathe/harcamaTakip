@@ -5,8 +5,8 @@ import BottomNav from "../components/Home/BottomNav.jsx";
 import { TotalsProvider } from "../context/TotalsContext";
 
 const Home = () => {
-    // TAHMİNİ HEADER YÜKSEKLİĞİ İÇİN DAHA BÜYÜK DEĞER KULLANDIK (192px)
-    const headerOffset = "pt-48"; // Önceki pt-28 (112px) yerine pt-48 (192px)
+    // ÖNEMLİ DEĞİŞİKLİK: Header'ın tamamını geçmek için pt-48 yerine pt-56 (224px) kullanıldı.
+    const headerOffset = "pt-56"; // pt-48'den (192px) daha büyük bir değer
     const footerOffset = "pb-20"; // BottomNav için (80px)
 
     return (
@@ -17,7 +17,7 @@ const Home = () => {
             {/* ORTA ALAN: Sadece MainContent'i tutan kaydırılabilir kapsayıcı (2. Alan) */}
             {/* w-full h-screen: Tüm ekranı kapla */}
             {/* overflow-y-auto: Kaydırmayı etkinleştir */}
-            {/* pt-48: Header'ın yüksekliği kadar boşluk bırakıldı (ÖNEMLİ DEĞİŞİKLİK) */}
+            {/* pt-56: Header'ın yüksekliği kadar boşluk bırakıldı (EN SON VE EN BÜYÜK DEĞİŞİKLİK) */}
             {/* pb-20: BottomNav için boşluk bırakıldı */}
             <div 
                 className={`w-full h-screen overflow-y-auto bg-gray-100 ${headerOffset} ${footerOffset}`}
