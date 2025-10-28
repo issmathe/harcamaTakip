@@ -102,7 +102,6 @@ const MARKETLER = [
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
-  // 👇 DÜZELTME: Context'ten gelen doğru isim olan 'refetch' kullanıldı.
   const { refetch, harcamalar = [] } = useTotalsContext(); 
   
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -124,7 +123,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       axios.post(`${API_URL}/harcama`, harcamaData),
     onSuccess: async () => {
       message.success("Harcama eklendi!");
-      // 👇 DÜZELTME: refetch çağrısı
       await refetch(); 
       handleModalCancel();
     },
@@ -135,7 +133,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     mutationFn: async (gelirData) => axios.post(`${API_URL}/gelir`, gelirData),
     onSuccess: async () => {
       message.success("Gelir eklendi!");
-      // 👇 DÜZELTME: refetch çağrısı
       await refetch(); 
       handleGelirCancel();
     },
@@ -311,11 +308,26 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     gelirMutation.mutate(gelirData);
   };
 
-  // --- Render (DEĞİŞMEDİ) ---
+  // --- Render ---
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-24">
+    // pb-24: BottomNav için alt boşluk bırakıldı (Eğer Home.jsx'te BottomNav yoksa bu gerekli.)
+    <main className="flex-1 px-4 pt-4 pb-4"> 
+      
+      {/* 🔥 DEĞİŞİKLİK BURADA: Üst Kategori ve Toplam Göstergesi, çarkın üzerine taşındı. */}
+      {/* absolute yerine normal akış (flow) kullanılarak görünürlük sağlandı. */}
+      <div className="text-center mb-6 pt-4"> 
+          <div className="text-blue-600 font-bold text-xl leading-snug">
+            {currentTopCategory}
+          </div>
+          <div className="text-gray-700 font-semibold text-base mt-1">
+            {formattedTotal} €
+          </div>
+      </div>
+
+      {/* Çarkın Ana Kapsayıcısı */}
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
+        
         {/* Gelir Ekle Merkezi Butonu */}
         <div
           onClick={handleGelirClick}
@@ -324,21 +336,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
 
-        {/* Üst Kategori ve Toplam Göstergesi */}
+        {/* ❌ ESKİ, EKRAN DIŞINA TAŞAN Üst Kategori ve Toplam Göstergesi SİLİNDİ
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-24 z-30 w-40 text-center">
-          <div className="text-blue-600 font-bold text-xl leading-snug">
-            {currentTopCategory}
-          </div>
-          <div className="text-gray-700 font-semibold text-base mt-1">
-            {formattedTotal} €
-          </div>
-        </div>
+          ...
+        </div> */}
 
         {/* Dönen Çark Alanı */}
         <div
           ref={wheelRef}
           className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          // CSS transition to smooth rotation when not dragging
           style={{
             transform: `rotate(${rotation}deg)`,
             transition: isDragging ? "none" : "transform 0.3s ease-out",
@@ -380,8 +386,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           })}
         </div>
       </div>
-
-      {/* Harcama Ekleme Modalı */}
+      
+      {/* Harcama Ekleme Modalı (DEĞİŞMEDİ) */}
       <Modal
         title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
         open={isModalVisible}
@@ -394,15 +400,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-<InputNumber
-  min={0.01}
-  step={0.01}
-  style={{ width: "100%" }}
-  inputMode="decimal"   // 👈 ekledik
-  formatter={(value) => `${value} €`.replace(".", ",")}
-  parser={(value) => value.replace(" €", "").replace(",", ".")}
-/>
-
+            <InputNumber
+              min={0.01}
+              step={0.01}
+              style={{ width: "100%" }}
+              inputMode="decimal"
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
+            />
           </Form.Item>
 
           {selectedCategory === "Market" && (
@@ -440,7 +445,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* Gelir Ekleme Modalı */}
+      {/* Gelir Ekleme Modalı (DEĞİŞMEDİ) */}
       <Modal
         title="Gelir Ekle"
         open={isGelirModalVisible}
