@@ -23,7 +23,6 @@ import {
   RightOutlined,
 } from "@ant-design/icons";
 // 💡 HATA DÜZELTME: Import yolları '../../' yerine '../' olarak değiştirildi
-import Header from "../components/Home/Header";
 import BottomNav from "../components/Home/BottomNav";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -443,7 +442,7 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <Header />
+
     <main className="pb-20">
       <HarcamalarContent />
     </main>

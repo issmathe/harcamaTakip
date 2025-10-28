@@ -324,7 +324,7 @@ const RaporlarContent = () => {
 
 const Raporlar = () => (
   <div className="relative min-h-screen bg-gray-50 flex flex-col">
-    <Header /> 
+
     {/* main içeriği, header ve bottomNav'ı hesaba katacak şekilde boşluk bırakır */}
     {/* pt-20 ve pb-20 boşlukları, sabit Header ve BottomNav için ZORUNLU BOŞLUKLARDIR. */}
     <main className="flex-grow pt-5 pb-20 overflow-y-auto">
