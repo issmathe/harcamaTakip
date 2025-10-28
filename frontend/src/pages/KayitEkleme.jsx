@@ -14,7 +14,6 @@ import {
   EditOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext";
 import axios from "axios";
@@ -258,7 +257,6 @@ const KayitEklemeContent = () => {
 
 const KayitEkleme = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <Header />
     <main className="pb-20">
       <KayitEklemeContent />
     </main>

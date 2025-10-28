@@ -6,7 +6,6 @@ import {
   EditOutlined, DeleteOutlined, EuroCircleOutlined, CalendarOutlined, SolutionOutlined, 
   FilterOutlined, LeftOutlined, RightOutlined, BankOutlined, SaveOutlined 
 } from '@ant-design/icons';
-import Header from "../components/Home/Header.jsx";
 import BottomNav from "../components/Home/BottomNav.jsx";
 // Context'ten doğru fonksiyonu çekiyoruz (artık TotalsContext'te 'refetch' var)
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -235,7 +234,7 @@ const GelirlerContent = () => {
 const Gelirler = () => {
   return (
     <div className="relative min-h-screen bg-gray-50 flex flex-col">
-      <Header />
+
       <main className="flex-grow pt-20 pb-20 overflow-y-auto">
         <GelirlerContent />
       </main>

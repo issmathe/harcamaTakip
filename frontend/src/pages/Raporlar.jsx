@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from "react";
-// 👇 Sadece kullanılan bileşenler kaldı: Card, Typography, Empty, Button
+// Sadece kullanılan bileşenler kaldı: Card, Typography, Empty, Button
 import { Card, Typography, Empty, Button } from "antd"; 
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons"; 
 import { useTotalsContext } from "../context/TotalsContext";
@@ -14,10 +14,11 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-import Header from "../components/Home/Header.jsx";
-import BottomNav from "../components/Home/BottomNav.jsx";
+// ❌ Header ve BottomNav import'larını SİLİN
+// import Header from "../components/Home/Header.jsx"; 
+// import BottomNav from "../components/Home/BottomNav.jsx";
 
-// dayjs importları
+// dayjs importları...
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
 dayjs.locale(tr);
@@ -26,6 +27,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartD
 const { Title } = Typography;
 
 // Sabitler ve Renkler (Değişmedi)
+// ... ALL_CATEGORIES, MARKETLER, categoryColors, marketColors ... (Aynen Kalsın)
 const ALL_CATEGORIES = [
   "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
   "Ulaşım", "Eğlence", "Elektronik", "Spor", "Market", "Kırtasiye",
@@ -63,8 +65,10 @@ const marketColors = [
   "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF",
   "#FF3333", "#33FF8A", "#AAAAAA", "#58508D", "#BC5090"
 ];
+// ... (RaporlarContent'in tamamı aynen kalabilir)
 
 const RaporlarContent = () => {
+  // ... (RaporlarContent içindeki tüm mantık ve return aynen kalacak)
   const { harcamalar = [] } = useTotalsContext();
   const now = dayjs();
   
@@ -243,11 +247,10 @@ const RaporlarContent = () => {
     // Dış padding'i kaldırıldı, içerik tam kenara yapışık
     <div className="w-full">
       
-      {/* 1. AY GEZİNME KARTI (Ayrı Card Bileşeni) */}
-      {/* Dış boşluklar için sadece mb-4 kullanıldı. İç dolgu için p-4 kullanıldı. */}
+      {/* 1. AY GEZİNME KARTI */}
       <Card 
         className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4" 
-        styles={{ body: { padding: '1rem' } }} // Antd card'ın iç dolgusunu 1rem'e ayarladık
+        styles={{ body: { padding: '1rem' } }} 
       >
         <div className="flex justify-between items-center">
           <Button 
@@ -272,17 +275,15 @@ const RaporlarContent = () => {
       </Card>
 
       {/* 2. KATEGORİ GRAFİĞİ KARTI */}
-      {/* İlk karttan sonraki dikey boşluk ayarlandı. */}
       <Card 
         className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
-        styles={{ body: { padding: '1rem' } }} // İç dolgu 1rem
+        styles={{ body: { padding: '1rem' } }} 
       >
         <Title level={4} className="text-center text-gray-700 mb-4">
           Kategorilere Göre Harcama Dağılımı
         </Title>
         
         {hasData ? (
-          // Grafik kapsayıcısına p-2 eklenebilir, grafiklerin kenarlara yapışmaması için
           <div className="p-2" style={{ height: `${chartHeight}px`, minHeight: '300px', width: '100%' }}>
             <Bar data={barData} options={barOptions} />
           </div>
@@ -298,7 +299,7 @@ const RaporlarContent = () => {
       {(hasData || hasMarketData) && (
         <Card 
           className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
-          styles={{ body: { padding: '1rem' } }} // İç dolgu 1rem
+          styles={{ body: { padding: '1rem' } }} 
         >
           <Title level={4} className="text-center text-gray-700 mb-4">
             Market Harcamaları Alt Kategori Dağılımı
@@ -322,17 +323,14 @@ const RaporlarContent = () => {
   );
 };
 
+// 👇 SADELEŞTİRİLMİŞ RAPORLAR BİLEŞENİ
 const Raporlar = () => (
-  <div className="relative min-h-screen bg-gray-50 flex flex-col">
-
-    {/* main içeriği, header ve bottomNav'ı hesaba katacak şekilde boşluk bırakır */}
-    {/* pt-20 ve pb-20 boşlukları, sabit Header ve BottomNav için ZORUNLU BOŞLUKLARDIR. */}
-    <main className="flex-grow pt-5 pb-20 overflow-y-auto">
-      {/* RaporlarContent artık kendi dış boşluğunu ayarlamıyor, tam genişlikte çalışıyor. */}
-      <RaporlarContent />
-    </main>
-    <BottomNav />
-  </div>
+    // Artık sadece içeriği döndürüyoruz. App.jsx,
+    // Header ve BottomNav'ın sabitliğini ve kaydırma özelliğini yönetiyor.
+    // İçeriğe dış boşluk (padding) ekleyelim ki App.jsx'teki kaydırılabilir alanda kenarlardan biraz boşluk olsun.
+    <div className="p-4 pt-0"> 
+        <RaporlarContent />
+    </div>
 );
 
 export default Raporlar;
