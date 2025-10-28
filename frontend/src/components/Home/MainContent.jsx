@@ -91,6 +91,7 @@ const MARKETLER = [
   "Türk Market",
   "Et-Tavuk",
   "Kaufland",
+    "bäckerei",
   "Rewe",
   "Netto",
   "Edeka",
