@@ -7,24 +7,24 @@ import { TotalsProvider } from "../context/TotalsContext";
 const Home = () => {
   return (
     <TotalsProvider>
-      {/* Tüm ekranı kaplayan ana kapsayıcı */}
-      <div className="fixed inset-0 flex flex-col bg-gray-100 select-none">
+      {/* Ekranı tamamen kaplayan, mobil uyumlu sabit layout */}
+      <div className="fixed inset-0 flex flex-col bg-gray-100 select-none overflow-hidden">
         
         {/* Üst sabit Header */}
-        <div className="fixed top-0 left-0 right-0 z-[999]">
+        <header className="fixed top-0 left-0 right-0 z-[999]">
           <Header />
-        </div>
+        </header>
 
         {/* Orta alan — yalnızca bu kısım kaydırılabilir */}
         <main
           className="
-            flex-1
-            overflow-y-auto
-            relative
-            z-[1]
-            mt-[150px]   /* Header yüksekliği */
-            mb-[80px]    /* BottomNav yüksekliği */
-            px-2
+            flex-1 
+            overflow-y-auto 
+            relative 
+            z-[1] 
+            mt-[150px]   /* Header yüksekliği kadar boşluk */
+            mb-[90px]    /* BottomNav yüksekliği kadar boşluk */
+            px-2 
             pb-4
             overscroll-contain
           "
@@ -32,10 +32,10 @@ const Home = () => {
           <MainContent />
         </main>
 
-        {/* Alt sabit BottomNav */}
-        <div className="fixed bottom-0 left-0 right-0 z-[998]">
+        {/* Alt sabit navigasyon */}
+        <footer className="fixed bottom-0 left-0 right-0 z-[998]">
           <BottomNav />
-        </div>
+        </footer>
       </div>
     </TotalsProvider>
   );
