@@ -1,14 +1,12 @@
 import React, { useState, useMemo, useCallback } from "react";
 import {
-  List,
   Typography,
   Button,
-  Modal,
+  Modal, 
   Input,
   Select,
   message,
   Card,
-  Popconfirm,
   Spin,
 } from "antd";
 import {
@@ -22,7 +20,17 @@ import {
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-// 💡 HATA DÜZELTME: Import yolları '../../' yerine '../' olarak değiştirildi
+// Kaydırarak silme ve düzenleme için bileşenler
+import {
+  SwipeableList,
+  SwipeableListItem,
+  SwipeAction,
+  TrailingActions,
+  LeadingActions,
+  Type as ListType,
+} from "react-swipeable-list";
+import "react-swipeable-list/dist/styles.css";
+
 import BottomNav from "../components/Home/BottomNav";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -63,7 +71,7 @@ const MARKETLER = [
   "Türk Market",
   "Et-Tavuk",
   "Kaufland",
-    "bäckerei",
+  "bäckerei",
   "Rewe",
   "Netto",
   "Edeka",
@@ -77,7 +85,7 @@ const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
 
   switch (normalizedKategori.toLowerCase()) {
-    case "Bağış":
+    case "bağış":
     case "market":
     case "restoran / kafe":
       return {
@@ -102,6 +110,9 @@ const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const now = dayjs();
 
+  // ✨ YENİ STATE: İptal edilen kaydırmalarda listeyi yeniden çizmek için
+  const [listRefreshKey, setListRefreshKey] = useState(0); 
+  
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
@@ -129,7 +140,7 @@ const HarcamalarContent = () => {
     mutationFn: async (payload) =>
       axios.put(`${API_URL}/harcama/${payload._id}`, payload),
     onSuccess: () => {
-      message.success("Harcama güncellendi!");
+      message.success("✨ Harcamanız başarıyla güncellendi!");
       queryClient.invalidateQueries(["harcamalar"]);
       setEditModalVisible(false);
     },
@@ -140,7 +151,7 @@ const HarcamalarContent = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id) => axios.delete(`${API_URL}/harcama/${id}`),
     onSuccess: () => {
-      message.success("Harcama silindi!");
+      message.success("🗑️ Harcama kaydı silindi!");
       queryClient.invalidateQueries(["harcamalar"]);
     },
     onError: () => message.error("Silme başarısız!"),
@@ -213,6 +224,52 @@ const HarcamalarContent = () => {
 
     updateMutation.mutate(payload);
   };
+  
+  // ✨ KAYDIRARAK SİLME İÇİN YARDIMCI BİLEŞENLER (Trailing Actions - Silme)
+  const trailingActions = (harcama) => (
+    <TrailingActions>
+      <SwipeAction
+        destructive={true} 
+        onClick={() => {
+           // Modal ile daha modern silme onayı
+           Modal.confirm({
+              title: <Text strong className="text-lg text-red-600">Harcamayı Sil</Text>,
+              content: <Text>'{dayjs(harcama.createdAt).format("DD.MM")} - {harcama.miktar} ₺' harcamasını kalıcı olarak silmek istediğinizden emin misiniz?</Text>,
+              okText: 'Evet, Sil',
+              cancelText: 'İptal',
+              okButtonProps: { danger: true, className: 'h-10' },
+              cancelButtonProps: { className: 'h-10' },
+              
+              onOk: () => deleteMutation.mutate(harcama._id), 
+              
+              // 👇 İPTAL DÜZELTMESİ: İptal edildiğinde listeyi yeniden çizmeye zorla
+              onCancel: () => {
+                  setListRefreshKey(prev => prev + 1); 
+              },
+              
+              centered: true,
+           });
+        }}
+      >
+        <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
+          <DeleteOutlined className="text-3xl" />
+        </div>
+      </SwipeAction>
+    </TrailingActions>
+  );
+
+  // ✨ KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞENLER (Leading Actions - Düzenleme)
+  const leadingActions = (harcama) => (
+    <LeadingActions>
+      <SwipeAction
+        onClick={() => openEditModal(harcama)}
+      >
+        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
+          <EditOutlined className="text-3xl" />
+        </div>
+      </SwipeAction>
+    </LeadingActions>
+  );
 
   if (isLoading) {
     return (
@@ -228,6 +285,7 @@ const HarcamalarContent = () => {
         Harcamalarınız
       </Title>
 
+      {/* Filtreleme ve Ay Seçimi Kartı */}
       <Card
         className="shadow-lg rounded-xl mb-6 bg-white"
         styles={{ body: { padding: "16px" } }}
@@ -276,85 +334,74 @@ const HarcamalarContent = () => {
           </div>
         )}
       </Card>
-
+      
+      {/* ✨ Kaydırarak Silme/Düzenleme Listesi - SwipeableList kullanıldı ✨ */}
       <Card
         className="shadow-lg rounded-xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
       >
-        <List
-          itemLayout="horizontal"
-          dataSource={filteredHarcamalar}
-          locale={{
-            emptyText:
-              filteredHarcamalar.length === 0
-                ? `${displayMonth} ayında harcama bulunmamaktadır.`
-                : "Lütfen bekleyin...",
-          }}
-          renderItem={(harcama) => {
-            const { icon, color } = getCategoryDetails(harcama.kategori);
+        {filteredHarcamalar.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            {`${displayMonth} ayında harcama bulunmamaktadır.`}
+          </div>
+        ) : (
+          <SwipeableList 
+            // 👇 KEY EKLEMESİ: İptal edilen kaydırmalarda listeyi yeniden çizmek için
+            key={listRefreshKey} 
+            threshold={0.3} 
+            fullSwipe={false}
+            listType={ListType.IOS} 
+          >
+            {filteredHarcamalar.map((harcama) => {
+              const { icon, color } = getCategoryDetails(harcama.kategori);
 
-            const displayCategory =
-              harcama.kategori === "Market" && harcama.altKategori
-                ? `Market (${harcama.altKategori})`
-                : harcama.kategori;
+              const displayCategory =
+                harcama.kategori === "Market" && harcama.altKategori
+                  ? `Market (${harcama.altKategori})`
+                  : harcama.kategori;
 
-            return (
-              <List.Item
-                key={harcama._id}
-                className="hover:bg-gray-50 transition duration-300 border-b p-4 sm:p-5"
-              >
-                <div className="flex items-center w-full">
-                  <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>
-                    {icon}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <Text strong className="text-lg text-gray-800 truncate">
-                        {displayCategory}
-                      </Text>
-                      <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
-                        {harcama.miktar} ₺
-                      </Text>
+              return (
+                <SwipeableListItem
+                  key={harcama._id}
+                  leadingActions={leadingActions(harcama)} 
+                  trailingActions={trailingActions(harcama)} 
+                  className="bg-white" 
+                >
+                  {/* List Item İçeriği */}
+                  <div 
+                    className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer"
+                  >
+                    <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>
+                      {icon}
                     </div>
-                    <div className="text-sm text-gray-500 mb-1">
-                      <CalendarOutlined className="mr-1" />
-                      <span>{formatDate(harcama.createdAt)}</span>
-                    </div>
-                    <div className="text-sm text-gray-600 italic truncate">
-                      <SolutionOutlined className="mr-1" />
-                      Not: {harcama.not || "Yok"}
+                    <div className="flex-grow min-w-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <Text strong className="text-lg text-gray-800 truncate">
+                          {displayCategory}
+                        </Text>
+                        <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
+                          {harcama.miktar} ₺
+                        </Text>
+                      </div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        <CalendarOutlined className="mr-1" />
+                        <span>{formatDate(harcama.createdAt)}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 italic truncate">
+                        <SolutionOutlined className="mr-1" />
+                        Not: {harcama.not || "Yok"}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex space-x-2 ml-4">
-                    <Button
-                      type="default"
-                      icon={<EditOutlined />}
-                      onClick={() => openEditModal(harcama)}
-                      className="text-blue-500 hover:text-blue-700 border-none shadow-none"
-                    />
-                    <Popconfirm
-                      title="Harcamayı Sil"
-                      description="Bu harcamayı silmek istiyor musunuz?"
-                      onConfirm={() => deleteMutation.mutate(harcama._id)}
-                      okText="Evet"
-                      cancelText="Hayır"
-                      okButtonProps={{ danger: true }}
-                    >
-                      <Button
-                        type="default"
-                        icon={<DeleteOutlined />}
-                        danger
-                        className="text-red-500 hover:text-red-700 border-none shadow-none"
-                      />
-                    </Popconfirm>
-                  </div>
-                </div>
-              </List.Item>
-            );
-          }}
-        />
+                  
+                </SwipeableListItem>
+              );
+            })}
+          </SwipeableList>
+        )}
       </Card>
 
+      {/* Düzenleme Modalı */}
       <Modal
         title={
           <Title level={4} className="text-center text-blue-600">
