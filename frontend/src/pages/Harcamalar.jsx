@@ -109,6 +109,9 @@ const getCategoryDetails = (kategori) => {
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const now = dayjs();
+
+  // ✨ YENİ STATE: İptal edilen kaydırmalarda listeyi yeniden çizmek için
+  const [listRefreshKey, setListRefreshKey] = useState(0); 
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
@@ -222,14 +225,30 @@ const HarcamalarContent = () => {
     updateMutation.mutate(payload);
   };
   
-  // ✨ KAYDIR VE TIKLA DESENİ: Sağa kaydırma (Trailing Actions - Silme)
+  // ✨ KAYDIRARAK SİLME İÇİN YARDIMCI BİLEŞENLER (Trailing Actions - Silme)
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
         destructive={true} 
-        // 💡 onClick: Kullanıcı düğmeye tıkladığında (kaydırma bittikten sonra) çalışır.
         onClick={() => {
-           deleteMutation.mutate(harcama._id);
+           // Modal ile daha modern silme onayı
+           Modal.confirm({
+              title: <Text strong className="text-lg text-red-600">Harcamayı Sil</Text>,
+              content: <Text>'{dayjs(harcama.createdAt).format("DD.MM")} - {harcama.miktar} ₺' harcamasını kalıcı olarak silmek istediğinizden emin misiniz?</Text>,
+              okText: 'Evet, Sil',
+              cancelText: 'İptal',
+              okButtonProps: { danger: true, className: 'h-10' },
+              cancelButtonProps: { className: 'h-10' },
+              
+              onOk: () => deleteMutation.mutate(harcama._id), 
+              
+              // 👇 İPTAL DÜZELTMESİ: İptal edildiğinde listeyi yeniden çizmeye zorla
+              onCancel: () => {
+                  setListRefreshKey(prev => prev + 1); 
+              },
+              
+              centered: true,
+           });
         }}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -239,11 +258,10 @@ const HarcamalarContent = () => {
     </TrailingActions>
   );
 
-  // ✨ KAYDIR VE TIKLA DESENİ: Sola kaydırma (Leading Actions - Düzenleme)
+  // ✨ KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞENLER (Leading Actions - Düzenleme)
   const leadingActions = (harcama) => (
     <LeadingActions>
       <SwipeAction
-        // 💡 onClick: Kullanıcı düğmeye tıkladığında (kaydırma bittikten sonra) çalışır.
         onClick={() => openEditModal(harcama)}
       >
         <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -317,7 +335,7 @@ const HarcamalarContent = () => {
         )}
       </Card>
       
-      {/* ✨ SwipeableList Kullanımı (Kaydır ve Tıkla Deseni) */}
+      {/* ✨ Kaydırarak Silme/Düzenleme Listesi - SwipeableList kullanıldı ✨ */}
       <Card
         className="shadow-lg rounded-xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
@@ -328,9 +346,11 @@ const HarcamalarContent = () => {
           </div>
         ) : (
           <SwipeableList 
+            // 👇 KEY EKLEMESİ: İptal edilen kaydırmalarda listeyi yeniden çizmek için
+            key={listRefreshKey} 
             threshold={0.3} 
             fullSwipe={false}
-            listType={ListType.IOS} // iOS tipi, düğmeleri kaydırma sonunda gösterir
+            listType={ListType.IOS} 
           >
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
