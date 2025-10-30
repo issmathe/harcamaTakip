@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Input,
@@ -7,14 +7,12 @@ import {
   DatePicker,
   message,
   Card,
-  Space,
 } from "antd";
 import {
   DollarOutlined,
   CalendarOutlined,
   EditOutlined,
   CheckCircleOutlined,
-  ShoppingOutlined, // Market ikonu eklendi
 } from "@ant-design/icons";
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext";
@@ -22,16 +20,11 @@ import axios from "axios";
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
 
-// dayjs lokalizasyonu bir kez yapılıyor
 dayjs.locale(tr);
-
 const { Title, Text } = Typography;
 const { Option } = Select;
-
-// Ortam değişkenini daha güvenli kullanma (mevcut kodda zaten var, tutuluyor)
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
-// Sabitler dışarı taşındı, bileşenin yeniden render edilmesinde tekrar oluşturulmaz
 const ALL_CATEGORIES = [
   "Market",
   "Giyim",
@@ -68,221 +61,185 @@ const MARKETLER = [
   "Diğer",
 ];
 
-// Başlangıç formu durumu
-const INITIAL_FORM_DATA = {
-  miktar: "",
-  kategori: "",
-  altKategori: "",
-  not: "",
-  tarih: dayjs(),
-};
-
-// Alt bileşenler için ikon eşlemesi
-const ICON_MAP = {
-    Miktar: <DollarOutlined className="text-green-600" />,
-    Tarih: <CalendarOutlined className="text-blue-600" />,
-    Not: <EditOutlined className="text-gray-600" />,
-    Market: <ShoppingOutlined className="text-orange-500" />,
-};
-
-// Form Alanı Bileşeni (Tekrar Kullanılabilir Alanlar için)
-const FormField = ({ label, icon, children, required = false }) => (
-    <div className="mb-4">
-        <Text strong className="block mb-1 flex items-center">
-            <Space size={4}>
-                {icon}
-                {label}
-                {required && <span className="text-red-500">*</span>}
-            </Space>
-        </Text>
-        {children}
-    </div>
-);
-
-
 const KayitEklemeContent = () => {
   const { fetchTotals } = useTotalsContext();
 
-  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [formData, setFormData] = useState({
+    miktar: "",
+    kategori: "",
+    altKategori: "",
+    not: "",
+    tarih: dayjs(),
+  });
   const [loading, setLoading] = useState(false);
 
-  // Form alanlarındaki değişimi daha düzenli yönetmek için tek fonksiyon
-  const handleChange = useCallback((key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  // Kategori değiştiğinde altKategori'yi sıfırlama
-  const handleCategoryChange = useCallback((v) => {
-    handleChange("kategori", v);
-    handleChange("altKategori", ""); // Kategori değişince alt kategoriyi sıfırla
-  }, [handleChange]);
-
-  // iPhone/Android zoom engelleme ve font boyutu sabitleme (mevcut koddan iyileştirildi)
-  // Bu tür global DOM manipülasyonları genellikle zorunlu kalmadıkça önerilmez
-  // ancak mobil format isteği ve mevcut kod yapısı nedeniyle tutuluyor.
+  // iPhone/Android zoom engelleme
   useEffect(() => {
-    const disableZoom = () => {
-        document.body.style.touchAction = 'manipulation';
-    };
-    disableZoom();
-    // Font büyüklüğü düzeltmesi için style tag ekleme
+    const meta = document.querySelector("meta[name=viewport]");
+    if (meta) {
+      meta.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      );
+    } else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "viewport";
+      newMeta.content =
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+      document.head.appendChild(newMeta);
+    }
+
     const style = document.createElement("style");
     style.innerHTML = `
-      input, select, textarea, button, .ant-select-selection-item {
-        font-size: 16px !important;
+      input, select, textarea, button {
+        font-size: 16px !important; 
       }
     `;
     document.head.appendChild(style);
 
     return () => {
-        document.body.style.touchAction = '';
-        document.head.removeChild(style);
+      document.head.removeChild(style);
     };
   }, []);
-  
-  // handleSubmit fonksiyonu useCallback ile önbelleğe alındı
-  const handleSubmit = useCallback(async () => {
-    const { miktar, kategori, tarih, altKategori } = formData;
-    
-    // Gerekli alan kontrolü
-    if (!miktar || !kategori || !tarih) {
-      return message.warning("Lütfen **miktar**, **kategori** ve **tarihi** doldurun!");
+
+  const handleSubmit = async () => {
+    if (!formData.miktar || !formData.kategori || !formData.tarih) {
+      return message.warning("Lütfen miktar, kategori ve tarihi doldurun!");
     }
 
     try {
       setLoading(true);
-      
-      // Payload oluşturma ve veri dönüşümleri
       const payload = { ...formData };
-      
-      // Miktarı sayıya çevirme ve global formatı destekleme
-      payload.miktar = Number(miktar.replace(",", "."));
-      
-      // Tarihi ISO formatına çevirme
-      payload.createdAt = tarih.toISOString();
 
-      // Market değilse altKategori'yi silme
-      if (kategori !== "Market" || !altKategori) {
+      payload.miktar = Number(formData.miktar.replace(",", "."));
+      payload.createdAt = formData.tarih.toISOString();
+
+      if (formData.kategori === "Market" && formData.altKategori) {
+        // Alt kategori varsa payload içinde bırak
+      } else {
         delete payload.altKategori;
       }
 
-      // 'tarih' alanını silme (çünkü 'createdAt' kullanılıyor)
       delete payload.tarih;
 
       await axios.post(`${API_URL}/harcama`, payload);
 
       message.success("Harcama kaydı başarıyla eklendi!");
 
-      // Context ve Header güncellemesi
+      // Header ve context anlık güncelleme
       await fetchTotals();
 
       // Form sıfırlama
-      setFormData(INITIAL_FORM_DATA);
+      setFormData({
+        miktar: "",
+        kategori: "",
+        altKategori: "",
+        not: "",
+        tarih: dayjs(),
+      });
     } catch (err) {
       console.error(err.response?.data || err.message);
-      message.error("Kayıt eklenemedi! Bir sorun oluştu.");
+      message.error("Kayıt eklenemedi!");
     } finally {
       setLoading(false);
     }
-  }, [formData, fetchTotals]); // formData ve fetchTotals bağımlılıkları
-
-  // Dinamik olarak oluşturulan kategori seçenekleri (useMemo ile optimize edildi)
-  const categoryOptions = useMemo(() => ALL_CATEGORIES.map((cat) => (
-    <Option key={cat} value={cat}>
-      {cat}
-    </Option>
-  )), []);
-
-  // Dinamik olarak oluşturulan market seçenekleri (useMemo ile optimize edildi)
-  const marketOptions = useMemo(() => MARKETLER.map((m) => (
-    <Option key={m} value={m}>
-      {m}
-    </Option>
-  )), []);
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <Title level={3} className="text-center text-gray-800 mb-6 font-semibold">
-        💰 Yeni Harcama Kaydı Ekle
+      <Title level={3} className="text-center text-gray-700 mb-6">
+        Yeni Kayıt Ekle
       </Title>
 
-      <Card className="shadow-2xl rounded-xl border-t-4 border-green-500 bg-white p-4">
-        {/* Miktar Alanı */}
-        <FormField label="Miktar (₺)" icon={ICON_MAP.Miktar} required>
+      <Card className="shadow-lg rounded-xl bg-white">
+        <div className="mb-4">
+          <Text strong className="block mb-1">
+            <DollarOutlined className="mr-1 text-green-600" />
+            Miktar (₺):
+          </Text>
           <Input
-            // inputMode="decimal" yerine numeric kullanmak mobil klavyeyi tetikleyebilir
-            inputMode="numeric" 
+            inputMode="decimal"
+            pattern="[0-9]*"
             value={formData.miktar}
             onChange={(e) =>
-              handleChange("miktar", e.target.value.replace(/[^0-9.,]/g, '')) // Sadece sayı, virgül ve nokta kabul et
+              setFormData({ ...formData, miktar: e.target.value })
             }
             placeholder="Örn: 45.50"
-            size="large"
-            className="rounded-lg border-gray-300 focus:border-green-500"
           />
-        </FormField>
-        
-        {/* Kategori Alanı */}
-        <FormField label="Kategori" icon={ICON_MAP.Kategori} required>
+        </div>
+
+        <div className="mb-4">
+          <Text strong className="block mb-1">
+            Kategori:
+          </Text>
           <Select
             value={formData.kategori}
-            onChange={handleCategoryChange}
+            onChange={(v) =>
+              setFormData({ ...formData, kategori: v, altKategori: "" })
+            }
             style={{ width: "100%" }}
             placeholder="Kategori seçin"
             size="large"
-            className="rounded-lg"
           >
-            {categoryOptions}
+            {ALL_CATEGORIES.map((cat) => (
+              <Option key={cat} value={cat}>
+                {cat}
+              </Option>
+            ))}
           </Select>
-          
-          {/* Alt Kategori (Market) Alanı - Koşullu Render */}
+
           {formData.kategori === "Market" && (
-            <div className="mt-4">
-              <FormField label="Market Seç" icon={ICON_MAP.Market}>
-                <Select
-                  value={formData.altKategori}
-                  onChange={(v) => handleChange("altKategori", v)}
-                  style={{ width: "100%" }}
-                  placeholder="Market seçin (isteğe bağlı)"
-                  size="large"
-                  className="rounded-lg"
-                  allowClear // Seçimi temizleme butonu
-                >
-                  {marketOptions}
-                </Select>
-              </FormField>
+            <div className="mt-3">
+              <Text strong className="block mb-1">
+                Market Seç:
+              </Text>
+              <Select
+                value={formData.altKategori}
+                onChange={(v) => setFormData({ ...formData, altKategori: v })}
+                style={{ width: "100%" }}
+                placeholder="Market seçin"
+                size="large"
+              >
+                {MARKETLER.map((m) => (
+                  <Option key={m} value={m}>
+                    {m}
+                  </Option>
+                ))}
+              </Select>
             </div>
           )}
-        </FormField>
+        </div>
 
-        {/* Tarih Alanı */}
-        <FormField label="Tarih" icon={ICON_MAP.Tarih} required>
+        <div className="mb-4">
+          <Text strong className="block mb-1">
+            <CalendarOutlined className="mr-1 text-blue-600" />
+            Tarih:
+          </Text>
           <DatePicker
             value={formData.tarih}
-            onChange={(date) => handleChange("tarih", date)}
+            onChange={(date) => setFormData({ ...formData, tarih: date })}
             style={{ width: "100%" }}
             placeholder="Tarih seçin"
             format="DD.MM.YYYY"
-            size="large"
-            className="rounded-lg border-gray-300 focus:border-blue-500"
-            disabledDate={(current) => current && current > dayjs().endOf("day")} // Bugünden sonraki günleri devre dışı bırak
-            
+            disabledDate={(current) =>
+              current && current > dayjs().endOf("day")
+            }
           />
-        </FormField>
+        </div>
 
-        {/* Not Alanı */}
-        <FormField label="Not" icon={ICON_MAP.Not}>
+        <div className="mb-6">
+          <Text strong className="block mb-1">
+            <EditOutlined className="mr-1 text-gray-600" />
+            Not:
+          </Text>
           <Input.TextArea
             rows={2}
             value={formData.not}
-            onChange={(e) => handleChange("not", e.target.value)}
+            onChange={(e) => setFormData({ ...formData, not: e.target.value })}
             placeholder="Ek not (isteğe bağlı)"
-            size="large"
-            className="rounded-lg border-gray-300 focus:border-gray-500"
           />
-        </FormField>
+        </div>
 
-        {/* Kaydet Butonu */}
         <Button
           type="primary"
           block
@@ -290,7 +247,6 @@ const KayitEklemeContent = () => {
           onClick={handleSubmit}
           loading={loading}
           size="large"
-          className="mt-6 h-12 text-lg font-bold rounded-xl bg-green-500 hover:bg-green-600 border-green-500 hover:border-green-600 transition duration-300 ease-in-out"
         >
           Kaydı Ekle
         </Button>
@@ -300,10 +256,8 @@ const KayitEklemeContent = () => {
 };
 
 const KayitEkleme = () => (
-  // min-h-screen ve relative yapı mobil uyumluluk için korundu.
-  // Tailwind BG rengi hafifçe değiştirildi.
-  <div className="relative min-h-screen bg-gray-100"> 
-    <main className="pb-20"> {/* BottomNav için boşluk bırakıldı */}
+  <div className="relative min-h-screen bg-gray-50">
+    <main className="pb-20">
       <KayitEklemeContent />
     </main>
     <BottomNav />
