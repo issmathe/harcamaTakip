@@ -28,7 +28,9 @@ import {
   TrailingActions,
   LeadingActions,
   Type as ListType,
-} from "react-swipeable-list";
+}
+// Bu bileşen yerel olarak tanımlı değil, doğru kütüphane yolunu kullanıyoruz
+from "react-swipeable-list"; 
 import "react-swipeable-list/dist/styles.css";
 
 import BottomNav from "../components/Home/BottomNav";
@@ -110,8 +112,8 @@ const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const now = dayjs();
 
-  // ✨ YENİ STATE: İptal edilen kaydırmalarda listeyi yeniden çizmek için
-  const [listRefreshKey, setListRefreshKey] = useState(0); 
+  // ❌ KALDIRILDI: listRefreshKey artık gerekli değil
+  // const [listRefreshKey, setListRefreshKey] = useState(0); 
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
@@ -151,11 +153,14 @@ const HarcamalarContent = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id) => axios.delete(`${API_URL}/harcama/${id}`),
     onSuccess: () => {
+      // Başarıyla silindi bildirimi kalıyor
       message.success("🗑️ Harcama kaydı silindi!");
       queryClient.invalidateQueries(["harcamalar"]);
     },
     onError: () => message.error("Silme başarısız!"),
   });
+
+  // ... (Diğer fonksiyonlar aynı)
 
   // ✅ Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
@@ -225,30 +230,14 @@ const HarcamalarContent = () => {
     updateMutation.mutate(payload);
   };
   
-  // ✨ KAYDIRARAK SİLME İÇİN YARDIMCI BİLEŞENLER (Trailing Actions - Silme)
+  // ✨ GÜNCELLENDİ: Doğrudan Silme Aksiyonu (Trailing Actions - Silme)
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
         destructive={true} 
+        // 💡 DEĞİŞİKLİK: Modal'ı kaldırdık, doğrudan silme mutasyonunu çağırıyoruz
         onClick={() => {
-           // Modal ile daha modern silme onayı
-           Modal.confirm({
-              title: <Text strong className="text-lg text-red-600">Harcamayı Sil</Text>,
-              content: <Text>'{dayjs(harcama.createdAt).format("DD.MM")} - {harcama.miktar} ₺' harcamasını kalıcı olarak silmek istediğinizden emin misiniz?</Text>,
-              okText: 'Evet, Sil',
-              cancelText: 'İptal',
-              okButtonProps: { danger: true, className: 'h-10' },
-              cancelButtonProps: { className: 'h-10' },
-              
-              onOk: () => deleteMutation.mutate(harcama._id), 
-              
-              // 👇 İPTAL DÜZELTMESİ: İptal edildiğinde listeyi yeniden çizmeye zorla
-              onCancel: () => {
-                  setListRefreshKey(prev => prev + 1); 
-              },
-              
-              centered: true,
-           });
+           deleteMutation.mutate(harcama._id);
         }}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -346,8 +335,7 @@ const HarcamalarContent = () => {
           </div>
         ) : (
           <SwipeableList 
-            // 👇 KEY EKLEMESİ: İptal edilen kaydırmalarda listeyi yeniden çizmek için
-            key={listRefreshKey} 
+            // ❌ KALDIRILDI: key={listRefreshKey} kaldırıldı
             threshold={0.3} 
             fullSwipe={false}
             listType={ListType.IOS} 
@@ -401,7 +389,7 @@ const HarcamalarContent = () => {
         )}
       </Card>
 
-      {/* Düzenleme Modalı */}
+      {/* Düzenleme Modalı (Aynı kaldı) */}
       <Modal
         title={
           <Title level={4} className="text-center text-blue-600">
