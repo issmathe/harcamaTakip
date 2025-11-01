@@ -9,7 +9,6 @@ import {
   Button,
   message,
   Select,
-  DatePicker, // 🔥 Güncellendi: DatePicker eklendi
 } from "antd";
 
 import {
@@ -28,16 +27,11 @@ import {
   Pencil, 
   Utensils,
   HelpCircle,
-  CalendarCheck, // 🔥 Güncellendi: Modal başlığı için yeni ikon
 } from "lucide-react";
 
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
-
-// Dayjs'i tarih manipülasyonu için Ant Design ile kullanmak için import edin (Ant Design'ın DatePicker'ı bunu kullanır)
-// Bu paketin kurulu olduğundan emin olun: npm install dayjs
-import dayjs from 'dayjs';
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
@@ -97,7 +91,7 @@ const MARKETLER = [
   "Türk Market",
   "Et-Tavuk",
   "Kaufland",
-  "bäckerei",
+    "bäckerei",
   "Rewe",
   "Netto",
   "Edeka",
@@ -145,17 +139,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  // --- Yardımcı Fonksiyonlar (Ağırlıklı olarak DEĞİŞMEDİ) ---
+  // --- Yardımcı Fonksiyonlar ---
 
   const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
 
   const monthlyCategoryTotals = useMemo(() => {
     const currentMonth = getCurrentMonthYear();
     return (harcamalar ?? []).reduce((acc, harcama) => {
-      // NOTE: Harcama nesnesinde 'tarih' alanı varsa onu, yoksa 'createdAt' alanını kullanın.
-      const dateString = harcama.tarih || harcama.createdAt;
-      
-      if (dateString?.startsWith(currentMonth)) {
+      if (harcama?.createdAt?.startsWith(currentMonth)) {
         const kategori = harcama.kategori;
         const miktar = Number(harcama.miktar || 0);
         if (kategori) acc[kategori] = (acc[kategori] || 0) + miktar;
@@ -257,6 +248,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   React.useEffect(() => {
     const wheel = wheelRef.current;
     if (!wheel) return;
+    // Event listeners globally for mouse up/move for better dragging experience
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     wheel.addEventListener("touchmove", handleTouchMove, { passive: false });
@@ -269,18 +261,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // --- Modal ve Form İşleyicileri (GÜNCELLENDİ) ---
+  // --- Modal ve Form İşleyicileri (DEĞİŞMEDİ) ---
 
   const handleIconClick = (category) => {
+    // Only open modal if not dragging
     if (isDragging) return;
     setSelectedCategory(category);
     setSelectedMarket("");
     setIsModalVisible(true);
     form.resetFields();
-    // Tarihi bugünün tarihi olarak ayarla
-    form.setFieldsValue({
-      tarih: dayjs(), 
-    });
   };
 
   const handleModalCancel = () => {
@@ -293,10 +282,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
-    // Tarihi bugünün tarihi olarak ayarla
-    gelirForm.setFieldsValue({
-      tarih: dayjs(),
-    });
   };
 
   const handleGelirCancel = () => {
@@ -310,8 +295,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       kategori: selectedCategory || "Diğer",
       altKategori: selectedCategory === "Market" ? selectedMarket : "",
       not: values.not || "",
-      // 🔥 GÜNCELLEME: Tarihi ISO formatında gönderiyoruz
-      tarih: values.tarih ? values.tarih.toISOString() : dayjs().toISOString(), 
     };
     harcamaMutation.mutate(harcamaData);
   };
@@ -321,8 +304,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       miktar: values.miktar,
       kategori: values.kategori,
       not: values.not || "",
-      // 🔥 GÜNCELLEME: Tarihi ISO formatında gönderiyoruz
-      tarih: values.tarih ? values.tarih.toISOString() : dayjs().toISOString(), 
     };
     gelirMutation.mutate(gelirData);
   };
@@ -330,9 +311,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   // --- Render ---
 
   return (
+    // pb-24: BottomNav için alt boşluk bırakıldı (Eğer Home.jsx'te BottomNav yoksa bu gerekli.)
     <main className="flex-1 px-4 pt-4 pb-4"> 
       
-      {/* Üst Kategori ve Toplam Göstergesi */}
+      {/* 🔥 DEĞİŞİKLİK BURADA: Üst Kategori ve Toplam Göstergesi, çarkın üzerine taşındı. */}
+      {/* absolute yerine normal akış (flow) kullanılarak görünürlük sağlandı. */}
       <div className="text-center mb-6 pt-4"> 
           <div className="text-blue-600 font-bold text-xl leading-snug">
             {currentTopCategory}
@@ -352,6 +335,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         >
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
+
+        {/* ❌ ESKİ, EKRAN DIŞINA TAŞAN Üst Kategori ve Toplam Göstergesi SİLİNDİ
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-24 z-30 w-40 text-center">
+          ...
+        </div> */}
 
         {/* Dönen Çark Alanı */}
         <div
@@ -399,56 +387,17 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </div>
       </div>
       
-      {/* Harcama Ekleme Modalı (MODERNİZE EDİLDİ) */}
+      {/* Harcama Ekleme Modalı (DEĞİŞMEDİ) */}
       <Modal
-        title={null} // Başlık kaldırıldı, özel başlık eklendi
+        title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
         open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
-        wrapClassName="!p-0"
-        maskClosable={!harcamaMutation.isPending}
-        styles={{ 
-          content: { padding: 0, borderRadius: '12px', overflow: 'hidden' },
-          mask: { backdropFilter: 'blur(3px)' } 
-        }}
       >
-        {/* Özel Başlık Alanı (Mavi Tonları) */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white rounded-t-lg">
-            <div className="flex items-center space-x-3">
-              <CalendarCheck size={24} className="text-white" />
-              <Typography.Title level={4} className="!m-0 !text-white">
-                {selectedCategory || "Harcama"} Kaydı
-              </Typography.Title>
-            </div>
-            <Text className="!text-white/80 text-sm mt-1 block">
-                Harcama detaylarını ve tarihi giriniz.
-            </Text>
-        </div>
-        
-        <Form 
-          form={form} 
-          layout="vertical" 
-          onFinish={onHarcamaFinish} 
-          className="p-6"
-        >
-          {/* 🔥 GÜNCELLEME: Tarih Seçimi Alanı */}
-          <Form.Item
-            name="tarih"
-            label={<span className="font-semibold text-gray-700">Tarih</span>}
-            rules={[{ required: true, message: "Tarih gerekli" }]}
-            // initialValue handleIconClick içinde dayjs() olarak ayarlanmıştır.
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              placeholder="Harcama Tarihini Seçin"
-              format="DD.MM.YYYY"
-              className="h-10 border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
-            />
-          </Form.Item>
-
+        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
           <Form.Item
             name="miktar"
-            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
+            label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
@@ -456,8 +405,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               step={0.01}
               style={{ width: "100%" }}
               inputMode="decimal"
-              placeholder="0,00 €"
-              className="h-10 rounded-lg"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
             />
@@ -466,10 +413,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           {selectedCategory === "Market" && (
             <Form.Item
               name="altKategori"
-              label={<span className="font-semibold text-gray-700">Market Seç</span>}
+              label="Market Seç"
               initialValue={selectedMarket}
             >
-              <Select placeholder="Market seçin" onChange={setSelectedMarket} className="h-10 rounded-lg">
+              <Select placeholder="Market seçin" onChange={setSelectedMarket}>
                 {MARKETLER.map((m) => (
                   <Option key={m} value={m}>
                     {m}
@@ -479,11 +426,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             </Form.Item>
           )}
 
-          <Form.Item name="not" label={<span className="font-semibold text-gray-700">Not</span>}>
+          <Form.Item name="not" label="Not">
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg"
             />
           </Form.Item>
 
@@ -492,71 +438,30 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={harcamaMutation.isPending}
-            className="mt-6 h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 transition-colors rounded-xl shadow-lg"
+            className="mt-4"
           >
-            Harcamayı Kaydet
+            Kaydet
           </Button>
         </Form>
       </Modal>
 
-      {/* Gelir Ekleme Modalı (MODERNİZE EDİLDİ) */}
+      {/* Gelir Ekleme Modalı (DEĞİŞMEDİ) */}
       <Modal
-        title={null}
+        title="Gelir Ekle"
         open={isGelirModalVisible}
         onCancel={handleGelirCancel}
         footer={null}
-        wrapClassName="!p-0"
-        maskClosable={!gelirMutation.isPending}
-        styles={{ 
-          content: { padding: 0, borderRadius: '12px', overflow: 'hidden' },
-          mask: { backdropFilter: 'blur(3px)' } 
-        }}
       >
-        {/* Özel Başlık Alanı (Yeşil Tonları) */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white rounded-t-lg">
-            <div className="flex items-center space-x-3">
-              <CalendarCheck size={24} className="text-white" />
-              <Typography.Title level={4} className="!m-0 !text-white">
-                Gelir Kaydı
-              </Typography.Title>
-            </div>
-            <Text className="!text-white/80 text-sm mt-1 block">
-                Gelir miktarını ve tarihi giriniz.
-            </Text>
-        </div>
-        
-        <Form 
-          form={gelirForm} 
-          layout="vertical" 
-          onFinish={onGelirFinish} 
-          className="p-6"
-        >
-          {/* 🔥 GÜNCELLEME: Tarih Seçimi Alanı */}
-          <Form.Item
-            name="tarih"
-            label={<span className="font-semibold text-gray-700">Tarih</span>}
-            rules={[{ required: true, message: "Tarih gerekli" }]}
-            // initialValue handleGelirClick içinde dayjs() olarak ayarlanmıştır.
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              placeholder="Gelir Tarihini Seçin"
-              format="DD.MM.YYYY"
-              className="h-10 border-gray-300 rounded-lg hover:border-green-500 transition-colors"
-            />
-          </Form.Item>
-          
+        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
           <Form.Item
             name="miktar"
-            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
+            label="Miktar (€)"
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
               min={0.01}
               step={0.01}
               style={{ width: "100%" }}
-              placeholder="0,00 €"
-              className="h-10 rounded-lg"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
             />
@@ -564,21 +469,20 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item
             name="kategori"
-            label={<span className="font-semibold text-gray-700">Kategori</span>}
+            label="Kategori"
             rules={[{ required: true, message: "Kategori gerekli" }]}
           >
-            <Select placeholder="Gelir türü seçin" className="h-10 rounded-lg">
+            <Select placeholder="Gelir türü seçin">
               <Option value="maaş">Maaş</Option>
               <Option value="tasarruf">Tasarruf</Option>
               <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="not" label={<span className="font-semibold text-gray-700">Not</span>}>
+          <Form.Item name="not" label="Not">
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg"
             />
           </Form.Item>
 
@@ -587,9 +491,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={gelirMutation.isPending}
-            className="mt-6 h-12 text-lg font-semibold bg-green-600 hover:bg-green-700 transition-colors rounded-xl shadow-lg"
+            className="mt-4"
           >
-            Geliri Kaydet
+            Kaydet
           </Button>
         </Form>
       </Modal>
