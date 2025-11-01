@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import {
   HomeOutlined,
   BarChartOutlined,
-  PlusOutlined, // <<< Yeni, daha küçük Ekle butonu ikonu
+  PlusOutlined,
   FileTextOutlined,
   DollarCircleOutlined,
   WalletOutlined,
+  ContainerOutlined, // Modal başlık ikonu
 } from "@ant-design/icons";
 import { Modal, Button } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -38,14 +39,15 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-xl z-20 h-24 sm:h-20">
+      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-xl z-20 h-24 sm:h-24">
+        {/* Navigasyon çubuğu h-24 olarak ayarlandı */}
         <div className="flex justify-around items-center h-full">
           {/* 1. Ana Sayfa */}
           <button
             className="flex flex-col items-center justify-center h-full w-1/5 text-gray-500 hover:text-blue-600 transition-colors duration-200"
             onClick={() => navigate("/")}
           >
-            <HomeOutlined className="text-xl md:text-2xl" />
+            <HomeOutlined className="text-2xl md:text-3xl" /> {/* İkon boyutu büyütüldü */}
             <span className="text-xs font-medium mt-1 hidden sm:block">Ana Sayfa</span>
           </button>
 
@@ -54,20 +56,19 @@ const BottomNav = () => {
             className="flex flex-col items-center justify-center h-full w-1/5 text-gray-500 hover:text-blue-600 transition-colors duration-200"
             onClick={goToRaporlar}
           >
-            <BarChartOutlined className="text-xl md:text-2xl" />
+            <BarChartOutlined className="text-2xl md:text-3xl" /> {/* İkon boyutu büyütüldü */}
             <span className="text-xs font-medium mt-1 hidden sm:block">Raporlar</span>
           </button>
 
-          {/* 3. Ekle (Merkezi, Küçük ve Sade Buton) */}
-          <div className="relative bottom-0 w-1/5 flex justify-center"> {/* bottom-4 kalktı, butonu nav hizasına çektik */}
+          {/* 3. Ekle (Merkezi Buton) */}
+          <div className="relative bottom-0 w-1/5 flex justify-center">
             <button
-              // Daha küçük ve sade buton boyutları
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-600 text-white shadow-lg transform hover:scale-110 transition-transform duration-300 flex items-center justify-center p-1"
+              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-blue-600 text-white shadow-lg transform hover:scale-110 transition-transform duration-300 flex items-center justify-center p-1"
+              // Merkezi butonun boyutları da h-24'e uyumlu olarak büyütüldü (w-16 h-16)
               onClick={goToEkle} 
               aria-label="Kayıt Ekleme Sayfası"
             >
-              {/* Daha sade Plus ikonu */}
-              <PlusOutlined className="text-2xl sm:text-3xl" /> 
+              <PlusOutlined className="text-3xl sm:text-4xl" /> {/* Ekle ikonu boyutu büyütüldü */}
             </button>
           </div>
 
@@ -79,17 +80,18 @@ const BottomNav = () => {
             className="flex flex-col items-center justify-center h-full w-1/5 text-gray-500 hover:text-blue-600 transition-colors duration-200"
             onClick={showModal}
           >
-            <FileTextOutlined className="text-xl md:text-2xl" />
+            <FileTextOutlined className="text-2xl md:text-3xl" /> {/* İkon boyutu büyütüldü */}
             <span className="text-xs font-medium mt-1 hidden sm:block">Dosya</span>
           </button>
         </div>
       </nav>
 
-      {/* Modal */}
+      {/* Modal - Estetik İyileştirmeler */}
       <Modal
         title={
-            <div className='text-lg font-semibold text-gray-700'>
-                Dosya Seçenekleri
+            <div className='flex items-center text-xl font-bold text-blue-600'>
+                <ContainerOutlined className="mr-2 text-2xl" /> 
+                Muhasebe Dosyaları
             </div>
         }
         open={isModalVisible}
@@ -97,29 +99,29 @@ const BottomNav = () => {
         footer={null}
         centered
         className='p-4'
-        // Modalın varsayılan genişliğini ayarlayalım
         width={350} 
       >
-        <div className='py-2 flex flex-col items-center'>
-            {/* Buton genişliğini %80 yapıyoruz */}
+        <div className='pt-4 pb-2 flex flex-col items-center border-t border-gray-100'> 
+            {/* 1. Gelir Butonu - Genişlik %80 */}
             <Button 
-                style={{ width: '80%' }} // <<< Buton genişliği %80
+                style={{ width: '80%' }}
                 size="large"
-                className="mb-3 h-12 rounded-lg font-semibold flex items-center justify-center" 
+                className="mb-4 h-14 rounded-xl font-bold flex items-center justify-start px-6 border-green-400 hover:border-green-600 bg-green-50 hover:bg-green-100 transition-colors duration-200" 
                 onClick={goToGelirler}
-                icon={<DollarCircleOutlined className="text-green-500 text-lg" />}
+                icon={<DollarCircleOutlined className="text-green-600 text-2xl mr-3" />}
             >
-                Gelirleri Görüntüle
+                Gelir Kayıtları
             </Button>
-            {/* Buton genişliğini %80 yapıyoruz */}
+            
+            {/* 2. Harcama Butonu - Genişlik %80 */}
             <Button 
-                style={{ width: '80%' }} // <<< Buton genişliği %80
+                style={{ width: '80%' }}
                 size="large"
-                className="h-12 rounded-lg font-semibold flex items-center justify-center" 
+                className="h-14 rounded-xl font-bold flex items-center justify-start px-6 border-red-400 hover:border-red-600 bg-red-50 hover:bg-red-100 transition-colors duration-200" 
                 onClick={goToHarcamalar}
-                icon={<WalletOutlined className="text-red-500 text-lg" />}
+                icon={<WalletOutlined className="text-red-600 text-2xl mr-3" />}
             >
-                Harcamaları Görüntüle
+                Harcama Kayıtları
             </Button>
         </div>
       </Modal>

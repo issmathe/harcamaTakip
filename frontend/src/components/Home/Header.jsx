@@ -1,3 +1,5 @@
+// Header.jsx (GÜNCELLENMİŞ)
+
 import { Card, Typography, Statistic } from "antd";
 import {
   ArrowUpOutlined,
@@ -11,21 +13,26 @@ import { useTotalsContext } from "../../context/TotalsContext";
 const { Title, Text } = Typography;
 
 const Header = () => {
-  const { totalIncome, totalExpense, totalToday } = useTotalsContext();
-  const balance = totalIncome - totalExpense;
+  // 🆕 cumulativeIncome ve cumulativeExpense eklendi
+  const { totalIncome, totalExpense, totalToday, cumulativeIncome, cumulativeExpense } = useTotalsContext();
+  
+  // ✅ Bakiye artık kümülatif toplamlar üzerinden hesaplanıyor.
+  const cumulativeBalance = cumulativeIncome - cumulativeExpense; 
+  // Eski balance artık kullanılmayacak, kümülatif olanı kullanıyoruz.
 
   return (
-    // **1. ADIM: Header Padding'i Azaltıldı**
     <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
+      
       {/* Güncel Bakiye Kartı - KOMPAKT DÜZEN */}
       <Card
         className="rounded-xl shadow-xl border-none p-3"
         styles={{
-          body: { padding: "12px" }, // ✅ yeni sürümde bodyStyle yerine styles.body
+          body: { padding: "12px" },
         }}
         style={{
+          // ✅ Kümülatif bakiyeye göre renk değişimi
           background:
-            balance >= 0
+            cumulativeBalance >= 0
               ? "linear-gradient(to right, #4c51bf, #667eea)"
               : "linear-gradient(to right, #f56565, #fc8181)",
         }}
@@ -53,11 +60,12 @@ const Header = () => {
               className="!text-white !mb-0 !mt-0 !py-0 font-extrabold !text-3xl"
             >
               <EuroOutlined className="mr-1 text-2xl" />
-              {balance.toFixed(2)}
+              {/* ✅ Kümülatif bakiyeyi gösteriyoruz */}
+              {cumulativeBalance.toFixed(2)} 
             </Title>
           </div>
 
-          {/* Bugün Harcama */}
+          {/* Bugün Harcama (Aylık toplamdan geliyor) */}
           <div className="text-right bg-white/10 p-1 rounded-md">
             <Text className="!text-white/80 text-xs">Bugün Harcama</Text>
             <div className="text-lg font-bold !text-white flex items-center justify-end">
@@ -68,7 +76,7 @@ const Header = () => {
         </div>
       </Card>
 
-      {/* Aylık Gelir ve Gider Kartları */}
+      {/* Aylık Gelir ve Gider Kartları (Bunlar AYBAŞI SIFIRLANIYOR) */}
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Card
           size="small"
@@ -76,7 +84,8 @@ const Header = () => {
         >
           <Statistic
             title="Aylık Gelir"
-            value={totalIncome}
+            // totalIncome artık aylık toplamı tutuyor
+            value={totalIncome} 
             precision={2}
             valueStyle={{ color: "#38a169", fontWeight: "bold" }}
             prefix={<ArrowUpOutlined />}
@@ -90,7 +99,8 @@ const Header = () => {
         >
           <Statistic
             title="Aylık Gider"
-            value={totalExpense}
+            // totalExpense artık aylık toplamı tutuyor
+            value={totalExpense} 
             precision={2}
             valueStyle={{ color: "#e53e3e", fontWeight: "bold" }}
             prefix={<ArrowDownOutlined />}
