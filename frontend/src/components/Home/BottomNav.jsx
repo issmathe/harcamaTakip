@@ -38,7 +38,7 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-xl z-20 h-16 sm:h-20">
+      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-xl z-20 h-24 sm:h-20">
         <div className="flex justify-around items-center h-full">
           {/* 1. Ana Sayfa */}
           <button
