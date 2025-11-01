@@ -42,6 +42,7 @@ dayjs.locale(tr);
 const { Text, Title } = Typography;
 const { Option } = Select;
 
+// API URL'nizi buraya tanımlayın
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_CATEGORIES = [
@@ -109,9 +110,6 @@ const getCategoryDetails = (kategori) => {
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const now = dayjs();
-
-  // ✨ YENİ STATE: İptal edilen kaydırmalarda listeyi yeniden çizmek için
-  const [listRefreshKey, setListRefreshKey] = useState(0); 
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
@@ -151,7 +149,7 @@ const HarcamalarContent = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id) => axios.delete(`${API_URL}/harcama/${id}`),
     onSuccess: () => {
-      message.success("🗑️ Harcama kaydı silindi!");
+      message.success("🗑️ Harcama kaydı başarıyla silindi!"); 
       queryClient.invalidateQueries(["harcamalar"]);
     },
     onError: () => message.error("Silme başarısız!"),
@@ -225,32 +223,19 @@ const HarcamalarContent = () => {
     updateMutation.mutate(payload);
   };
   
-  // ✨ KAYDIRARAK SİLME İÇİN YARDIMCI BİLEŞENLER (Trailing Actions - Silme)
+  // ✅ KAYDIRMA SONRASI BASMA İLE SİLME (Trailing Actions - Silme)
+  // Bu, görseldeki davranışı sağlar: Kaydır -> Kırmızı Alan Çık -> Kırmızı Alana Bas -> Sil
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
+        // destructive=true, aksiyonun kırmızı renkte görünmesini sağlar.
         destructive={true} 
+        // onClick, kaydırma sonrası kırmızı alana yapılan basma/dokunma ile tetiklenir.
         onClick={() => {
-           // Modal ile daha modern silme onayı
-           Modal.confirm({
-              title: <Text strong className="text-lg text-red-600">Harcamayı Sil</Text>,
-              content: <Text>'{dayjs(harcama.createdAt).format("DD.MM")} - {harcama.miktar} ₺' harcamasını kalıcı olarak silmek istediğinizden emin misiniz?</Text>,
-              okText: 'Evet, Sil',
-              cancelText: 'İptal',
-              okButtonProps: { danger: true, className: 'h-10' },
-              cancelButtonProps: { className: 'h-10' },
-              
-              onOk: () => deleteMutation.mutate(harcama._id), 
-              
-              // 👇 İPTAL DÜZELTMESİ: İptal edildiğinde listeyi yeniden çizmeye zorla
-              onCancel: () => {
-                  setListRefreshKey(prev => prev + 1); 
-              },
-              
-              centered: true,
-           });
+           deleteMutation.mutate(harcama._id);
         }}
       >
+        {/* Görseldeki gibi sade çöp kutusu ikonu */}
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
         </div>
@@ -258,7 +243,7 @@ const HarcamalarContent = () => {
     </TrailingActions>
   );
 
-  // ✨ KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞENLER (Leading Actions - Düzenleme)
+  // ✨ KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞEN (Leading Actions - Düzenleme)
   const leadingActions = (harcama) => (
     <LeadingActions>
       <SwipeAction
@@ -346,10 +331,8 @@ const HarcamalarContent = () => {
           </div>
         ) : (
           <SwipeableList 
-            // 👇 KEY EKLEMESİ: İptal edilen kaydırmalarda listeyi yeniden çizmek için
-            key={listRefreshKey} 
-            threshold={0.3} 
-            fullSwipe={false}
+            threshold={0.3} // Aksiyonun görünmesi için kaydırma eşiği
+            fullSwipe={false} // Tam kaydırmada otomatik aksiyonu **devre dışı bırakır**
             listType={ListType.IOS} 
           >
             {filteredHarcamalar.map((harcama) => {
