@@ -9,11 +9,10 @@ import {
   Button,
   message,
   Select,
-  DatePicker, // 👈 YENİ: DatePicker eklendi
+  DatePicker,
 } from "antd";
 
-// antd DatePicker için dayjs kütüphanesini kullanır, o yüzden onu da import ediyoruz.
-import dayjs from "dayjs"; // 👈 YENİ: dayjs eklendi
+import dayjs from "dayjs";
 
 import {
   Shirt,
@@ -41,7 +40,6 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// Modern ve renkli ikonlar ve Tailwind sınıfları (DEĞİŞMEDİ)
 const CategoryIcons = {
   Market: {
     icon: ShoppingCart,
@@ -95,7 +93,7 @@ const MARKETLER = [
   "Türk Market",
   "Et-Tavuk",
   "Kaufland",
-    "bäckerei",
+  "bäckerei",
   "Rewe",
   "Netto",
   "Edeka",
@@ -120,8 +118,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
-  // --- Mutasyonlar (DEĞİŞMEDİ) ---
-
   const harcamaMutation = useMutation({
     mutationFn: async (harcamaData) =>
       axios.post(`${API_URL}/harcama`, harcamaData),
@@ -143,15 +139,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  // --- Yardımcı Fonksiyonlar (DEĞİŞMEDİ) ---
-
   const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
 
   const monthlyCategoryTotals = useMemo(() => {
     const currentMonth = getCurrentMonthYear();
     return (harcamalar ?? []).reduce((acc, harcama) => {
-      // 🚨 Dikkat: API'den gelen veride 'createdAt' yoksa harcama?.createdAt?.startsWith() hata verebilir. 
-      // API'nin tüm harcamalarda bir createdAt alanı döndürdüğünü varsayıyorum.
       if (harcama?.createdAt?.startsWith(currentMonth)) {
         const kategori = harcama.kategori;
         const miktar = Number(harcama.miktar || 0);
@@ -163,9 +155,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const getTopCategory = useCallback(() => {
     const categoryAngle = 360 / CATEGORIES.length;
-    // Normalized rotation to be between 0 and 360
     const normalizedRotation = ((rotation % 360) + 360) % 360;
-    // Calculate which category is at the top (0 degrees, assuming the first icon starts at -90 degrees)
     const topIndex =
       (Math.round(-normalizedRotation / categoryAngle) + CATEGORIES.length) %
       CATEGORIES.length;
@@ -174,12 +164,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const currentTopCategory = getTopCategory();
   const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
-  // Para birimini Euro (€) olarak tutuyorum.
   const formattedTotal = (currentCategoryTotal ?? 0)
     .toFixed(2)
     .replace(".", ",");
-
-  // --- Çark Döndürme Mantığı (DEĞİŞMEDİ) ---
 
   const getAngle = (centerX, centerY, pointX, pointY) =>
     Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
@@ -230,9 +217,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       const touch = e.touches[0];
       const dx = touch.clientX - touchStartPos.current.x;
       const dy = touch.clientY - touchStartPos.current.y;
-      // Check if touch moved enough to start drag or if already dragging
       if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
-        e.preventDefault(); // Prevent scrolling
+        e.preventDefault(); 
         if (!isDragging) setIsDragging(true);
 
         const rect = wheelRef.current.getBoundingClientRect();
@@ -254,7 +240,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   React.useEffect(() => {
     const wheel = wheelRef.current;
     if (!wheel) return;
-    // Event listeners globally for mouse up/move for better dragging experience
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     wheel.addEventListener("touchmove", handleTouchMove, { passive: false });
@@ -267,18 +252,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // --- Modal ve Form İşleyicileri ---
-
   const handleIconClick = (category) => {
-    // Only open modal if not dragging
     if (isDragging) return;
     setSelectedCategory(category);
     setSelectedMarket("");
     setIsModalVisible(true);
-    // Tarih alanını bugünün tarihiyle başlatmak için
     form.resetFields();
     form.setFieldsValue({
-        tarih: dayjs() // Bugünün tarihi
+        tarih: dayjs() 
     });
   };
 
@@ -292,9 +273,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
-    // Tarih alanını bugünün tarihiyle başlatmak için
     gelirForm.setFieldsValue({
-        tarih: dayjs() // Bugünün tarihi
+        tarih: dayjs()
     });
   };
 
@@ -304,7 +284,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
-    // 👈 DEĞİŞİKLİK: Tarih alanını al ve formatla
     const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
     
     const harcamaData = {
@@ -312,32 +291,26 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       kategori: selectedCategory || "Diğer",
       altKategori: selectedCategory === "Market" ? selectedMarket : "",
       not: values.not || "",
-      createdAt: selectedDate, // 👈 YENİ: Tarih verisini ekle
+      createdAt: selectedDate, 
     };
     harcamaMutation.mutate(harcamaData);
   };
 
   const onGelirFinish = (values) => {
-    // 👈 DEĞİŞİKLİK: Tarih alanını al ve formatla
     const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
 
     const gelirData = {
       miktar: values.miktar,
       kategori: values.kategori,
       not: values.not || "",
-      createdAt: selectedDate, // 👈 YENİ: Tarih verisini ekle
+      createdAt: selectedDate, 
     };
     gelirMutation.mutate(gelirData);
   };
 
-  // --- Render ---
-
   return (
-    // pb-24: BottomNav için alt boşluk bırakıldı (Eğer Home.jsx'te BottomNav yoksa bu gerekli.)
     <main className="flex-1 px-4 pt-4 pb-4"> 
       
-      {/* 🔥 DEĞİŞİKLİK BURADA: Üst Kategori ve Toplam Göstergesi, çarkın üzerine taşındı. */}
-      {/* absolute yerine normal akış (flow) kullanılarak görünürlük sağlandı. */}
       <div className="text-center mb-6 pt-4"> 
           <div className="text-blue-600 font-bold text-xl leading-snug">
             {currentTopCategory}
@@ -347,10 +320,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           </div>
       </div>
 
-      {/* Çarkın Ana Kapsayıcısı */}
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
         
-        {/* Gelir Ekle Merkezi Butonu */}
         <div
           onClick={handleGelirClick}
           className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-[1.05] z-20 transition-all"
@@ -358,7 +329,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
 
-        {/* Dönen Çark Alanı */}
         <div
           ref={wheelRef}
           className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
@@ -370,7 +340,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((category, i) => {
-            const angle = (360 / CATEGORIES.length) * i - 90; // Start at the top (-90 deg)
+            const angle = (360 / CATEGORIES.length) * i - 90; 
             const rad = (angle * Math.PI) / 180;
             const x = radius * Math.cos(rad);
             const y = radius * Math.sin(rad);
@@ -390,10 +360,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                         )}`
                   }`}
                   style={{
-                    // Position icons around the circle
                     top: `${center + y}%`,
                     left: `${center + x}%`,
-                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`, // Counter-rotate the icon
+                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`, 
                   }}
                 >
                   <Icon className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} />
@@ -406,36 +375,43 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       
       {/* Harcama Ekleme Modalı */}
       <Modal
-        title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
+        title={
+          <div className="text-2xl font-bold text-blue-700">
+            {selectedCategory || "Harcama"} Ekle
+          </div>
+        }
         open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
+        centered // Modalı ekranın ortasına hizala
+        className="modern-modal" // Özel stil için sınıf ekle
       >
         <Form 
             form={form} 
             layout="vertical" 
             onFinish={onHarcamaFinish}
             initialValues={{
-                tarih: dayjs(), // Default olarak bugünün tarihini ayarla
+                tarih: dayjs(), 
             }}
+            className="space-y-4" // Form öğeleri arasına boşluk ekle
         >
-            {/* 👈 YENİ: Tarih Seçimi */}
           <Form.Item
             name="tarih"
-            label="Tarih"
+            label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
             <DatePicker 
                 style={{ width: "100%" }} 
                 format="DD.MM.YYYY"
-                allowClear={false} // Tarihin temizlenmesini engelle
-                disabledDate={(current) => current && current > dayjs().endOf('day')} // Sadece bugünün ve geçmişin seçilmesini sağla
+                allowClear={false}
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
+                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
           <Form.Item
             name="miktar"
-            label="Miktar (€)"
+            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
@@ -445,16 +421,21 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
+              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
           {selectedCategory === "Market" && (
             <Form.Item
               name="altKategori"
-              label="Market Seç"
+              label={<span className="font-semibold text-gray-700">Market Seç</span>}
               initialValue={selectedMarket}
             >
-              <Select placeholder="Market seçin" onChange={setSelectedMarket}>
+              <Select 
+                placeholder="Market seçin" 
+                onChange={setSelectedMarket}
+                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
+              >
                 {MARKETLER.map((m) => (
                   <Option key={m} value={m}>
                     {m}
@@ -464,10 +445,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             </Form.Item>
           )}
 
-          <Form.Item name="not" label="Not">
+          <Form.Item 
+            name="not" 
+            label={<span className="font-semibold text-gray-700">Not</span>}
+          >
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
+              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
@@ -476,7 +461,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={harcamaMutation.isPending}
-            className="mt-4"
+            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200" // Daha büyük, belirgin buton
           >
             Kaydet
           </Button>
@@ -485,23 +470,29 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
       {/* Gelir Ekleme Modalı */}
       <Modal
-        title="Gelir Ekle"
+        title={
+          <div className="text-2xl font-bold text-indigo-700">
+            Gelir Ekle
+          </div>
+        }
         open={isGelirModalVisible}
         onCancel={handleGelirCancel}
         footer={null}
+        centered // Modalı ekranın ortasına hizala
+        className="modern-modal" // Özel stil için sınıf ekle
       >
         <Form 
             form={gelirForm} 
             layout="vertical" 
             onFinish={onGelirFinish}
             initialValues={{
-                tarih: dayjs(), // Default olarak bugünün tarihini ayarla
+                tarih: dayjs(),
             }}
+            className="space-y-4" // Form öğeleri arasına boşluk ekle
         >
-             {/* 👈 YENİ: Tarih Seçimi */}
           <Form.Item
             name="tarih"
-            label="Tarih"
+            label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
             <DatePicker 
@@ -509,12 +500,13 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 format="DD.MM.YYYY"
                 allowClear={false}
                 disabledDate={(current) => current && current > dayjs().endOf('day')}
+                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
           <Form.Item
             name="miktar"
-            label="Miktar (€)"
+            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
@@ -523,25 +515,33 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               style={{ width: "100%" }}
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
+              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
           <Form.Item
             name="kategori"
-            label="Kategori"
+            label={<span className="font-semibold text-gray-700">Kategori</span>}
             rules={[{ required: true, message: "Kategori gerekli" }]}
           >
-            <Select placeholder="Gelir türü seçin">
+            <Select 
+                placeholder="Gelir türü seçin"
+                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
+            >
               <Option value="maaş">Maaş</Option>
               <Option value="tasarruf">Tasarruf</Option>
               <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="not" label="Not">
+          <Form.Item 
+            name="not" 
+            label={<span className="font-semibold text-gray-700">Not</span>}
+          >
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
+              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
@@ -550,7 +550,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={gelirMutation.isPending}
-            className="mt-4"
+            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200" // Daha büyük, belirgin buton
           >
             Kaydet
           </Button>
