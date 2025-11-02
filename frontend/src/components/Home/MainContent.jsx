@@ -418,9 +418,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               min={0.01}
               step={0.01}
               style={{ width: "100%" }}
+              inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
+              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
             />
           </Form.Item>
 
