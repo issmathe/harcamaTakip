@@ -1,4 +1,4 @@
-// Header.jsx (GÜNCELLENMİŞ)
+// Header.jsx (GÖRSEL SIRALAMA GÜNCELLENMİŞ VERSİYON)
 
 import { Card, Typography, Statistic } from "antd";
 import {
@@ -16,9 +16,16 @@ const Header = () => {
   // 🆕 cumulativeIncome ve cumulativeExpense eklendi
   const { totalIncome, totalExpense, totalToday, cumulativeIncome, cumulativeExpense } = useTotalsContext();
   
-  // ✅ Bakiye artık kümülatif toplamlar üzerinden hesaplanıyor.
+  // ✅ Kümülatif Bakiye
   const cumulativeBalance = cumulativeIncome - cumulativeExpense; 
-  // Eski balance artık kullanılmayacak, kümülatif olanı kullanıyoruz.
+
+  // 🎯 Aylık Bakiyeyi Hesapla (Aylık Gelir - Aylık Gider)
+  const monthlyBalance = totalIncome - totalExpense;
+
+  // Yeni kartın stilini belirlemek için yardımcı değişken
+  const monthlyBalanceColor = monthlyBalance >= 0 ? "#38a169" : "#e53e3e";
+  const monthlyBalanceIcon = monthlyBalance >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />;
+
 
   return (
     <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
@@ -45,7 +52,7 @@ const Header = () => {
               level={5}
               className="!text-white !mb-0 !mt-0 !py-0 font-bold"
             >
-              Finans Takibi
+              Genel Bakış
             </Title>
           </div>
         </div>
@@ -54,20 +61,20 @@ const Header = () => {
         <div className="flex justify-between items-end mt-2">
           {/* Güncel Bakiye */}
           <div className="flex flex-col text-white">
-            <Text className="!text-white/90 text-xs mb-1">Güncel Bakiye</Text>
+            <Text className="!text-white/90 text-xs mb-1">Toplam Bakiye</Text>
             <Title
               level={2}
               className="!text-white !mb-0 !mt-0 !py-0 font-extrabold !text-3xl"
             >
               <EuroOutlined className="mr-1 text-2xl" />
-              {/* ✅ Kümülatif bakiyeyi gösteriyoruz */}
+              {/* Kümülatif bakiyeyi gösteriyoruz */}
               {cumulativeBalance.toFixed(2)} 
             </Title>
           </div>
 
           {/* Bugün Harcama (Aylık toplamdan geliyor) */}
           <div className="text-right bg-white/10 p-1 rounded-md">
-            <Text className="!text-white/80 text-xs">Bugün Harcama</Text>
+            <Text className="!text-white/80 text-xs">Bugünkü Harcama</Text>
             <div className="text-lg font-bold !text-white flex items-center justify-end">
               <FireOutlined className="mr-1 text-sm text-amber-300" />
               €{totalToday.toFixed(2)}
@@ -76,33 +83,50 @@ const Header = () => {
         </div>
       </Card>
 
-      {/* Aylık Gelir ve Gider Kartları (Bunlar AYBAŞI SIFIRLANIYOR) */}
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      {/* Aylık Gelir, Kalan ve Gider Kartları */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {/* 1. KART: Aylık Gelir (Yeşil) */}
         <Card
           size="small"
           className="rounded-xl shadow-md border-t-4 border-green-500"
         >
           <Statistic
             title="Aylık Gelir"
-            // totalIncome artık aylık toplamı tutuyor
             value={totalIncome} 
             precision={2}
-            valueStyle={{ color: "#38a169", fontWeight: "bold" }}
+            valueStyle={{ color: "#38a169", fontWeight: "bold", fontSize: "14px" }}
             prefix={<ArrowUpOutlined />}
             suffix="€"
           />
         </Card>
 
+        {/* 2. KART: Aylık Kalan (Mavi/Kırmızı - Bütçe Fazlası/Açığı) */}
+        {/* 🎯 SIRALAMA DEĞİŞTİ: Artık ikinci sırada */}
+        <Card
+          size="small"
+          className={`rounded-xl shadow-md border-t-4 ${monthlyBalance >= 0 ? 'border-blue-500' : 'border-red-500'}`}
+        >
+          <Statistic
+            title="Aylık Kalan"
+            value={monthlyBalance} 
+            precision={2}
+            // Fazla ise yeşil, açık ise kırmızı
+            valueStyle={{ color: monthlyBalanceColor, fontWeight: "bold", fontSize: "14px" }}
+            prefix={monthlyBalanceIcon}
+            suffix="€"
+          />
+        </Card>
+        
+        {/* 3. KART: Aylık Gider (Kırmızı) */}
         <Card
           size="small"
           className="rounded-xl shadow-md border-t-4 border-red-500"
         >
           <Statistic
-            title="Aylık Gider"
-            // totalExpense artık aylık toplamı tutuyor
+            title="Aylık Harcama"
             value={totalExpense} 
             precision={2}
-            valueStyle={{ color: "#e53e3e", fontWeight: "bold" }}
+            valueStyle={{ color: "#e53e3e", fontWeight: "bold", fontSize: "14px" }}
             prefix={<ArrowDownOutlined />}
             suffix="€"
           />

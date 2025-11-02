@@ -16,7 +16,6 @@ import {
   TagOutlined,
   CalendarOutlined,
   SolutionOutlined,
-  FilterOutlined,
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
@@ -88,6 +87,7 @@ const getCategoryDetails = (kategori) => {
   switch (normalizedKategori.toLowerCase()) {
     case "bağış":
     case "market":
+    case "restoran":
     case "restoran / kafe":
       return {
         icon: <DollarCircleOutlined />,
@@ -113,7 +113,8 @@ const HarcamalarContent = () => {
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
-  const [selectedCategory, setSelectedCategory] = useState("Tümü");
+  // 💡 GÜNCELLEME: Başlangıç değeri olarak "Filtre" metnini ayarlıyoruz
+  const [selectedCategory, setSelectedCategory] = useState("Kategoriler"); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -157,12 +158,16 @@ const HarcamalarContent = () => {
 
   // ✅ Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
+    // Eğer selectedCategory "Kategoriler" ise, filtremeyi tamamen devre dışı bırak.
+    // Ancak toplamı hesaplamak için ay/yıl filtresi her zaman çalışmalı.
     const ayFiltreli = harcamalar.filter((h) => {
       const t = dayjs(h.createdAt);
       return t.month() === selectedMonth && t.year() === selectedYear;
     });
 
-    if (selectedCategory === "Tümü") return ayFiltreli;
+    if (selectedCategory === "Tümü" || selectedCategory === "Kategoriler") {
+        return ayFiltreli;
+    }
 
     return ayFiltreli.filter((h) => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
@@ -181,7 +186,8 @@ const HarcamalarContent = () => {
           : current.add(1, "month");
       setSelectedMonth(newDate.month());
       setSelectedYear(newDate.year());
-      setSelectedCategory("Tümü");
+      // Ay değiştiğinde varsayılan filtreyi "Tümü" yap, "Kategoriler" değil.
+      setSelectedCategory("Tümü"); 
     },
     [selectedMonth, selectedYear]
   );
@@ -224,18 +230,14 @@ const HarcamalarContent = () => {
   };
   
   // ✅ KAYDIRMA SONRASI BASMA İLE SİLME (Trailing Actions - Silme)
-  // Bu, görseldeki davranışı sağlar: Kaydır -> Kırmızı Alan Çık -> Kırmızı Alana Bas -> Sil
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
-        // destructive=true, aksiyonun kırmızı renkte görünmesini sağlar.
         destructive={true} 
-        // onClick, kaydırma sonrası kırmızı alana yapılan basma/dokunma ile tetiklenir.
         onClick={() => {
            deleteMutation.mutate(harcama._id);
         }}
       >
-        {/* Görseldeki gibi sade çöp kutusu ikonu */}
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
         </div>
@@ -264,6 +266,10 @@ const HarcamalarContent = () => {
     );
   }
 
+  // 💡 Kontrol: Eğer başlangıç değeri "Kategoriler" ise, toplamı hesaplarken "Tümü" olarak davran
+  const currentCategoryForDisplay = 
+      selectedCategory === "Kategoriler" ? "Tümü" : selectedCategory;
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <Title level={3} className="text-center text-gray-700 mb-6">
@@ -287,17 +293,18 @@ const HarcamalarContent = () => {
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <FilterOutlined className="text-xl text-gray-600 flex-shrink-0" />
-          <Text strong className="text-gray-600 flex-shrink-0">
-            Kategori Filtresi:
-          </Text>
+<div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          
           <Select
-            value={selectedCategory}
-            onChange={setSelectedCategory}
+            // 💡 GÜNCELLEME: selectedCategory state'i kullanılıyor
+            value={selectedCategory} 
+            onChange={(v) => setSelectedCategory(v)}
             style={{ width: "100%" }}
             className="flex-grow"
+            // 💡 HATA GİDERİLDİ: "dropdownMatchSelectWidth" yerine "popupMatchSelectWidth" kullanıldı.
+            popupMatchSelectWidth={true} 
           >
+            {/* Bu, Select bileşeni açıldığında görünecek seçeneklerdir. */}
             <Option value="Tümü">Tümü</Option>
             {ALL_CATEGORIES.map((cat) => (
               <Option key={cat} value={cat}>
@@ -307,11 +314,12 @@ const HarcamalarContent = () => {
           </Select>
         </div>
 
-        {selectedCategory !== "Tümü" && (
+        {/* 💡 GÜNCELLEME: "Kategoriler" veya "Tümü" seçilmediyse toplamı göster */}
+        {currentCategoryForDisplay !== "Tümü" && (
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
-            {getCategoryDetails(selectedCategory).icon}
+            {getCategoryDetails(currentCategoryForDisplay).icon}
             <span className="ml-2 text-gray-700 font-medium">
-              {selectedCategory} Toplamı:{" "}
+              {currentCategoryForDisplay} Toplamı:{" "}
               <span className="text-blue-600 font-bold">
                 {kategoriToplam.toFixed(2)} ₺
               </span>
