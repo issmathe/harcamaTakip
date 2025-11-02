@@ -1,3 +1,5 @@
+// pages/Harcamalar.jsx
+
 import React, { useState, useMemo, useCallback } from "react";
 import {
   Typography,
@@ -19,6 +21,7 @@ import {
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
+
 // Kaydırarak silme ve düzenleme için bileşenler
 import {
   SwipeableList,
@@ -113,7 +116,6 @@ const HarcamalarContent = () => {
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
-  // 💡 GÜNCELLEME: Başlangıç değeri olarak "Filtre" metnini ayarlıyoruz
   const [selectedCategory, setSelectedCategory] = useState("Kategoriler"); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -158,8 +160,6 @@ const HarcamalarContent = () => {
 
   // ✅ Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
-    // Eğer selectedCategory "Kategoriler" ise, filtremeyi tamamen devre dışı bırak.
-    // Ancak toplamı hesaplamak için ay/yıl filtresi her zaman çalışmalı.
     const ayFiltreli = harcamalar.filter((h) => {
       const t = dayjs(h.createdAt);
       return t.month() === selectedMonth && t.year() === selectedYear;
@@ -293,18 +293,14 @@ const HarcamalarContent = () => {
           </Button>
         </div>
 
-<div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
           
           <Select
-            // 💡 GÜNCELLEME: selectedCategory state'i kullanılıyor
             value={selectedCategory} 
             onChange={(v) => setSelectedCategory(v)}
             style={{ width: "100%" }}
-            className="flex-grow"
-            // 💡 HATA GİDERİLDİ: "dropdownMatchSelectWidth" yerine "popupMatchSelectWidth" kullanıldı.
             popupMatchSelectWidth={true} 
           >
-            {/* Bu, Select bileşeni açıldığında görünecek seçeneklerdir. */}
             <Option value="Tümü">Tümü</Option>
             {ALL_CATEGORIES.map((cat) => (
               <Option key={cat} value={cat}>
@@ -314,13 +310,13 @@ const HarcamalarContent = () => {
           </Select>
         </div>
 
-        {/* 💡 GÜNCELLEME: "Kategoriler" veya "Tümü" seçilmediyse toplamı göster */}
+        {/* 💡 "Kategoriler" veya "Tümü" seçilmediyse toplamı göster */}
         {currentCategoryForDisplay !== "Tümü" && (
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
             {getCategoryDetails(currentCategoryForDisplay).icon}
             <span className="ml-2 text-gray-700 font-medium">
               {currentCategoryForDisplay} Toplamı:{" "}
-              <span className="text-blue-600 font-bold">
+              <span className="text-red-600 font-bold">
                 {kategoriToplam.toFixed(2)} ₺
               </span>
             </span>
@@ -339,8 +335,8 @@ const HarcamalarContent = () => {
           </div>
         ) : (
           <SwipeableList 
-            threshold={0.3} // Aksiyonun görünmesi için kaydırma eşiği
-            fullSwipe={false} // Tam kaydırmada otomatik aksiyonu **devre dışı bırakır**
+            threshold={0.3} 
+            fullSwipe={false} 
             listType={ListType.IOS} 
           >
             {filteredHarcamalar.map((harcama) => {
@@ -411,13 +407,15 @@ const HarcamalarContent = () => {
             <Text strong className="block mb-1">
               Miktar (₺):
             </Text>
-<Input
-    type="number" // 👈 Bu satır mobil klavyeyi tam olarak tetiklemeyebilir.
-    value={formData.miktar}
-    onChange={(e) =>
-      setFormData({ ...formData, miktar: e.target.value })
-    }
-  />
+            {/* ✨ DÜZELTME YAPILAN KISIM: inputMode="decimal" eklendi. */}
+            <Input
+              type="number"
+              inputMode="decimal" 
+              value={formData.miktar}
+              onChange={(e) =>
+                setFormData({ ...formData, miktar: e.target.value })
+              }
+            />
           </div>
 
           <div>
