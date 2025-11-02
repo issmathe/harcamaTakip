@@ -509,14 +509,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-            <InputNumber
-              min={0.01}
-              step={0.01}
-              style={{ width: "100%" }}
-              formatter={(value) => `${value} €`.replace(".", ",")}
-              parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
-            />
+<InputNumber
+  min={0.01}
+  step={0.01}
+  style={{ width: "100%" }}
+  inputMode="decimal" // 👈 Bu satırı ekleyin
+  formatter={(value) => `${value} €`.replace(".", ",")}
+  parser={(value) => value.replace(" €", "").replace(",", ".")}
+  className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
+/>
           </Form.Item>
 
           <Form.Item

@@ -411,13 +411,13 @@ const HarcamalarContent = () => {
             <Text strong className="block mb-1">
               Miktar (₺):
             </Text>
-            <Input
-              type="number"
-              value={formData.miktar}
-              onChange={(e) =>
-                setFormData({ ...formData, miktar: e.target.value })
-              }
-            />
+<Input
+    type="number" // 👈 Bu satır mobil klavyeyi tam olarak tetiklemeyebilir.
+    value={formData.miktar}
+    onChange={(e) =>
+      setFormData({ ...formData, miktar: e.target.value })
+    }
+  />
           </div>
 
           <div>
