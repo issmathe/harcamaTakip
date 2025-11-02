@@ -1,4 +1,4 @@
-// useTotals.js (SON GÜNCELLEME)
+// useTotals.js (SAĞLAMLAŞTIRILMIŞ GÜNCELLEME)
 
 import axios from "axios";
 
@@ -18,7 +18,6 @@ export const fetchTotalsFromAPI = async () => {
       axios.get(`${API_URL}/harcama`),
     ]);
 
-    // 🚨 ÖNEMLİ DEĞİŞİKLİK: Bunlar artık tüm zamanların verileri
     const allGelirler = gelirRes.data || [];
     const allHarcamalar = harcamaRes.data || [];
 
@@ -27,16 +26,19 @@ export const fetchTotalsFromAPI = async () => {
     const cumulativeExpense = allHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
 
-    // --- 2. AYLIK TOPLAMLAR İÇİN FİLTRELEME VE HESAPLAMA (HEADER'DAKİ İSTATİSTİKLER İÇİN) ---
+    // --- 2. AYLIK TOPLAMLAR İÇİN FİLTRELEME VE HESAPLAMA ---
     
     const currentMonthPrefix = getCurrentMonthString();
 
+    // 💡 GÜNCELLEME: createdAt'in varlığını ve string olup olmadığını kontrol etmek
+    const isValidDateString = (date) => typeof date === 'string';
+
     // Sadece mevcut ayın verilerini filtrele
     const aylikHarcamalar = allHarcamalar.filter(i => 
-        i.createdAt?.startsWith(currentMonthPrefix)
+        isValidDateString(i.createdAt) && i.createdAt.startsWith(currentMonthPrefix)
     );
     const aylikGelirler = allGelirler.filter(i => 
-        i.createdAt?.startsWith(currentMonthPrefix)
+        isValidDateString(i.createdAt) && i.createdAt.startsWith(currentMonthPrefix)
     );
 
 
@@ -45,9 +47,9 @@ export const fetchTotalsFromAPI = async () => {
     const monthlyExpense = aylikHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
     // Bugünkü toplam harcama
-    const today = new Date().toISOString().split("T")[0];
-    const totalToday = aylikHarcamalar
-      .filter(i => i.createdAt?.startsWith(today))
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const totalToday = allHarcamalar
+      .filter(i => isValidDateString(i.createdAt) && i.createdAt.startsWith(today))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
     // Tüm zamanların harcamalarını zenginleştiriyoruz.
@@ -57,15 +59,12 @@ export const fetchTotalsFromAPI = async () => {
     }));
     
     // Geriye döndürülen değerleri güncelledik:
-    // totalIncome/Expense aylık kalsın.
-    // gelirler/harcamalar ise artık TÜM ZAMANLARIN verisini tutuyor!
     return { 
         totalIncome: monthlyIncome,          
         totalExpense: monthlyExpense,        
         cumulativeIncome,          
         cumulativeExpense,         
         totalToday, 
-        // 🚨 ÖNEMLİ: Artık context'e TÜM ZAMANLARIN verisini gönderiyoruz
         gelirler: allGelirler, 
         harcamalar: enrichedAllHarcamalar
     };
@@ -82,3 +81,4 @@ export const fetchTotalsFromAPI = async () => {
     };
   }
 };
+// context/TotalsContext.jsx kısmında değişiklik yapmaya gerek yok.

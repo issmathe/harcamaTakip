@@ -5,7 +5,8 @@ const Gelir = require("../models/Gelir");
 // ➕ Yeni gelir ekle
 router.post("/", async (req, res) => {
   try {
-    const { miktar, kategori, not } = req.body;
+    // 💡 GÜNCELLEME: req.body'den 'createdAt' (tarih) alanını da alıyoruz
+    const { miktar, kategori, not, createdAt } = req.body; 
 
     if (!miktar || !kategori) {
       return res.status(400).json({ message: "Miktar ve kategori zorunludur" });
@@ -15,6 +16,9 @@ router.post("/", async (req, res) => {
       miktar,
       kategori,
       not,
+      // 💡 GÜNCELLEME: Eğer client'tan 'createdAt' geliyorsa onu kullan.
+      // Front-end'den (MainContent.jsx) gelen ISO string'i Mongoose otomatik Date objesine dönüştürecektir.
+      ...(createdAt && { createdAt: createdAt }), 
     });
 
     await yeniGelir.save();
@@ -27,6 +31,7 @@ router.post("/", async (req, res) => {
 // 📥 Tüm gelirleri getir
 router.get("/", async (req, res) => {
   try {
+    // En yeni kaydı en üste getirmek için tarihe göre sırala
     const gelirler = await Gelir.find().sort({ createdAt: -1 });
     res.json(gelirler);
   } catch (err) {
@@ -37,8 +42,9 @@ router.get("/", async (req, res) => {
 // 🔄 Tek geliri güncelle
 router.put("/:id", async (req, res) => {
   try {
+    // req.body'deki tüm alanlar güncellenebilir
     const guncellenmis = await Gelir.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      new: true, // Güncellenmiş dokümanı geri döndür
     });
     if (!guncellenmis) {
       return res.status(404).json({ message: "Gelir bulunamadı" });

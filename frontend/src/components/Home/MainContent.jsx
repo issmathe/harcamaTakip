@@ -9,7 +9,11 @@ import {
   Button,
   message,
   Select,
+  DatePicker, // 👈 YENİ: DatePicker eklendi
 } from "antd";
+
+// antd DatePicker için dayjs kütüphanesini kullanır, o yüzden onu da import ediyoruz.
+import dayjs from "dayjs"; // 👈 YENİ: dayjs eklendi
 
 import {
   Shirt,
@@ -116,7 +120,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
-  // --- Mutasyonlar ---
+  // --- Mutasyonlar (DEĞİŞMEDİ) ---
 
   const harcamaMutation = useMutation({
     mutationFn: async (harcamaData) =>
@@ -139,13 +143,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  // --- Yardımcı Fonksiyonlar ---
+  // --- Yardımcı Fonksiyonlar (DEĞİŞMEDİ) ---
 
   const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
 
   const monthlyCategoryTotals = useMemo(() => {
     const currentMonth = getCurrentMonthYear();
     return (harcamalar ?? []).reduce((acc, harcama) => {
+      // 🚨 Dikkat: API'den gelen veride 'createdAt' yoksa harcama?.createdAt?.startsWith() hata verebilir. 
+      // API'nin tüm harcamalarda bir createdAt alanı döndürdüğünü varsayıyorum.
       if (harcama?.createdAt?.startsWith(currentMonth)) {
         const kategori = harcama.kategori;
         const miktar = Number(harcama.miktar || 0);
@@ -261,7 +267,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     };
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // --- Modal ve Form İşleyicileri (DEĞİŞMEDİ) ---
+  // --- Modal ve Form İşleyicileri ---
 
   const handleIconClick = (category) => {
     // Only open modal if not dragging
@@ -269,7 +275,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setSelectedCategory(category);
     setSelectedMarket("");
     setIsModalVisible(true);
+    // Tarih alanını bugünün tarihiyle başlatmak için
     form.resetFields();
+    form.setFieldsValue({
+        tarih: dayjs() // Bugünün tarihi
+    });
   };
 
   const handleModalCancel = () => {
@@ -282,6 +292,10 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
+    // Tarih alanını bugünün tarihiyle başlatmak için
+    gelirForm.setFieldsValue({
+        tarih: dayjs() // Bugünün tarihi
+    });
   };
 
   const handleGelirCancel = () => {
@@ -290,20 +304,28 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
+    // 👈 DEĞİŞİKLİK: Tarih alanını al ve formatla
+    const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
+    
     const harcamaData = {
       miktar: values.miktar,
       kategori: selectedCategory || "Diğer",
       altKategori: selectedCategory === "Market" ? selectedMarket : "",
       not: values.not || "",
+      createdAt: selectedDate, // 👈 YENİ: Tarih verisini ekle
     };
     harcamaMutation.mutate(harcamaData);
   };
 
   const onGelirFinish = (values) => {
+    // 👈 DEĞİŞİKLİK: Tarih alanını al ve formatla
+    const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
+
     const gelirData = {
       miktar: values.miktar,
       kategori: values.kategori,
       not: values.not || "",
+      createdAt: selectedDate, // 👈 YENİ: Tarih verisini ekle
     };
     gelirMutation.mutate(gelirData);
   };
@@ -335,11 +357,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         >
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
-
-        {/* ❌ ESKİ, EKRAN DIŞINA TAŞAN Üst Kategori ve Toplam Göstergesi SİLİNDİ
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-24 z-30 w-40 text-center">
-          ...
-        </div> */}
 
         {/* Dönen Çark Alanı */}
         <div
@@ -387,14 +404,35 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </div>
       </div>
       
-      {/* Harcama Ekleme Modalı (DEĞİŞMEDİ) */}
+      {/* Harcama Ekleme Modalı */}
       <Modal
         title={`${selectedCategory || "Harcama"} Harcaması Ekle`}
         open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
       >
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
+        <Form 
+            form={form} 
+            layout="vertical" 
+            onFinish={onHarcamaFinish}
+            initialValues={{
+                tarih: dayjs(), // Default olarak bugünün tarihini ayarla
+            }}
+        >
+            {/* 👈 YENİ: Tarih Seçimi */}
+          <Form.Item
+            name="tarih"
+            label="Tarih"
+            rules={[{ required: true, message: "Tarih gerekli" }]}
+          >
+            <DatePicker 
+                style={{ width: "100%" }} 
+                format="DD.MM.YYYY"
+                allowClear={false} // Tarihin temizlenmesini engelle
+                disabledDate={(current) => current && current > dayjs().endOf('day')} // Sadece bugünün ve geçmişin seçilmesini sağla
+            />
+          </Form.Item>
+
           <Form.Item
             name="miktar"
             label="Miktar (€)"
@@ -445,14 +483,35 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* Gelir Ekleme Modalı (DEĞİŞMEDİ) */}
+      {/* Gelir Ekleme Modalı */}
       <Modal
         title="Gelir Ekle"
         open={isGelirModalVisible}
         onCancel={handleGelirCancel}
         footer={null}
       >
-        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
+        <Form 
+            form={gelirForm} 
+            layout="vertical" 
+            onFinish={onGelirFinish}
+            initialValues={{
+                tarih: dayjs(), // Default olarak bugünün tarihini ayarla
+            }}
+        >
+             {/* 👈 YENİ: Tarih Seçimi */}
+          <Form.Item
+            name="tarih"
+            label="Tarih"
+            rules={[{ required: true, message: "Tarih gerekli" }]}
+          >
+            <DatePicker 
+                style={{ width: "100%" }} 
+                format="DD.MM.YYYY"
+                allowClear={false}
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
+            />
+          </Form.Item>
+
           <Form.Item
             name="miktar"
             label="Miktar (€)"
