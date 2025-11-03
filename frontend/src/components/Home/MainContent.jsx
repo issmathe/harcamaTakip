@@ -9,10 +9,12 @@ import {
   Button,
   message,
   Select,
-  DatePicker,
 } from "antd";
 
 import dayjs from "dayjs";
+
+// Yeni import: CustomDayPicker bileşenini ayrı dosyasından içe aktarıyoruz
+import CustomDayPicker from "../Forms/CustomDayPicker";
 
 import {
   Shirt,
@@ -258,8 +260,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setSelectedMarket("");
     setIsModalVisible(true);
     form.resetFields();
+    // DayPicker için initial değeri Date objesi olarak ayarlayın
     form.setFieldsValue({
-        tarih: dayjs() 
+        tarih: dayjs().toDate() 
     });
   };
 
@@ -273,8 +276,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
+    // DayPicker için initial değeri Date objesi olarak ayarlayın
     gelirForm.setFieldsValue({
-        tarih: dayjs()
+        tarih: dayjs().toDate()
     });
   };
 
@@ -284,7 +288,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
-    const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
+    // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
     
     const harcamaData = {
       miktar: values.miktar,
@@ -297,7 +302,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onGelirFinish = (values) => {
-    const selectedDate = values.tarih ? values.tarih.toISOString() : new Date().toISOString();
+    // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
 
     const gelirData = {
       miktar: values.miktar,
@@ -383,29 +389,27 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
-        centered // Modalı ekranın ortasına hizala
-        className="modern-modal" // Özel stil için sınıf ekle
+        centered 
+        className="modern-modal" 
       >
         <Form 
             form={form} 
             layout="vertical" 
             onFinish={onHarcamaFinish}
             initialValues={{
-                tarih: dayjs(), 
+                tarih: dayjs().toDate(), // Date objesi
             }}
-            className="space-y-4" // Form öğeleri arasına boşluk ekle
+            className="space-y-4" 
         >
           <Form.Item
             name="tarih"
             label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
-            <DatePicker 
-                style={{ width: "100%" }} 
-                format="DD.MM.YYYY"
-                allowClear={false}
-                disabledDate={(current) => current && current > dayjs().endOf('day')}
-                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
+            {/* CustomDayPicker kullanımı (Harcama) */}
+            <CustomDayPicker 
+                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                isIncome={false}
             />
           </Form.Item>
 
@@ -421,7 +425,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
+              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
             />
           </Form.Item>
 
@@ -434,7 +438,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               <Select 
                 placeholder="Market seçin" 
                 onChange={setSelectedMarket}
-                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" // Daha modern stil
+                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
               >
                 {MARKETLER.map((m) => (
                   <Option key={m} value={m}>
@@ -452,7 +456,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200" // Daha modern stil
+              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200" 
             />
           </Form.Item>
 
@@ -461,7 +465,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={harcamaMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200" // Daha büyük, belirgin buton
+            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200" 
           >
             Kaydet
           </Button>
@@ -478,29 +482,27 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         open={isGelirModalVisible}
         onCancel={handleGelirCancel}
         footer={null}
-        centered // Modalı ekranın ortasına hizala
-        className="modern-modal" // Özel stil için sınıf ekle
+        centered 
+        className="modern-modal" 
       >
         <Form 
             form={gelirForm} 
             layout="vertical" 
             onFinish={onGelirFinish}
             initialValues={{
-                tarih: dayjs(),
+                tarih: dayjs().toDate(), // Date objesi
             }}
-            className="space-y-4" // Form öğeleri arasına boşluk ekle
+            className="space-y-4" 
         >
           <Form.Item
             name="tarih"
             label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
-            <DatePicker 
-                style={{ width: "100%" }} 
-                format="DD.MM.YYYY"
-                allowClear={false}
-                disabledDate={(current) => current && current > dayjs().endOf('day')}
-                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
+            {/* CustomDayPicker kullanımı (Gelir) */}
+            <CustomDayPicker 
+                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                isIncome={true}
             />
           </Form.Item>
 
@@ -509,15 +511,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
-<InputNumber
-  min={0.01}
-  step={0.01}
-  style={{ width: "100%" }}
-  inputMode="decimal" // 👈 Bu satırı ekleyin
-  formatter={(value) => `${value} €`.replace(".", ",")}
-  parser={(value) => value.replace(" €", "").replace(",", ".")}
-  className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
-/>
+            <InputNumber
+              min={0.01}
+              step={0.01}
+              style={{ width: "100%" }}
+              inputMode="decimal" 
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
+              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
+            />
           </Form.Item>
 
           <Form.Item
@@ -527,7 +529,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           >
             <Select 
                 placeholder="Gelir türü seçin"
-                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" // Daha modern stil
+                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" 
             >
               <Option value="maaş">Maaş</Option>
               <Option value="tasarruf">Tasarruf</Option>
@@ -542,7 +544,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200" // Daha modern stil
+              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200" 
             />
           </Form.Item>
 
@@ -551,7 +553,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={gelirMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200" // Daha büyük, belirgin buton
+            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200" 
           >
             Kaydet
           </Button>

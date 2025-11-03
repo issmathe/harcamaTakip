@@ -22,6 +22,9 @@ import {
   RightOutlined,
 } from "@ant-design/icons";
 
+// Özel bileşen importu
+import CustomDayPicker from "../components/Forms/CustomDayPicker"; // Tarih seçiciyi import et
+
 // Kaydırarak silme ve düzenleme için bileşenler
 import {
   SwipeableList,
@@ -120,11 +123,13 @@ const HarcamalarContent = () => {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
+  
   const [formData, setFormData] = useState({
     miktar: "",
     kategori: "",
     altKategori: "",
     not: "",
+    tarih: dayjs().toDate(), // ✨ Tarih alanını ekledik (Date objesi)
   });
 
   // ✅ Harcamaları Fetch Et
@@ -186,7 +191,6 @@ const HarcamalarContent = () => {
           : current.add(1, "month");
       setSelectedMonth(newDate.month());
       setSelectedYear(newDate.year());
-      // Ay değiştiğinde varsayılan filtreyi "Tümü" yap, "Kategoriler" değil.
       setSelectedCategory("Tümü"); 
     },
     [selectedMonth, selectedYear]
@@ -209,6 +213,7 @@ const HarcamalarContent = () => {
       kategori: harcama.kategori,
       altKategori: isMarket ? harcama.altKategori || "" : "",
       not: harcama.not || "",
+      tarih: dayjs(harcama.createdAt).toDate(), // ✨ Tarihi Date objesi olarak set et
     });
     setEditModalVisible(true);
   };
@@ -219,11 +224,15 @@ const HarcamalarContent = () => {
     if (formData.kategori === "Market" && !formData.altKategori) {
       return message.error("Market seçimi boş bırakılamaz!");
     }
+    
+    // ✨ Tarih, ISO string formatına çevrildi
+    const updatedCreatedAt = dayjs(formData.tarih).toISOString();
 
     const payload = {
       ...formData,
       _id: editingHarcama._id,
       altKategori: formData.kategori !== "Market" ? "" : formData.altKategori,
+      createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
     };
 
     updateMutation.mutate(payload);
@@ -266,7 +275,6 @@ const HarcamalarContent = () => {
     );
   }
 
-  // 💡 Kontrol: Eğer başlangıç değeri "Kategoriler" ise, toplamı hesaplarken "Tümü" olarak davran
   const currentCategoryForDisplay = 
       selectedCategory === "Kategoriler" ? "Tümü" : selectedCategory;
 
@@ -310,7 +318,7 @@ const HarcamalarContent = () => {
           </Select>
         </div>
 
-        {/* 💡 "Kategoriler" veya "Tümü" seçilmediyse toplamı göster */}
+        {/* Toplamı göster */}
         {currentCategoryForDisplay !== "Tümü" && (
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
             {getCategoryDetails(currentCategoryForDisplay).icon}
@@ -324,7 +332,7 @@ const HarcamalarContent = () => {
         )}
       </Card>
       
-      {/* ✨ Kaydırarak Silme/Düzenleme Listesi - SwipeableList kullanıldı ✨ */}
+      {/* Kaydırarak Silme/Düzenleme Listesi - SwipeableList kullanıldı */}
       <Card
         className="shadow-lg rounded-xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
@@ -403,11 +411,24 @@ const HarcamalarContent = () => {
         destroyOnHidden
       >
         <div className="space-y-4 pt-4">
+          
+          {/* ✨ YENİ TARİH ALANI - CustomDayPicker kullanılıyor */}
+          <div>
+            <Text strong className="block mb-1">
+              Tarih:
+            </Text>
+            <CustomDayPicker
+                value={formData.tarih}
+                onChange={(date) => setFormData({ ...formData, tarih: date })}
+                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                isIncome={false} // Harcama için mavi/kırmızı tonları kullan
+            />
+          </div>
+          
           <div>
             <Text strong className="block mb-1">
               Miktar (₺):
             </Text>
-            {/* ✨ DÜZELTME YAPILAN KISIM: inputMode="decimal" eklendi. */}
             <Input
               type="number"
               inputMode="decimal" 

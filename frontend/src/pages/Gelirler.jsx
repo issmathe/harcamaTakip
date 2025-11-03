@@ -1,24 +1,27 @@
-// pages/Gelirler.jsx (KAYDIRARAK SİLME/DÜZENLEME VERSİYONU)
+// pages/Gelirler.jsx (KAYDIRARAK SİLME/DÜZENLEME + CUSTOM DAY PICKER VERSİYONU)
 
 import React, { useState, useMemo, useCallback } from "react";
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
 import { 
   EditOutlined, DeleteOutlined, CalendarOutlined, SolutionOutlined, 
   LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined 
-} from '@ant-design/icons'; // Gerekli ikonlar eklendi
+} from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
 import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
 
+// Özel bileşen importu: CustomDayPicker
+import CustomDayPicker from "../components/Forms/CustomDayPicker";
+
 // Kaydırarak silme ve düzenleme için bileşenler
 import {
   SwipeableList,
   SwipeableListItem,
   SwipeAction,
-  TrailingActions, // Sağdan kaydırma aksiyonu (Silme)
-  LeadingActions,  // Soldan kaydırma aksiyonu (Düzenleme)
+  TrailingActions, 
+  LeadingActions,  
   Type as ListType,
 } from "react-swipeable-list";
 import "react-swipeable-list/dist/styles.css";
@@ -31,7 +34,6 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
 const ALL_GELIR_CATEGORIES = ["Maaş", "Tasarruf", "Diğer"]; 
 
-// Gelir kategorisi ikonları (Listede görsel zenginlik için geri eklendi)
 const getCategoryDetails = (kategori) => {
   switch (kategori.toLowerCase()) {
     case 'maaş':
@@ -45,12 +47,18 @@ const getCategoryDetails = (kategori) => {
 };
 
 const GelirlerContent = () => {
-  // useTotalsContext'ten gelen verinin isLoading durumunu varsayalım
   const { gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
-  const [formData, setFormData] = useState({ miktar: "", kategori: "", not: "" });
+  
+  // ✨ formData state'ine 'tarih' alanını Date objesi olarak ekledik
+  const [formData, setFormData] = useState({ 
+    miktar: "", 
+    kategori: "", 
+    not: "", 
+    tarih: dayjs().toDate() // Varsayılan: Bugün
+  });
 
   const now = dayjs();
   const [selectedMonth, setSelectedMonth] = useState(now.month());
@@ -73,6 +81,7 @@ const GelirlerContent = () => {
 
   const isFutureMonth = useMemo(() => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
+    // Seçilen ayın, geçerli aydan sonra olup olmadığını kontrol et
     return current.isAfter(now, 'month');
   }, [selectedMonth, selectedYear, now]);
 
@@ -84,6 +93,7 @@ const GelirlerContent = () => {
       miktar: gelir.miktar,
       kategori: gelir.kategori,
       not: gelir.not || "",
+      tarih: dayjs(gelir.createdAt).toDate(), // ✨ Tarihi Date objesi olarak set et
     });
     setEditModalVisible(true);
   };
@@ -91,7 +101,19 @@ const GelirlerContent = () => {
   const handleEditSave = async () => {
     try {
       if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
-      await axios.put(`${API_URL}/gelir/${editingGelir._id}`, formData); 
+      
+      // ✨ Tarih, ISO string formatına çevrildi
+      const updatedCreatedAt = dayjs(formData.tarih).toISOString();
+      
+      const payload = {
+        miktar: formData.miktar,
+        kategori: formData.kategori,
+        not: formData.not,
+        createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
+      };
+      
+      await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
+      
       message.success("Gelir başarıyla güncellendi!");
       setEditModalVisible(false);
       if (typeof refetch === 'function') refetch(); 
@@ -115,17 +137,11 @@ const GelirlerContent = () => {
   const formatDate = (dateString) => dayjs(dateString).format('DD.MM.YYYY HH:mm');
 
   
-  // -----------------------------------------------------------------
-  // ✨ KAYDIRMA AKSİYONLARI BAŞLANGIÇ
-  // -----------------------------------------------------------------
-  
-  // 1. Trailing Actions (Sağdan kaydırma - Silme)
+  // KAYDIRMA AKSİYONLARI (Aynı kaldı)
   const trailingActions = (gelir) => (
     <TrailingActions>
       <SwipeAction
-        // destructive=true: Kırmızı arka planı sağlar
         destructive={true} 
-        // onClick: Kullanıcı kaydırma sonrası kırmızı alana bastığında tetiklenir (Kaydır-Bas-Sil mantığı)
         onClick={() => handleDelete(gelir._id)}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -135,11 +151,9 @@ const GelirlerContent = () => {
     </TrailingActions>
   );
 
-  // 2. Leading Actions (Soldan kaydırma - Düzenleme)
   const leadingActions = (gelir) => (
     <LeadingActions>
       <SwipeAction
-        // Varsayılan renk (mavi) kullanılacak
         onClick={() => openEditModal(gelir)}
       >
         <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -149,8 +163,6 @@ const GelirlerContent = () => {
     </LeadingActions>
   );
   
-  // -----------------------------------------------------------------
-  // ✨ KAYDIRMA AKSİYONLARI SON
   // -----------------------------------------------------------------
 
   if (isContextLoading) {
@@ -177,7 +189,7 @@ const GelirlerContent = () => {
         </div>
       </Card>
 
-      {/* Gelir Listesi - List yerine SwipeableList kullanıldı */}
+      {/* Gelir Listesi */}
       <Card 
         className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 overflow-hidden mb-4" 
         styles={{ body: { padding: 0 } }} 
@@ -188,9 +200,9 @@ const GelirlerContent = () => {
           </div>
         ) : (
           <SwipeableList
-            threshold={0.3}     // Aksiyonun görünmesi için kaydırma eşiği
-            fullSwipe={false}   // Tam kaydırmada otomatik aksiyonu engeller (Basma zorunluluğunu korur)
-            listType={ListType.IOS} // iOS stilinde kaydırma
+            threshold={0.3}     
+            fullSwipe={false}   
+            listType={ListType.IOS} 
           >
             {filteredGelirler.map((gelir) => {
               const { icon, color } = getCategoryDetails(gelir.kategori);
@@ -198,18 +210,16 @@ const GelirlerContent = () => {
               return (
                 <SwipeableListItem
                   key={gelir._id}
-                  leadingActions={leadingActions(gelir)} // Soldan kaydırma (Düzenle)
-                  trailingActions={trailingActions(gelir)} // Sağdan kaydırma (Sil)
+                  leadingActions={leadingActions(gelir)} 
+                  trailingActions={trailingActions(gelir)} 
                   className="bg-white"
                 >
                   {/* Liste Öğesinin İçeriği */}
                   <div className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer">
-                    {/* İkon Kutusu */}
                     <div className={`p-3 rounded-full mr-4 sm:mr-6 flex-shrink-0 ${color}`}>{icon}</div>
                     
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-center mb-1">
-                        {/* Kategori bilgisi */}
                         <Text strong className="text-lg text-gray-800 truncate">{gelir.kategori.charAt(0).toUpperCase() + gelir.kategori.slice(1)}</Text>
                         <Text className="text-xl font-bold text-green-600 ml-4 flex-shrink-0">+{gelir.miktar} ₺</Text>
                       </div>
@@ -221,7 +231,6 @@ const GelirlerContent = () => {
                         <SolutionOutlined className="mr-1" />Not: {gelir.not || "Yok"}
                       </div>
                     </div>
-                    {/* Eski Düzenle/Sil butonları kaldırıldı */}
                   </div>
                 </SwipeableListItem>
               );
@@ -241,15 +250,30 @@ const GelirlerContent = () => {
         destroyOnHidden 
       >
         <div className="space-y-4 pt-4">
-<div>
-    <Text strong className="block mb-1">Miktar (₺):</Text>
-    <Input 
-        type="number" // <-- Burası zaten mevcut
-        value={formData.miktar} 
-        onChange={e => setFormData({...formData, miktar:e.target.value})} 
-        placeholder="Miktar" 
-    />
-</div>
+          
+          {/* ✨ YENİ TARİH ALANI - CustomDayPicker kullanılıyor */}
+          <div>
+            <Text strong className="block mb-1">Tarih:</Text>
+            <CustomDayPicker
+                value={formData.tarih}
+                // onChange, Date objesi döner
+                onChange={(date) => setFormData({ ...formData, tarih: date })}
+                // Gelirler için de ileri tarihi engelliyoruz
+                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                isIncome={true} // Gelirler için indigo/yeşil tonlarını kullan
+            />
+          </div>
+
+          <div>
+            <Text strong className="block mb-1">Miktar (₺):</Text>
+            <Input 
+                type="number"
+                inputMode="decimal"
+                value={formData.miktar} 
+                onChange={e => setFormData({...formData, miktar:e.target.value})} 
+                placeholder="Miktar" 
+            />
+          </div>
           <div>
             <Text strong className="block mb-1">Kategori:</Text>
             <Select 
