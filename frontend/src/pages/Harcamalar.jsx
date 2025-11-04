@@ -1,6 +1,6 @@
-// pages/Harcamalar.jsx (react-query ile TAM ve GÜNCEL VERSİYON)
+// pages/Harcamalar.jsx
 
-import React, { useState, useMemo, useCallback, useRef } from "react"; 
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Typography,
   Button,
@@ -20,11 +20,10 @@ import {
   SolutionOutlined,
   LeftOutlined,
   RightOutlined,
-  UndoOutlined, // Geri Al iconu eklendi
 } from "@ant-design/icons";
 
 // Özel bileşen importu
-import CustomDayPicker from "../components/Forms/CustomDayPicker";
+import CustomDayPicker from "../components/Forms/CustomDayPicker"; // Tarih seçiciyi import et
 
 // Kaydırarak silme ve düzenleme için bileşenler
 import {
@@ -48,19 +47,44 @@ dayjs.locale(tr);
 const { Text, Title } = Typography;
 const { Option } = Select;
 
+// API URL'nizi buraya tanımlayın
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
-const MESSAGE_KEY = 'harcamaSilmeIslemi'; // Geri Al mesaj anahtarı
 
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", 
-  "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", 
-  "Spor", "Kırtasiye", "Restoran", "Diğer",
+  "Market",
+  "Giyim",
+  "Bağış",
+  "Petrol",
+  "Kira",
+  "Fatura",
+  "Eğitim",
+  "Sağlık",
+  "Ulaşım",
+  "Eğlence",
+  "Elektronik",
+  "Spor",
+  "Kırtasiye",
+  "Restoran",
+  "Diğer",
 ];
 
 const MARKETLER = [
-  "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", 
-  "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", 
-  "Edeka", "Biomarkt", "Penny", "Rossmann", "Diğer",
+  "Lidl",
+  "Aldi",
+  "DM",
+  "Action",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "bäckerei",
+  "Rewe",
+  "Netto",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
+  "Rossmann",
+  "Diğer",
 ];
 
 const getCategoryDetails = (kategori) => {
@@ -91,7 +115,6 @@ const getCategoryDetails = (kategori) => {
 
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
-  const deleteTimerRef = useRef(null); // Silme zamanlayıcısı
   const now = dayjs();
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
@@ -106,7 +129,7 @@ const HarcamalarContent = () => {
     kategori: "",
     altKategori: "",
     not: "",
-    tarih: dayjs().toDate(), 
+    tarih: dayjs().toDate(), // ✨ Tarih alanını ekledik (Date objesi)
   });
 
   // ✅ Harcamaları Fetch Et
@@ -130,9 +153,7 @@ const HarcamalarContent = () => {
     onError: () => message.error("Güncelleme başarısız!"),
   });
 
-  // Geri Alma Özelliği için artık bu mutasyonu doğrudan kullanmıyoruz.
-  // Silme işlemini manuel olarak yöneteceğiz.
-  /*
+  // ✅ Silme (DELETE)
   const deleteMutation = useMutation({
     mutationFn: async (id) => axios.delete(`${API_URL}/harcama/${id}`),
     onSuccess: () => {
@@ -141,65 +162,13 @@ const HarcamalarContent = () => {
     },
     onError: () => message.error("Silme başarısız!"),
   });
-  */
 
-
-  // 1. KESİN SİLME İŞLEMİ (Sadece zamanlayıcı bitince veya Geri Al iptal edilince çağrılır)
-  const definitiveDelete = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/harcama/${id}`);
-      queryClient.invalidateQueries(["harcamalar"]); 
-    } catch (err) {
-      console.error("Kesin silme hatası:", err);
-    }
-  };
-
-  // 2. GERİ ALMA İŞLEMİ
-  const handleUndo = (messageKey) => {
-    clearTimeout(deleteTimerRef.current);
-    message.destroy(messageKey);
-    message.info("Silme işlemi iptal edildi.");
-  };
-
-  // 3. SİLME BAŞLATMA İŞLEMİ (3 saniyelik estetik bildirim)
-  const startDeleteProcess = (id) => {
-    if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current);
-    }
-    
-    const content = (
-      <span className="flex items-center space-x-3">
-        <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
-        <Button 
-          type="link" 
-          icon={<UndoOutlined />} 
-          size="small"
-          onClick={() => handleUndo(MESSAGE_KEY)}
-          className="text-blue-500 hover:text-blue-700" 
-        >
-          Geri Al
-        </Button>
-      </span>
-    );
-    
-    message.success({ 
-        content: content, 
-        key: MESSAGE_KEY, 
-        duration: 3, // 3 saniye sonra otomatik kapanacak
-    });
-
-    deleteTimerRef.current = setTimeout(() => {
-      definitiveDelete(id);
-      message.destroy(MESSAGE_KEY); 
-    }, 3000); // 3 saniye
-  };
-  
   // ✅ Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
     const ayFiltreli = harcamalar.filter((h) => {
       const t = dayjs(h.createdAt);
       return t.month() === selectedMonth && t.year() === selectedYear;
-    }).sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()); // Tarihe göre sıralama eklendi
+    });
 
     if (selectedCategory === "Tümü" || selectedCategory === "Kategoriler") {
         return ayFiltreli;
@@ -227,11 +196,6 @@ const HarcamalarContent = () => {
     [selectedMonth, selectedYear]
   );
 
-  const isFutureMonth = useMemo(() => {
-    const current = dayjs().year(selectedYear).month(selectedMonth);
-    return current.isAfter(now, 'month');
-  }, [selectedMonth, selectedYear, now]);
-
   const displayMonth = dayjs()
     .year(selectedYear)
     .month(selectedMonth)
@@ -249,7 +213,7 @@ const HarcamalarContent = () => {
       kategori: harcama.kategori,
       altKategori: isMarket ? harcama.altKategori || "" : "",
       not: harcama.not || "",
-      tarih: dayjs(harcama.createdAt).toDate(), // Tarihi Date objesi olarak set et
+      tarih: dayjs(harcama.createdAt).toDate(), // ✨ Tarihi Date objesi olarak set et
     });
     setEditModalVisible(true);
   };
@@ -261,30 +225,27 @@ const HarcamalarContent = () => {
       return message.error("Market seçimi boş bırakılamaz!");
     }
     
-    // ✅ Tarih, ISO string formatına çevrildi (Tarih güncelleme sorunu çözüldü)
+    // ✨ Tarih, ISO string formatına çevrildi
     const updatedCreatedAt = dayjs(formData.tarih).toISOString();
 
     const payload = {
-      // ✅ Miktar Sayıya Çevrildi
-      miktar: parseFloat(formData.miktar),
+      ...formData,
       _id: editingHarcama._id,
-      kategori: formData.kategori,
       altKategori: formData.kategori !== "Market" ? "" : formData.altKategori,
-      not: formData.not,
       createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
     };
 
     updateMutation.mutate(payload);
   };
   
-  // KAYDIRMA SONRASI BASMA İLE SİLME (Trailing Actions - Silme)
+  // ✅ KAYDIRMA SONRASI BASMA İLE SİLME (Trailing Actions - Silme)
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
         destructive={true} 
-        // ✅ Silme PC/Mobil stabilite ve Geri Al düzeltmesi
-        onClick={() => startDeleteProcess(harcama._id)}
-        onSwipeEnd={() => startDeleteProcess(harcama._id)}
+        onClick={() => {
+           deleteMutation.mutate(harcama._id);
+        }}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
@@ -293,7 +254,7 @@ const HarcamalarContent = () => {
     </TrailingActions>
   );
 
-  // KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞEN (Leading Actions - Düzenleme)
+  // ✨ KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞEN (Leading Actions - Düzenleme)
   const leadingActions = (harcama) => (
     <LeadingActions>
       <SwipeAction
@@ -335,7 +296,7 @@ const HarcamalarContent = () => {
           <Title level={5} className="m-0 text-blue-600">
             {displayMonth}
           </Title>
-          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth}>
+          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")}>
             Sonraki Ay
           </Button>
         </div>
@@ -383,7 +344,7 @@ const HarcamalarContent = () => {
         ) : (
           <SwipeableList 
             threshold={0.3} 
-            fullSwipe={true} 
+            fullSwipe={false} 
             listType={ListType.IOS} 
           >
             {filteredHarcamalar.map((harcama) => {
@@ -391,7 +352,7 @@ const HarcamalarContent = () => {
 
               const displayCategory =
                 harcama.kategori === "Market" && harcama.altKategori
-                  ? `${harcama.kategori} (${harcama.altKategori})`
+                  ? `Market (${harcama.altKategori})`
                   : harcama.kategori;
 
               return (
@@ -414,7 +375,7 @@ const HarcamalarContent = () => {
                           {displayCategory}
                         </Text>
                         <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
-                          -{harcama.miktar} ₺
+                          {harcama.miktar} ₺
                         </Text>
                       </div>
                       <div className="text-sm text-gray-500 mb-1">
@@ -451,7 +412,7 @@ const HarcamalarContent = () => {
       >
         <div className="space-y-4 pt-4">
           
-          {/* ✅ TARİH ALANI: Tarih güncelleme için CustomDayPicker */}
+          {/* ✨ YENİ TARİH ALANI - CustomDayPicker kullanılıyor */}
           <div>
             <Text strong className="block mb-1">
               Tarih:
@@ -460,7 +421,7 @@ const HarcamalarContent = () => {
                 value={formData.tarih}
                 onChange={(date) => setFormData({ ...formData, tarih: date })}
                 disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={false} 
+                isIncome={false} // Harcama için mavi/kırmızı tonları kullan
             />
           </div>
           
@@ -524,7 +485,6 @@ const HarcamalarContent = () => {
             <Input.TextArea
               rows={2}
               value={formData.not}
-              // Not güncelleme düzeltildi
               onChange={(e) =>
                 setFormData({ ...formData, not: e.target.value })
               }
