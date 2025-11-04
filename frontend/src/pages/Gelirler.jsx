@@ -1,10 +1,11 @@
-// pages/Gelirler.jsx (KAYDIRARAK SİLME/DÜZENLEME + CUSTOM DAY PICKER VERSİYONU)
+// pages/Gelirler.jsx (NİHAİ VERSİYON: Estetik Geri Al Eklendi)
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
 import { 
   EditOutlined, DeleteOutlined, CalendarOutlined, SolutionOutlined, 
-  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined 
+  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined,
+  UndoOutlined 
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -12,7 +13,7 @@ import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
 
-// Özel bileşen importu: CustomDayPicker
+// Özel bileşen importu
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
 
 // Kaydırarak silme ve düzenleme için bileşenler
@@ -40,37 +41,30 @@ const getCategoryDetails = (kategori) => {
       return { icon: <BankOutlined />, color: 'bg-green-100 text-green-600' };
     case 'tasarruf':
       return { icon: <SaveOutlined />, color: 'bg-blue-100 text-blue-600' };
-    case 'diğer':
     default:
       return { icon: <EuroCircleOutlined />, color: 'bg-gray-100 text-gray-600' };
   }
 };
 
+const MESSAGE_KEY = 'silmeIslemi'; 
+
 const GelirlerContent = () => {
   const { gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
+  const deleteTimerRef = useRef(null); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
   
-  // ✨ formData state'ine 'tarih' alanını Date objesi olarak ekledik
   const [formData, setFormData] = useState({ 
     miktar: "", 
     kategori: "", 
     not: "", 
-    tarih: dayjs().toDate() // Varsayılan: Bugün
+    tarih: dayjs().toDate()
   });
 
   const now = dayjs();
-  const [selectedMonth, setSelectedMonth] = useState(now.month());
+  const [selectedMonth, setSelectedMonth] = useState(now.month()); 
   const [selectedYear, setSelectedYear] = useState(now.year());
-
-  const filteredGelirler = useMemo(() => {
-    const ayFiltreli = gelirler.filter((gelir) => {
-      const gelirTarihi = dayjs(gelir.createdAt);
-      return gelirTarihi.month() === selectedMonth && gelirTarihi.year() === selectedYear;
-    });
-    return ayFiltreli;
-  }, [gelirler, selectedMonth, selectedYear]); 
 
   const changeMonth = useCallback((direction) => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
@@ -81,11 +75,23 @@ const GelirlerContent = () => {
 
   const isFutureMonth = useMemo(() => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
-    // Seçilen ayın, geçerli aydan sonra olup olmadığını kontrol et
     return current.isAfter(now, 'month');
   }, [selectedMonth, selectedYear, now]);
 
-  const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format('MMMM YYYY');
+  const displayMonth = useMemo(() => {
+      return dayjs().year(selectedYear).month(selectedMonth).format('MMMM YYYY');
+  }, [selectedMonth, selectedYear]);
+
+
+  const filteredGelirler = useMemo(() => {
+    const ayFiltreli = gelirler.filter((gelir) => {
+      const gelirTarihi = dayjs(gelir.createdAt);
+      return gelirTarihi.month() === selectedMonth && gelirTarihi.year() === selectedYear;
+    });
+    return ayFiltreli.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
+  }, [gelirler, selectedMonth, selectedYear]); 
+
+  // ... (Geri kalan düzenleme ve silme mantığı)
 
   const openEditModal = (gelir) => {
     setEditingGelir(gelir);
@@ -93,7 +99,7 @@ const GelirlerContent = () => {
       miktar: gelir.miktar,
       kategori: gelir.kategori,
       not: gelir.not || "",
-      tarih: dayjs(gelir.createdAt).toDate(), // ✨ Tarihi Date objesi olarak set et
+      tarih: dayjs(gelir.createdAt).toDate(), 
     });
     setEditModalVisible(true);
   };
@@ -102,14 +108,13 @@ const GelirlerContent = () => {
     try {
       if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
       
-      // ✨ Tarih, ISO string formatına çevrildi
       const updatedCreatedAt = dayjs(formData.tarih).toISOString();
       
       const payload = {
-        miktar: formData.miktar,
+        miktar: parseFloat(formData.miktar), 
         kategori: formData.kategori,
         not: formData.not,
-        createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
+        createdAt: updatedCreatedAt, 
       };
       
       await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
@@ -118,31 +123,75 @@ const GelirlerContent = () => {
       setEditModalVisible(false);
       if (typeof refetch === 'function') refetch(); 
     } catch (err) {
-      console.error(err);
+      console.error("Güncelleme hatası:", err);
       message.error("Güncelleme başarısız!");
     }
   };
 
-  const handleDelete = async (id) => {
+  // KESİN SİLME İŞLEMİ
+  const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/gelir/${id}`);
-      message.success("🗑️ Gelir başarıyla silindi!");
       if (typeof refetch === 'function') refetch(); 
     } catch (err) {
-      console.error("Silme işlemi sunucu hatası:", err);
-      message.error("Silme işlemi başarısız oldu! Lütfen tekrar deneyin.");
+      console.error("Kesin silme hatası:", err);
     }
   };
 
+  // GERİ ALMA İŞLEMİ
+  const handleUndo = (messageKey) => {
+    clearTimeout(deleteTimerRef.current);
+    message.destroy(messageKey);
+    message.info("Silme işlemi iptal edildi.");
+  };
+
+  // SİLME BAŞLATMA İŞLEMİ - Yeni Estetik Görünüm
+  const startDeleteProcess = (id) => {
+    // Önceki zamanlayıcı varsa temizle
+    if (deleteTimerRef.current) {
+        clearTimeout(deleteTimerRef.current);
+    }
+    
+    // Ant Design'a özel uyarı içeriği
+    const content = (
+      <span className="flex items-center space-x-3">
+        <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
+        <Button 
+          type="link" 
+          icon={<UndoOutlined />} 
+          size="small"
+          onClick={() => handleUndo(MESSAGE_KEY)}
+          className="text-blue-500 hover:text-blue-700" 
+        >
+          Geri Al
+        </Button>
+      </span>
+    );
+    
+    // 3 saniye süreli, success tipi bildirimi göster
+    message.success({ 
+        content: content, 
+        key: MESSAGE_KEY, 
+        duration: 3, // 3 saniye sonra otomatik kapanacak
+    });
+
+    // 3 saniye sonra kesin silme işlemini başlatacak zamanlayıcıyı kur
+    deleteTimerRef.current = setTimeout(() => {
+      definitiveDelete(id);
+      message.destroy(MESSAGE_KEY); 
+    }, 3000); // 3 saniye
+  };
+  
   const formatDate = (dateString) => dayjs(dateString).format('DD.MM.YYYY HH:mm');
 
   
-  // KAYDIRMA AKSİYONLARI (Aynı kaldı)
+  // KAYDIRMA AKSİYONLARI
   const trailingActions = (gelir) => (
     <TrailingActions>
       <SwipeAction
         destructive={true} 
-        onClick={() => handleDelete(gelir._id)}
+        onClick={() => startDeleteProcess(gelir._id)} 
+        onSwipeEnd={() => startDeleteProcess(gelir._id)}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
@@ -201,7 +250,7 @@ const GelirlerContent = () => {
         ) : (
           <SwipeableList
             threshold={0.3}     
-            fullSwipe={false}   
+            fullSwipe={true} 
             listType={ListType.IOS} 
           >
             {filteredGelirler.map((gelir) => {
@@ -251,16 +300,13 @@ const GelirlerContent = () => {
       >
         <div className="space-y-4 pt-4">
           
-          {/* ✨ YENİ TARİH ALANI - CustomDayPicker kullanılıyor */}
           <div>
             <Text strong className="block mb-1">Tarih:</Text>
             <CustomDayPicker
                 value={formData.tarih}
-                // onChange, Date objesi döner
                 onChange={(date) => setFormData({ ...formData, tarih: date })}
-                // Gelirler için de ileri tarihi engelliyoruz
                 disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={true} // Gelirler için indigo/yeşil tonlarını kullan
+                isIncome={true}
             />
           </div>
 
