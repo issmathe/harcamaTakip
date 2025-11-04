@@ -1,3 +1,5 @@
+// backend/routes/gelirs.js (GÜNCEL VERSİYON)
+
 const express = require("express");
 const router = express.Router();
 const Gelir = require("../models/Gelir");
@@ -5,7 +7,6 @@ const Gelir = require("../models/Gelir");
 // ➕ Yeni gelir ekle
 router.post("/", async (req, res) => {
   try {
-    // 💡 GÜNCELLEME: req.body'den 'createdAt' (tarih) alanını da alıyoruz
     const { miktar, kategori, not, createdAt } = req.body; 
 
     if (!miktar || !kategori) {
@@ -16,14 +17,17 @@ router.post("/", async (req, res) => {
       miktar,
       kategori,
       not,
-      // 💡 GÜNCELLEME: Eğer client'tan 'createdAt' geliyorsa onu kullan.
-      // Front-end'den (MainContent.jsx) gelen ISO string'i Mongoose otomatik Date objesine dönüştürecektir.
+      // Eğer client'tan 'createdAt' geliyorsa onu kullan.
       ...(createdAt && { createdAt: createdAt }), 
     });
 
     await yeniGelir.save();
     res.status(201).json(yeniGelir);
   } catch (err) {
+    // Hata yönetimini iyileştirelim
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({ message: "Doğrulama Hatası", errors: err.errors });
+    }
     res.status(500).json({ message: "Sunucu hatası", error: err.message });
   }
 });
@@ -42,15 +46,32 @@ router.get("/", async (req, res) => {
 // 🔄 Tek geliri güncelle
 router.put("/:id", async (req, res) => {
   try {
-    // req.body'deki tüm alanlar güncellenebilir
-    const guncellenmis = await Gelir.findByIdAndUpdate(req.params.id, req.body, {
+    // Gelen verileri ayır
+    const { miktar, kategori, not, createdAt } = req.body; 
+    
+    // Güncellenecek nesneyi oluştur (yalnızca gelen alanlar)
+    const updates = { miktar, kategori, not };
+    
+    // ✅ KRİTİK DÜZELTME: Eğer createdAt geldiyse, onu güncelleme nesnesine ekle
+    if (createdAt) {
+      updates.createdAt = createdAt; 
+    }
+    
+    // Mongoose güncellemesi
+    const guncellenmis = await Gelir.findByIdAndUpdate(req.params.id, updates, {
       new: true, // Güncellenmiş dokümanı geri döndür
+      runValidators: true, // Miktarın Number olması gibi doğrulayıcıları çalıştır
     });
+    
     if (!guncellenmis) {
       return res.status(404).json({ message: "Gelir bulunamadı" });
     }
     res.json(guncellenmis);
   } catch (err) {
+    // Hata yönetimini iyileştirelim
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({ message: "Doğrulama Hatası", errors: err.errors });
+    }
     res.status(500).json({ message: "Sunucu hatası", error: err.message });
   }
 });
