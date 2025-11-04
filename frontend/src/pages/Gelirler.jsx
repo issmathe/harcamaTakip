@@ -1,4 +1,4 @@
-// pages/Gelirler.jsx (TAM, TEMİZ VE SİLME/YENİLEME DÜZELTİLMİŞ VERSİYON)
+// pages/Gelirler.jsx (NİHAİ, STABİL VE TÜM DÜZELTMELERİ İÇEREN VERSİYON)
 
 import React, { useState, useMemo, useCallback } from "react";
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
@@ -47,7 +47,6 @@ const getCategoryDetails = (kategori) => {
 };
 
 const GelirlerContent = () => {
-  // Veri ve refetch'i Context'ten al
   const { gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -105,7 +104,7 @@ const GelirlerContent = () => {
       const updatedCreatedAt = dayjs(formData.tarih).toISOString();
       
       const payload = {
-        // Miktarı sayıya çevir (Tarih güncellemesinin çalışması için kritik)
+        // ✅ KRİTİK DÜZELTME: Miktarı sayıya çevir
         miktar: parseFloat(formData.miktar), 
         kategori: formData.kategori,
         not: formData.not,
@@ -116,7 +115,7 @@ const GelirlerContent = () => {
       
       message.success("Gelir başarıyla güncellendi!");
       setEditModalVisible(false);
-      // ✅ GÜNCELLEME BAŞARILI: Veriyi yenile
+      // Veriyi yenile
       if (typeof refetch === 'function') refetch(); 
     } catch (err) {
       console.error("Güncelleme hatası:", err);
@@ -150,9 +149,9 @@ const GelirlerContent = () => {
     <TrailingActions>
       <SwipeAction
         destructive={true} 
-        // fullSwipe=true durumunda zorunlu onClick prop'u
-        onClick={() => {}} 
-        // Tam kaydırma ile silme işlemi tetikleniyor
+        // ✅ KRİTİK ÇÖZÜM: onCLick'i silme fonksiyonuna bağla (PC'de buton tıklama için)
+        onClick={() => executeDelete(gelir._id)} 
+        // onSwipeEnd'i koru (Mobil cihazlarda kaydırma bitişi için)
         onSwipeEnd={() => executeDelete(gelir._id)}
       >
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
