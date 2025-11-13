@@ -54,7 +54,7 @@ const MESSAGE_KEY = 'harcamaSilmeIslemi'; // Geri Al mesaj anahtarı
 const ALL_CATEGORIES = [
   "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", 
   "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", 
-  "Spor", "Kırtasiye", "Restoran", "Diğer",
+  "İletisim", "Kırtasiye", "Restoran", "Diğer",
 ];
 
 const MARKETLER = [
