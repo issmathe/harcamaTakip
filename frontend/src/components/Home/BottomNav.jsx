@@ -2,76 +2,66 @@ import React from "react";
 import {
   HomeOutlined,
   BarChartOutlined,
-  FileTextOutlined,
-  DollarCircleOutlined,
+  FileTextOutlined, // Harcamalar için kullanıldı
+  DollarCircleOutlined, // Gelirler için kullanıldı
 } from "@ant-design/icons";
+// Modal ve Button Antd importları artık gerekli değil.
 import { useNavigate } from "react-router-dom";
 
 const BottomNav = () => {
+  // Modal state'i ve fonksiyonları artık kullanılmayacak
+  // const [isModalVisible, setIsModalVisible] = useState(false);
   const navigate = useNavigate();
 
+  // Yönlendirme Fonksiyonları (Artık modal açıp kapamaya gerek yok)
   const goToHome = () => navigate("/");
   const goToRaporlar = () => navigate("/raporlar");
-  const goToGelirler = () => navigate("/gelirler");
-  const goToHarcamalar = () => navigate("/harcamalar");
-
-  const currentPath = window.location.pathname; 
-
-  // 🌟 GÜNCELLEME: Koyu Arkaplan için renkler yeniden ayarlandı.
-  const activeColor = "text-indigo-400"; // Koyu üzerinde daha iyi duran açık indigo
-  const defaultColor = "text-gray-400"; // Varsayılan ikon rengi
-  
-  const getButtonClass = (path) => (
-    `flex flex-col items-center justify-center h-full w-1/4 transition-colors duration-200 
-    ${currentPath === path ? activeColor : defaultColor} 
-    hover:${activeColor}`
-  );
-
+  const // ✨ Yeni Fonksiyonlar
+  goToGelirler = () => navigate("/gelirler");
+  const // ✨ Yeni Fonksiyonlar
+  goToHarcamalar = () => navigate("/harcamalar");
 
   return (
+    // Modal kısmı tamamen kaldırıldı
     <>
-      {/* 🌟 GÜNCELLEME: bg-gray-700 kullanıldı ve border kaldırıldı (isteğe bağlı). */}
-      <nav className="fixed bottom-0 left-0 w-full bg-gray-700 shadow-xl z-20 h-20">
+      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 shadow-xl z-20 h-20 sm:h-20">
         
-        <div className="flex justify-around items-center h-full px-2 sm:px-4"> 
+        {/* ✅ Dört Eşit Parça: justify-around yerine justify-between ve tüm butonlar w-1/4 */}
+        <div className="flex justify-between items-center h-full px-2 sm:px-4"> 
           
-          {/* 1. Ana Sayfa */}
+          {/* 1. Ana Sayfa (w-1/4) */}
           <button
-            className={getButtonClass("/")}
+            className="flex flex-col items-center justify-center h-full w-1/4 text-gray-500 hover:text-blue-600 transition-colors duration-200"
             onClick={goToHome}
           >
-            <HomeOutlined className="text-3xl" /> 
+            <HomeOutlined className="text-2xl md:text-3xl" />
             <span className="text-xs font-medium mt-1">Ana Sayfa</span>
           </button>
 
-          {/* 2. Raporlar */}
+          {/* 2. Raporlar (w-1/4) */}
           <button
-            className={getButtonClass("/raporlar")}
+            className="flex flex-col items-center justify-center h-full w-1/4 text-gray-500 hover:text-blue-600 transition-colors duration-200"
             onClick={goToRaporlar}
           >
-            <BarChartOutlined className="text-3xl" />
+            <BarChartOutlined className="text-2xl md:text-3xl" />
             <span className="text-xs font-medium mt-1">Raporlar</span>
           </button>
           
-          {/* 3. Gelirler (Koyu arkaplan için emerald-300) */}
+          {/* 3. Gelirler (w-1/4) - Yeni Eklendi */}
           <button
-            className={`flex flex-col items-center justify-center h-full w-1/4 transition-colors duration-200 
-                        ${currentPath === '/gelirler' ? 'text-emerald-300' : defaultColor} 
-                        hover:text-emerald-300`}
+            className="flex flex-col items-center justify-center h-full w-1/4 text-green-600 hover:text-green-700 transition-colors duration-200"
             onClick={goToGelirler}
           >
-            <DollarCircleOutlined className="text-3xl" />
+            <DollarCircleOutlined className="text-2xl md:text-3xl" />
             <span className="text-xs font-medium mt-1">Gelirler</span>
           </button>
 
-          {/* 4. Harcamalar (Koyu arkaplan için red-300) */}
+          {/* 4. Harcamalar (w-1/4) - Yeni Eklendi */}
           <button
-            className={`flex flex-col items-center justify-center h-full w-1/4 transition-colors duration-200 
-                        ${currentPath === '/harcamalar' ? 'text-red-300' : defaultColor} 
-                        hover:text-red-300`}
+            className="flex flex-col items-center justify-center h-full w-1/4 text-red-600 hover:text-red-700 transition-colors duration-200"
             onClick={goToHarcamalar}
           >
-            <FileTextOutlined className="text-3xl" />
+            <FileTextOutlined className="text-2xl md:text-3xl" />
             <span className="text-xs font-medium mt-1">Harcamalar</span>
           </button>
 
