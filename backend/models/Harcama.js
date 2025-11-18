@@ -22,7 +22,7 @@ const HarcamaSchema = new mongoose.Schema(
         "Elektronik",
         "İletisim",
         "Market",
-        "Kırtasiye",
+        "Hediye",
         "Restoran",
         "Diğer",
       ],

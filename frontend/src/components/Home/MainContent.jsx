@@ -71,7 +71,7 @@ const CategoryIcons = {
   Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Kırtasiye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
+  Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
   "Restoran": {
     icon: Utensils,
     color: "text-orange-500",
