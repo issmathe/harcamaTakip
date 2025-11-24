@@ -1,33 +1,41 @@
 import React, { useMemo, useState, useCallback } from "react";
-// Sadece kullanılan bileşenler kaldı: Card, Typography, Empty, Button
 import { Card, Typography, Empty, Button } from "antd"; 
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons"; 
 import { useTotalsContext } from "../context/TotalsContext";
-import { Bar } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2"; // Line import edildi
+
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
   Tooltip,
-  Legend
+  Legend,
+  // Çizgi Grafiği için gerekli elementler eklendi
+  LineElement, 
+  PointElement,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-// ❌ Header ve BottomNav import'larını SİLİN
-// import Header from "../components/Home/Header.jsx"; 
-// import BottomNav from "../components/Home/BottomNav.jsx";
-
-// dayjs importları...
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
 dayjs.locale(tr);
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
+// Gerekli tüm Chart.js bileşenleri kaydedildi
+ChartJS.register(
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  Tooltip, 
+  Legend, 
+  ChartDataLabels,
+  LineElement, 
+  PointElement
+);
+
 const { Title } = Typography;
 
-// Sabitler ve Renkler (Değişmedi)
-// ... ALL_CATEGORIES, MARKETLER, categoryColors, marketColors ... (Aynen Kalsın)
+// --- SABİTLER ---
 const ALL_CATEGORIES = [
   "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
   "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Market", "Hediye",
@@ -66,10 +74,9 @@ const marketColors = [
   "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF",
   "#FF3333", "#33FF8A", "#AAAAAA", "#58508D", "#BC5090"
 ];
-// ... (RaporlarContent'in tamamı aynen kalabilir)
+// -----------------
 
 const RaporlarContent = () => {
-  // ... (RaporlarContent içindeki tüm mantık ve return aynen kalacak)
   const { harcamalar = [] } = useTotalsContext();
   const now = dayjs();
   
@@ -104,15 +111,16 @@ const RaporlarContent = () => {
 
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  // Harcama toplamları grafiği için verilerin hesaplanması
+  // ----------------------------------------------------
+  // I. Kategori Harcama Toplamları (Yatay Bar Grafiği - Mevcut)
+  // ----------------------------------------------------
   const barData = useMemo(() => {
     const totals = {};
     ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
 
     filteredHarcamalar.forEach(h => {
       let key = h.kategori;
-      if (key === "Market") key = "Market"; 
-      else if (key === "Restoran / Kafe") key = "Restoran";
+      if (key === "Restoran / Kafe") key = "Restoran";
       else if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
       
       totals[key] = (totals[key] || 0) + Number(h.miktar || 0);
@@ -141,7 +149,9 @@ const RaporlarContent = () => {
     };
   }, [filteredHarcamalar]);
 
-  // Market harcamaları grafiği için verilerin hesaplanması
+  // ----------------------------------------------------
+  // II. Market Harcamaları Alt Kategori (Yatay Bar Grafiği - Mevcut)
+  // ----------------------------------------------------
   const marketBarData = useMemo(() => {
     const marketTotals = {};
     const marketHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Market");
@@ -175,77 +185,216 @@ const RaporlarContent = () => {
     };
   }, [filteredHarcamalar]);
 
-// Genel Bar Grafiği Seçenekleri (Değişmedi)
-  const barOptions = useMemo(() => ({
-    responsive: true,
-    indexAxis: 'y',
-    maintainAspectRatio: false,
-    animation: { duration: 0 },
-    scales: {
-      x: {
-        beginAtZero: true,
-        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
-        ticks: { color: '#4A5568' },
-        grid: { display: false }
-      },
-      y: {
-        reverse: true,
-        title: { display: false },
-        ticks: { color: '#4A5568' }
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
-        }
-      },
-      datalabels: {
-        anchor: 'start', 
-        align: 'end', 
-        offset: 8, 
-        color: "white", 
-        font: { weight: "bold", size: 12 },
-        formatter: (value) => `${value.toFixed(2)}₺`,
-        textShadowBlur: 4,
-        textShadowColor: 'rgba(0, 0, 0, 0.7)' 
-      }
-    }
-  }), []);
 
-  // Market Bar Grafiği Seçenekleri (Değişmedi)
-  const marketBarOptions = useMemo(() => ({
-    ...barOptions,
-    scales: {
-      ...barOptions.scales,
-      x: {
-        ...barOptions.scales.x,
-        title: {
-          display: true,
-          text: 'Miktar (₺)',
-          color: '#4A5568'
+  // ----------------------------------------------------
+  // III. Market / Diğer Yığılmış Sütun Grafiği (YENİ)
+  // ----------------------------------------------------
+  const stackedBarData = useMemo(() => {
+    let marketTotal = 0;
+    let otherTotal = 0;
+    
+    filteredHarcamalar.forEach(h => {
+        const miktar = Number(h.miktar || 0);
+        if (h.kategori === "Market") {
+            marketTotal += miktar;
+        } else {
+            otherTotal += miktar;
         }
+    });
+
+    // Toplam harcama yoksa grafiği boş göstermek için
+    const total = marketTotal + otherTotal;
+    if (total === 0) return null; 
+
+    return {
+      labels: [displayMonth],
+      datasets: [
+        {
+          label: 'Market Harcamaları',
+          data: [marketTotal],
+          backgroundColor: categoryColors.Market,
+          stack: 'Stack 0', // Yığılmış olması için aynı stack adı
+        },
+        {
+          label: 'Diğer Harcamalar',
+          data: [otherTotal],
+          backgroundColor: '#4A5568', // Gri ton
+          stack: 'Stack 0',
+        },
+      ]
+    };
+  }, [filteredHarcamalar, displayMonth]);
+
+
+  // ----------------------------------------------------
+  // IV. Son 6 Aylık Harcama Trendi (Çizgi Grafiği) (YENİ)
+  // ----------------------------------------------------
+  const trendLineData = useMemo(() => {
+    const monthsToShow = 6; // Son 6 ayı göster
+    const trendDataMap = {};
+    const labels = [];
+    const now = dayjs();
+    
+    // Etiketleri (Son 6 ay) oluştur ve harcama haritasını ilkle
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const month = now.subtract(i, 'month');
+      labels.push(month.format('MMM YY'));
+      trendDataMap[month.format('YYYY-MM')] = 0;
+    }
+
+    // Harcamaları ilgili aylara dağıt
+    harcamalar.forEach(h => {
+      const t = dayjs(h.createdAt);
+      const yearMonth = t.format('YYYY-MM');
+      const miktar = Number(h.miktar || 0);
+
+      if (trendDataMap.hasOwnProperty(yearMonth)) {
+        trendDataMap[yearMonth] += miktar;
+      }
+    });
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Toplam Aylık Harcama",
+          data: Object.values(trendDataMap),
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          tension: 0.4, // Çizgi eğimi
+          fill: true,
+        }
+      ]
+    };
+  }, [harcamalar]);
+
+
+  // ----------------------------------------------------
+  // GRAFİK SEÇENEKLERİ (OPTIONS)
+  // ----------------------------------------------------
+
+  // Genel Yatay Bar Grafiği Seçenekleri (I. ve II. için)
+  const barOptions = useMemo(() => ({
+    responsive: true,
+    indexAxis: 'y',
+    maintainAspectRatio: false,
+    animation: { duration: 0 },
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
+        ticks: { color: '#4A5568' },
+        grid: { display: false }
       },
+      y: {
+        reverse: true,
+        title: { display: false },
+        ticks: { color: '#4A5568' }
+      }
     },
     plugins: {
-        ...barOptions.plugins,
-        tooltip: {
-            callbacks: {
-                label: (ctx) => `Harcama: ${ctx.raw.toFixed(2)}₺`
-            }
-        },
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
+      datalabels: {
+        anchor: 'end', 
+        align: 'end', 
+        offset: 8, 
+        color: "#4A5568", // Koyu renk daha iyi okunur
+        font: { weight: "bold", size: 12 },
+        formatter: (value) => `${value.toFixed(2)}₺`,
+      }
     }
-  }), [barOptions]);
+  }), []);
+
+  // Yığılmış Sütun Grafiği Seçenekleri (III. için)
+  const stackedBarOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 0 },
+    scales: {
+      x: {
+        stacked: true, 
+        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
+        ticks: { color: '#4A5568' },
+        grid: { display: false }
+      },
+      y: {
+        stacked: true, 
+        ticks: { color: '#4A5568' }
+      }
+    },
+    plugins: {
+      legend: { 
+        display: true, 
+        position: 'top',
+        labels: { color: '#4A5568' }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
+      datalabels: {
+        color: "white", // Çubuk içinde beyaz daha iyi görünür
+        font: { weight: "bold", size: 12 },
+        formatter: (value) => value > 0 ? `${value.toFixed(2)}₺` : null,
+        textShadowBlur: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.7)' 
+      }
+    }
+  }), []);
+
+  // Çizgi Grafiği Seçenekleri (IV. için)
+  const lineOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 0 },
+    scales: {
+      x: {
+        title: { display: true, text: 'Ay', color: '#4A5568' },
+        ticks: { color: '#4A5568' },
+        grid: { display: false }
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: 'Miktar (₺)', color: '#4A5568' },
+        ticks: { color: '#4A5568' }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}₺`
+        }
+      },
+      datalabels: {
+        anchor: 'end', 
+        align: 'top', 
+        offset: 4,
+        color: "rgb(75, 192, 192)", 
+        font: { weight: "bold", size: 12 },
+        formatter: (value) => `${value.toFixed(0)}₺`,
+      }
+    }
+  }), []);
+
 
   const hasData = barData.datasets[0]?.data.length > 0;
   const hasMarketData = marketBarData.datasets[0]?.data.length > 0;
+  const hasStackedData = stackedBarData !== null;
   
   const chartHeight = hasData ? (barData.labels.length * 35) + 100 : 300;
   const marketChartHeight = hasMarketData ? (marketBarData.labels.length * 35) + 100 : 300;
 
+  // ----------------------------------------------------
+  // JSX RETURN
+  // ----------------------------------------------------
   return (
-    // Dış padding'i kaldırıldı, içerik tam kenara yapışık
     <div className="w-full">
       
       {/* 1. AY GEZİNME KARTI */}
@@ -275,7 +424,20 @@ const RaporlarContent = () => {
         </div>
       </Card>
 
-      {/* 2. KATEGORİ GRAFİĞİ KARTI */}
+      {/* 2. TREND GRAFİĞİ KARTI (Çizgi Grafiği) */}
+      <Card 
+        className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
+        styles={{ body: { padding: '1rem' } }} 
+      >
+        <Title level={4} className="text-center text-gray-700 mb-4">
+          Son 6 Aylık Harcama Trendi 📉
+        </Title>
+        <div className="p-2" style={{ height: `300px`, width: '100%' }}>
+          <Line data={trendLineData} options={lineOptions} />
+        </div>
+      </Card>
+      
+      {/* 3. KATEGORİ GRAFİĞİ KARTI (Yatay Bar) */}
       <Card 
         className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
         styles={{ body: { padding: '1rem' } }} 
@@ -295,8 +457,23 @@ const RaporlarContent = () => {
           />
         )}
       </Card>
+      
+      {/* 4. MARKET/DİĞER YIĞILMIŞ GRAFİK KARTI (Dikey Yığılmış Bar) */}
+      {hasStackedData && (
+        <Card 
+          className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
+          styles={{ body: { padding: '1rem' } }} 
+        >
+          <Title level={4} className="text-center text-gray-700 mb-4">
+            Market/Diğer Harcama Payı 📊
+          </Title>
+          <div className="p-2" style={{ height: `300px`, width: '100%' }}>
+            <Bar data={stackedBarData} options={stackedBarOptions} />
+          </div>
+        </Card>
+      )}
 
-      {/* 3. MARKET ALT KATEGORİ GRAFİĞİ KARTI */}
+      {/* 5. MARKET ALT KATEGORİ GRAFİĞİ KARTI (Yatay Bar) */}
       {(hasData || hasMarketData) && (
         <Card 
           className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
@@ -307,7 +484,7 @@ const RaporlarContent = () => {
           </Title>
           {hasMarketData ? (
             <div className="p-2" style={{ height: `${marketChartHeight}px`, minHeight: '300px', width: '100%' }}>
-              <Bar data={marketBarData} options={marketBarOptions} />
+              <Bar data={marketBarData} options={barOptions} />
             </div>
           ) : (
             <Empty
@@ -324,11 +501,7 @@ const RaporlarContent = () => {
   );
 };
 
-// 👇 SADELEŞTİRİLMİŞ RAPORLAR BİLEŞENİ
 const Raporlar = () => (
-    // Artık sadece içeriği döndürüyoruz. App.jsx,
-    // Header ve BottomNav'ın sabitliğini ve kaydırma özelliğini yönetiyor.
-    // İçeriğe dış boşluk (padding) ekleyelim ki App.jsx'teki kaydırılabilir alanda kenarlardan biraz boşluk olsun.
     <div className="p-4 pt-0"> 
         <RaporlarContent />
     </div>
