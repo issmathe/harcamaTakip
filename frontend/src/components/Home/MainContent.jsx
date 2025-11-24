@@ -98,10 +98,11 @@ const MARKETLER = [
   "bäckerei",
   "Rewe",
   "Netto",
+  "Fundgrube",
+  "Rossmann",
   "Edeka",
   "Biomarkt",
   "Penny",
-  "Rossmann",
   "Diğer",
 ];
 

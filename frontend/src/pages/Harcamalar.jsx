@@ -58,9 +58,23 @@ const ALL_CATEGORIES = [
 ];
 
 const MARKETLER = [
-  "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", 
-  "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", 
-  "Edeka", "Biomarkt", "Penny", "Rossmann", "Diğer",
+  "Lidl",
+  "Aldi",
+  "DM",
+  "Action",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "bäckerei",
+  "Rewe",
+  "Netto",
+  "Fundgrube",
+  "Rossmann",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
+  "Diğer",
 ];
 
 const getCategoryDetails = (kategori) => {

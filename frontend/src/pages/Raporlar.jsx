@@ -43,13 +43,14 @@ const MARKETLER = [
   "Türk Market",
   "Et-Tavuk",
   "Kaufland",
-    "bäckerei",
+  "bäckerei",
   "Rewe",
   "Netto",
+  "Fundgrube",
+  "Rossmann",
   "Edeka",
   "Biomarkt",
   "Penny",
-  "Rossmann",
   "Diğer",
 ];
 
