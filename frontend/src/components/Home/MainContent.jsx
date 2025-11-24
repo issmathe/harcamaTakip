@@ -295,7 +295,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     const harcamaData = {
       miktar: values.miktar,
       kategori: selectedCategory || "Diğer",
-      altKategori: selectedCategory === "Market" ? selectedMarket : "",
+      altKategori: selectedCategory === "Market" ? values.altKategori : "", // altKategori'yi values'tan alıyoruz.
       not: values.not || "",
       createdAt: selectedDate, 
     };
@@ -434,11 +434,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             <Form.Item
               name="altKategori"
               label={<span className="font-semibold text-gray-700">Market Seç</span>}
-              initialValue={selectedMarket}
+              // Market kategorisi seçildiğinde bu alanı zorunlu yapıyoruz
+              rules={[{ required: true, message: "Market seçimi zorunludur" }]} 
+              initialValue={selectedMarket || undefined} // Zorunlu alan için boş string yerine undefined kullanmak daha iyi
             >
               <Select 
                 placeholder="Market seçin" 
-                onChange={setSelectedMarket}
+                // Market seçimi artık formun altKategori değeri olarak tutuluyor
+                onChange={setSelectedMarket} 
                 className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
               >
                 {MARKETLER.map((m) => (
