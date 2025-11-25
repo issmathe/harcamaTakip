@@ -106,11 +106,23 @@ const MARKETLER = [
   "Diğer",
 ];
 
+// Yeni Giyim Alt Kategori Listesi
+const GIYIM_KISILERI = [
+  "Ahmet",
+  "Ayşe",
+  "Yusuf",
+  "Zeynep",
+  "Hediye",
+];
+
 const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext(); 
   
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  // selectedMarket yerine selectedSubCategory adını kullanmak daha genel bir yaklaşım olurdu,
+  // ancak mevcut kod yapısını bozmamak için sadece "Market" ile ilgili state'i koruyabiliriz.
+  // Giyim için ayrı bir state tanımlamadan Form.Item'ın kendi değerini kullanacağız.
   const [selectedMarket, setSelectedMarket] = useState("");
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -258,7 +270,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleIconClick = (category) => {
     if (isDragging) return;
     setSelectedCategory(category);
-    setSelectedMarket("");
+    setSelectedMarket(""); // Market'i sıfırla
     setIsModalVisible(true);
     form.resetFields();
     // DayPicker için initial değeri Date objesi olarak ayarlayın
@@ -292,10 +304,18 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
     const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
     
+    let altKategoriValue = "";
+
+    // Market veya Giyim kategorisi için altKategori değerini belirle
+    if (selectedCategory === "Market" || selectedCategory === "Giyim") {
+        altKategoriValue = values.altKategori || "";
+    }
+    
     const harcamaData = {
       miktar: values.miktar,
       kategori: selectedCategory || "Diğer",
-      altKategori: selectedCategory === "Market" ? values.altKategori : "", // altKategori'yi values'tan alıyoruz.
+      // Güncellenmiş altKategori ataması
+      altKategori: altKategoriValue, 
       not: values.not || "",
       createdAt: selectedDate, 
     };
@@ -430,23 +450,27 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             />
           </Form.Item>
 
-          {selectedCategory === "Market" && (
+          {(selectedCategory === "Market" || selectedCategory === "Giyim") && (
             <Form.Item
               name="altKategori"
-              label={<span className="font-semibold text-gray-700">Market Seç</span>}
-              // Market kategorisi seçildiğinde bu alanı zorunlu yapıyoruz
-              rules={[{ required: true, message: "Market seçimi zorunludur" }]} 
-              initialValue={selectedMarket || undefined} // Zorunlu alan için boş string yerine undefined kullanmak daha iyi
+              label={
+                <span className="font-semibold text-gray-700">
+                  {selectedCategory === "Market" ? "Market Seç" : "Kişi Seç"}
+                </span>
+              }
+              // Bu alanı Market veya Giyim seçildiğinde zorunlu yapıyoruz
+              rules={[{ required: true, message: `${selectedCategory === "Market" ? "Market" : "Kişi"} seçimi zorunludur` }]} 
+              initialValue={selectedCategory === "Market" ? selectedMarket || undefined : undefined} 
             >
               <Select 
-                placeholder="Market seçin" 
-                // Market seçimi artık formun altKategori değeri olarak tutuluyor
-                onChange={setSelectedMarket} 
+                placeholder={selectedCategory === "Market" ? "Market seçin" : "Kişi seçin"} 
+                onChange={selectedCategory === "Market" ? setSelectedMarket : undefined} // Sadece Market için state'i güncelleyelim
                 className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
               >
-                {MARKETLER.map((m) => (
-                  <Option key={m} value={m}>
-                    {m}
+                {/* Seçenekleri kategoriye göre belirliyoruz */}
+                {(selectedCategory === "Market" ? MARKETLER : GIYIM_KISILERI).map((item) => (
+                  <Option key={item} value={item}>
+                    {item}
                   </Option>
                 ))}
               </Select>

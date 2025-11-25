@@ -77,6 +77,15 @@ const MARKETLER = [
   "Diğer",
 ];
 
+// YENİ SABİT: Giyim Alt Kategorileri (Kişiler)
+const GIYIM_KISILERI = [
+  "Ahmet",
+  "Ayşe",
+  "Yusuf",
+  "Zeynep",
+  "Hediye", 
+];
+
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
 
@@ -144,19 +153,6 @@ const HarcamalarContent = () => {
     onError: () => message.error("Güncelleme başarısız!"),
   });
 
-  // Geri Alma Özelliği için artık bu mutasyonu doğrudan kullanmıyoruz.
-  // Silme işlemini manuel olarak yöneteceğiz.
-  /*
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => axios.delete(`${API_URL}/harcama/${id}`),
-    onSuccess: () => {
-      message.success("🗑️ Harcama kaydı başarıyla silindi!"); 
-      queryClient.invalidateQueries(["harcamalar"]);
-    },
-    onError: () => message.error("Silme başarısız!"),
-  });
-  */
-
 
   // 1. KESİN SİLME İŞLEMİ (Sadece zamanlayıcı bitince veya Geri Al iptal edilince çağrılır)
   const definitiveDelete = async (id) => {
@@ -202,6 +198,9 @@ const HarcamalarContent = () => {
         duration: 3, // 3 saniye sonra otomatik kapanacak
     });
 
+    // Anlık olarak cache'den silinmiş gibi göster, kesin silmeyi geciktir
+    // NOT: useQueryClient olmadığı için bu kısım burada uygulanmadı, cache'i manuel güncellemek gerekir.
+    // Şimdilik sadece API çağrısı geciktiriliyor.
     deleteTimerRef.current = setTimeout(() => {
       definitiveDelete(id);
       message.destroy(MESSAGE_KEY); 
@@ -255,13 +254,14 @@ const HarcamalarContent = () => {
     dayjs(dateString).format("DD.MM.YYYY HH:mm");
 
   const openEditModal = (harcama) => {
-    const isMarket = harcama.kategori === "Market";
+    const isMarketOrGiyim = harcama.kategori === "Market" || harcama.kategori === "Giyim";
 
     setEditingHarcama(harcama);
     setFormData({
       miktar: harcama.miktar,
       kategori: harcama.kategori,
-      altKategori: isMarket ? harcama.altKategori || "" : "",
+      // Market veya Giyim ise altKategori'yi set et
+      altKategori: isMarketOrGiyim ? harcama.altKategori || "" : "",
       not: harcama.not || "",
       tarih: dayjs(harcama.createdAt).toDate(), // Tarihi Date objesi olarak set et
     });
@@ -271,19 +271,28 @@ const HarcamalarContent = () => {
   const handleEditSave = () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
 
-    if (formData.kategori === "Market" && !formData.altKategori) {
-      return message.error("Market seçimi boş bırakılamaz!");
+    const isMarket = formData.kategori === "Market";
+    const isGiyim = formData.kategori === "Giyim";
+
+    if ((isMarket || isGiyim) && !formData.altKategori) {
+      return message.error(`${isMarket ? "Market" : "Kişi"} seçimi boş bırakılamaz!`);
     }
     
     // ✅ Tarih, ISO string formatına çevrildi (Tarih güncelleme sorunu çözüldü)
     const updatedCreatedAt = dayjs(formData.tarih).toISOString();
 
+    let finalAltKategori = "";
+    if (isMarket || isGiyim) {
+        finalAltKategori = formData.altKategori;
+    }
+    
     const payload = {
       // ✅ Miktar Sayıya Çevrildi
       miktar: parseFloat(formData.miktar),
       _id: editingHarcama._id,
       kategori: formData.kategori,
-      altKategori: formData.kategori !== "Market" ? "" : formData.altKategori,
+      // Alt kategoriyi sadece Market veya Giyim ise dahil et
+      altKategori: finalAltKategori, 
       not: formData.not,
       createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
     };
@@ -403,10 +412,10 @@ const HarcamalarContent = () => {
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
 
-              const displayCategory =
-                harcama.kategori === "Market" && harcama.altKategori
-                  ? `${harcama.kategori} (${harcama.altKategori})`
-                  : harcama.kategori;
+              let displayCategory = harcama.kategori;
+              if ((harcama.kategori === "Market" || harcama.kategori === "Giyim") && harcama.altKategori) {
+                  displayCategory = `${harcama.kategori} (${harcama.altKategori})`;
+              }
 
               return (
                 <SwipeableListItem
@@ -510,6 +519,7 @@ const HarcamalarContent = () => {
               ))}
             </Select>
 
+            {/* Market Alt Kategori Seçimi */}
             {formData.kategori === "Market" && (
               <div className="mt-2">
                 <Text strong className="block mb-1">
@@ -529,6 +539,28 @@ const HarcamalarContent = () => {
                 </Select>
               </div>
             )}
+
+            {/* YENİ: Giyim Alt Kategori Seçimi (Kişi) */}
+            {formData.kategori === "Giyim" && (
+              <div className="mt-2">
+                <Text strong className="block mb-1">
+                  Kişi Seç:
+                </Text>
+                <Select
+                  value={formData.altKategori}
+                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
+                  style={{ width: "100%" }}
+                  placeholder="Kişi seçin"
+                >
+                  {GIYIM_KISILERI.map((kisi) => (
+                    <Option key={kisi} value={kisi}>
+                      {kisi}
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+            )}
+
           </div>
 
           <div>

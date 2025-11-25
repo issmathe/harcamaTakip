@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from "react";
 import { Card, Typography, Empty, Button } from "antd"; 
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons"; 
 import { useTotalsContext } from "../context/TotalsContext";
-import { Bar, Line } from "react-chartjs-2"; // Line import edildi
+import { Bar, Line } from "react-chartjs-2";
 
 import {
   Chart as ChartJS,
@@ -11,7 +11,6 @@ import {
   BarElement,
   Tooltip,
   Legend,
-  // Çizgi Grafiği için gerekli elementler eklendi
   LineElement, 
   PointElement,
 } from "chart.js";
@@ -62,6 +61,15 @@ const MARKETLER = [
   "Diğer",
 ];
 
+// YENİ SABİT: Giyim Kişileri
+const GIYIM_KISILERI = [
+  "Ahmet",
+  "Ayşe",
+  "Yusuf",
+  "Zeynep",
+  "Hediye",
+];
+
 const categoryColors = {
   "Giyim": "#FF6384", "Bağış": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
   "Fatura": "#9966FF", "Eğitim": "#FF9F40", "Sağlık": "#C9CBCF", "Ulaşım": "#8AFF33",
@@ -74,6 +82,9 @@ const marketColors = [
   "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF",
   "#FF3333", "#33FF8A", "#AAAAAA", "#58508D", "#BC5090"
 ];
+
+// Kişi renkleri için yeni bir renk paleti tanımlayalım.
+const giyimColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"];
 // -----------------
 
 const RaporlarContent = () => {
@@ -185,9 +196,50 @@ const RaporlarContent = () => {
     };
   }, [filteredHarcamalar]);
 
+  // ----------------------------------------------------
+  // YENİ III. Giyim Harcamaları Alt Kategori (Kişi Bazlı Yatay Bar Grafiği)
+  // ----------------------------------------------------
+  const giyimBarData = useMemo(() => {
+    const giyimTotals = {};
+    const giyimHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Giyim");
+
+    // Tüm kişileri (ve Diğer/Ortak) sıfırla ilkle
+    GIYIM_KISILERI.forEach(kisi => giyimTotals[kisi] = 0);
+
+    giyimHarcamalar.forEach(h => {
+      // altKategori'de kişi adı olmalı
+      const altKategori = h.altKategori || "Diğer"; 
+      // Sadece tanımlı kişiler ve "Diğer" / "Ortak" için toplama yap
+      const key = GIYIM_KISILERI.includes(altKategori) ? altKategori : "Diğer";
+      giyimTotals[key] = (giyimTotals[key] || 0) + Number(h.miktar || 0);
+    });
+
+    const chartDataItems = Object.keys(giyimTotals)
+      .filter(k => giyimTotals[k] > 0)
+      .map((label, index) => ({
+        label,
+        data: giyimTotals[label],
+        color: giyimColors[index % giyimColors.length] // Yeni renk paletini kullan
+      }))
+      .sort((a, b) => a.data - b.data);
+
+    return {
+      labels: chartDataItems.map(item => item.label),
+      datasets: [
+        {
+          label: "Giyim Harcaması (₺)",
+          data: chartDataItems.map(item => item.data),
+          backgroundColor: chartDataItems.map(item => item.color),
+          borderColor: chartDataItems.map(item => item.color + 'AA'),
+          borderWidth: 1,
+        }
+      ]
+    };
+  }, [filteredHarcamalar]);
+
 
   // ----------------------------------------------------
-  // III. Market / Diğer Yığılmış Sütun Grafiği (YENİ)
+  // IV. Market / Diğer Yığılmış Sütun Grafiği (Mevcut)
   // ----------------------------------------------------
   const stackedBarData = useMemo(() => {
     let marketTotal = 0;
@@ -227,7 +279,7 @@ const RaporlarContent = () => {
 
 
   // ----------------------------------------------------
-  // IV. Son 6 Aylık Harcama Trendi (Çizgi Grafiği) (YENİ)
+  // V. Son 6 Aylık Harcama Trendi (Çizgi Grafiği) (Mevcut)
   // ----------------------------------------------------
   const trendLineData = useMemo(() => {
     const monthsToShow = 6; // Son 6 ayı göster
@@ -273,7 +325,7 @@ const RaporlarContent = () => {
   // GRAFİK SEÇENEKLERİ (OPTIONS)
   // ----------------------------------------------------
 
-  // Genel Yatay Bar Grafiği Seçenekleri (I. ve II. için)
+  // Genel Yatay Bar Grafiği Seçenekleri (I., II. ve YENİ III. için)
   const barOptions = useMemo(() => ({
     responsive: true,
     indexAxis: 'y',
@@ -303,14 +355,14 @@ const RaporlarContent = () => {
         anchor: 'end', 
         align: 'end', 
         offset: 8, 
-        color: "#4A5568", // Koyu renk daha iyi okunur
+        color: "#4A5568", 
         font: { weight: "bold", size: 12 },
         formatter: (value) => `${value.toFixed(2)}₺`,
       }
     }
   }), []);
 
-  // Yığılmış Sütun Grafiği Seçenekleri (III. için)
+  // Yığılmış Sütun Grafiği Seçenekleri (IV. için)
   const stackedBarOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -339,7 +391,7 @@ const RaporlarContent = () => {
         }
       },
       datalabels: {
-        color: "white", // Çubuk içinde beyaz daha iyi görünür
+        color: "white", 
         font: { weight: "bold", size: 12 },
         formatter: (value) => value > 0 ? `${value.toFixed(2)}₺` : null,
         textShadowBlur: 4,
@@ -348,7 +400,7 @@ const RaporlarContent = () => {
     }
   }), []);
 
-  // Çizgi Grafiği Seçenekleri (IV. için)
+  // Çizgi Grafiği Seçenekleri (V. için)
   const lineOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -386,10 +438,15 @@ const RaporlarContent = () => {
 
   const hasData = barData.datasets[0]?.data.length > 0;
   const hasMarketData = marketBarData.datasets[0]?.data.length > 0;
+  // YENİ Kontrol
+  const hasGiyimData = giyimBarData.datasets[0]?.data.length > 0; 
   const hasStackedData = stackedBarData !== null;
   
   const chartHeight = hasData ? (barData.labels.length * 35) + 100 : 300;
   const marketChartHeight = hasMarketData ? (marketBarData.labels.length * 35) + 100 : 300;
+  // YENİ Yükseklik
+  const giyimChartHeight = hasGiyimData ? (giyimBarData.labels.length * 35) + 100 : 300;
+
 
   // ----------------------------------------------------
   // JSX RETURN
@@ -458,7 +515,32 @@ const RaporlarContent = () => {
         )}
       </Card>
       
-      {/* 4. MARKET/DİĞER YIĞILMIŞ GRAFİK KARTI (Dikey Yığılmış Bar) */}
+      {/* YENİ 4. GİYİM KİŞİ BAZLI GRAFİK KARTI (Yatay Bar) */}
+      {(hasData || hasGiyimData) && (
+        <Card 
+          className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
+          styles={{ body: { padding: '1rem' } }} 
+        >
+          <Title level={4} className="text-center text-gray-700 mb-4">
+            Giyim Harcamaları (Kişi Bazlı) 👕
+          </Title>
+          {hasGiyimData ? (
+            <div className="p-2" style={{ height: `${giyimChartHeight}px`, minHeight: '300px', width: '100%' }}>
+              <Bar data={giyimBarData} options={barOptions} />
+            </div>
+          ) : (
+            <Empty
+              description={hasData 
+                ? "Bu ayda Giyim kategorisinde harcama yapılmamış." 
+                : `Seçilen dönemde (${displayMonth}) giyim harcaması verisi yok.`
+              }
+              className="p-10"
+            />
+          )}
+        </Card>
+      )}
+
+      {/* 5. MARKET/DİĞER YIĞILMIŞ GRAFİK KARTI (Dikey Yığılmış Bar) */}
       {hasStackedData && (
         <Card 
           className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
@@ -473,7 +555,7 @@ const RaporlarContent = () => {
         </Card>
       )}
 
-      {/* 5. MARKET ALT KATEGORİ GRAFİĞİ KARTI (Yatay Bar) */}
+      {/* 6. MARKET ALT KATEGORİ GRAFİĞİ KARTI (Yatay Bar) */}
       {(hasData || hasMarketData) && (
         <Card 
           className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4"
