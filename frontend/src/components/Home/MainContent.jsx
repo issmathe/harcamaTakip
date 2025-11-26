@@ -19,19 +19,20 @@ import CustomDayPicker from "../Forms/CustomDayPicker";
 import {
   Shirt,
   HeartHandshake,
-  Fuel, 
+  Fuel,
   Home,
   ReceiptText,
   BookOpen,
-  HeartPulse, 
+  HeartPulse,
   Car,
   Gift,
   Laptop,
   Zap,
   ShoppingCart,
-  Pencil, 
+  Pencil,
   Utensils,
   HelpCircle,
+  Users, // 👈 Yeni İkon: Aile için Users ikonu
 } from "lucide-react";
 
 import axios from "axios";
@@ -42,6 +43,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
+// 1. Değişiklik: CategoryIcons objesine "Aile" kategorisini ekle
 const CategoryIcons = {
   Market: {
     icon: ShoppingCart,
@@ -54,7 +56,7 @@ const CategoryIcons = {
     color: "text-pink-500",
     bgColor: "bg-pink-100",
   },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" }, 
+  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
   Fatura: {
     icon: ReceiptText,
@@ -66,16 +68,22 @@ const CategoryIcons = {
     icon: HeartPulse,
     color: "text-emerald-500",
     bgColor: "bg-emerald-100",
-  }, 
+  },
   Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
   Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
   Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  "Restoran": {
+  Restoran: {
     icon: Utensils,
     color: "text-orange-500",
     bgColor: "bg-orange-100",
+  },
+  // 👇 Yeni Aile Kategorisi
+  Aile: {
+    icon: Users,
+    color: "text-green-600",
+    bgColor: "bg-green-100",
   },
   Diğer: {
     icon: HelpCircle,
@@ -106,23 +114,22 @@ const MARKETLER = [
   "Diğer",
 ];
 
-// Yeni Giyim Alt Kategori Listesi
-const GIYIM_KISILERI = [
-  "Ahmet",
+// Giyim Alt Kategori Listesi
+const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
+
+// 2. Değişiklik: Yeni Aile Üyeleri Alt Kategori Listesi
+const AILE_UYELERI = [
+  "Ahmet", // Örnek üyeler
   "Ayşe",
   "Yusuf",
   "Zeynep",
-  "Hediye",
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
-  const { refetch, harcamalar = [] } = useTotalsContext(); 
-  
+  const { refetch, harcamalar = [] } = useTotalsContext();
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  // selectedMarket yerine selectedSubCategory adını kullanmak daha genel bir yaklaşım olurdu,
-  // ancak mevcut kod yapısını bozmamak için sadece "Market" ile ilgili state'i koruyabiliriz.
-  // Giyim için ayrı bir state tanımlamadan Form.Item'ın kendi değerini kullanacağız.
   const [selectedMarket, setSelectedMarket] = useState("");
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -138,7 +145,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       axios.post(`${API_URL}/harcama`, harcamaData),
     onSuccess: async () => {
       message.success("Harcama eklendi!");
-      await refetch(); 
+      await refetch();
       handleModalCancel();
     },
     onError: () => message.error("Harcama eklenirken hata oluştu."),
@@ -148,7 +155,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     mutationFn: async (gelirData) => axios.post(`${API_URL}/gelir`, gelirData),
     onSuccess: async () => {
       message.success("Gelir eklendi!");
-      await refetch(); 
+      await refetch();
       handleGelirCancel();
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
@@ -233,7 +240,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       const dx = touch.clientX - touchStartPos.current.x;
       const dy = touch.clientY - touchStartPos.current.y;
       if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
-        e.preventDefault(); 
+        e.preventDefault();
         if (!isDragging) setIsDragging(true);
 
         const rect = wheelRef.current.getBoundingClientRect();
@@ -275,7 +282,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     form.resetFields();
     // DayPicker için initial değeri Date objesi olarak ayarlayın
     form.setFieldsValue({
-        tarih: dayjs().toDate() 
+      tarih: dayjs().toDate(),
     });
   };
 
@@ -291,7 +298,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     gelirForm.resetFields();
     // DayPicker için initial değeri Date objesi olarak ayarlayın
     gelirForm.setFieldsValue({
-        tarih: dayjs().toDate()
+      tarih: dayjs().toDate(),
     });
   };
 
@@ -302,53 +309,92 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const onHarcamaFinish = (values) => {
     // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
-    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
-    
+    const selectedDate = values.tarih
+      ? dayjs(values.tarih).toISOString()
+      : new Date().toISOString();
+
     let altKategoriValue = "";
 
-    // Market veya Giyim kategorisi için altKategori değerini belirle
-    if (selectedCategory === "Market" || selectedCategory === "Giyim") {
-        altKategoriValue = values.altKategori || "";
+    // Market, Giyim veya Aile kategorisi için altKategori değerini belirle
+    if (
+      selectedCategory === "Market" ||
+      selectedCategory === "Giyim" ||
+      selectedCategory === "Aile"
+    ) {
+      altKategoriValue = values.altKategori || "";
     }
-    
+
     const harcamaData = {
       miktar: values.miktar,
       kategori: selectedCategory || "Diğer",
       // Güncellenmiş altKategori ataması
-      altKategori: altKategoriValue, 
+      altKategori: altKategoriValue,
       not: values.not || "",
-      createdAt: selectedDate, 
+      createdAt: selectedDate,
     };
     harcamaMutation.mutate(harcamaData);
   };
 
   const onGelirFinish = (values) => {
     // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
-    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
+    const selectedDate = values.tarih
+      ? dayjs(values.tarih).toISOString()
+      : new Date().toISOString();
 
     const gelirData = {
       miktar: values.miktar,
       kategori: values.kategori,
       not: values.not || "",
-      createdAt: selectedDate, 
+      createdAt: selectedDate,
     };
     gelirMutation.mutate(gelirData);
   };
 
+  // Alt kategori listesini ve placeholder metnini kategoriye göre döndüren yardımcı fonksiyon
+  const getSubCategoryProps = (category) => {
+    switch (category) {
+      case "Market":
+        return {
+          label: "Market Seç",
+          placeholder: "Market seçin",
+          options: MARKETLER,
+        };
+      case "Giyim":
+        return {
+          label: "Kişi Seç",
+          placeholder: "Kişi seçin",
+          options: GIYIM_KISILERI,
+        };
+      // 👇 3. Değişiklik: "Aile" için yeni durum
+      case "Aile":
+        return {
+          label: "Aile Üyesi Seç",
+          placeholder: "Aile üyesi seçin",
+          options: AILE_UYELERI,
+        };
+      default:
+        return { label: "", placeholder: "", options: [] };
+    }
+  };
+
+  const needsSubCategory =
+    selectedCategory === "Market" ||
+    selectedCategory === "Giyim" ||
+    selectedCategory === "Aile"; // 3. Değişiklik: Aile'yi ekle
+  const subCategoryProps = getSubCategoryProps(selectedCategory);
+
   return (
-    <main className="flex-1 px-4 pt-4 pb-4"> 
-      
-      <div className="text-center mb-6 pt-4"> 
-          <div className="text-blue-600 font-bold text-xl leading-snug">
-            {currentTopCategory}
-          </div>
-          <div className="text-gray-700 font-semibold text-base mt-1">
-            {formattedTotal} €
-          </div>
+    <main className="flex-1 px-4 pt-4 pb-4">
+      <div className="text-center mb-6 pt-4">
+        <div className="text-blue-600 font-bold text-xl leading-snug">
+          {currentTopCategory}
+        </div>
+        <div className="text-gray-700 font-semibold text-base mt-1">
+          {formattedTotal} €
+        </div>
       </div>
 
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        
         <div
           onClick={handleGelirClick}
           className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-[1.05] z-20 transition-all"
@@ -367,7 +413,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((category, i) => {
-            const angle = (360 / CATEGORIES.length) * i - 90; 
+            const angle = (360 / CATEGORIES.length) * i - 90;
             const rad = (angle * Math.PI) / 180;
             const x = radius * Math.cos(rad);
             const y = radius * Math.sin(rad);
@@ -389,7 +435,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                   style={{
                     top: `${center + y}%`,
                     left: `${center + x}%`,
-                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`, 
+                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
                   }}
                 >
                   <Icon className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} />
@@ -399,7 +445,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           })}
         </div>
       </div>
-      
+
       {/* Harcama Ekleme Modalı */}
       <Modal
         title={
@@ -410,17 +456,17 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
-        centered 
-        className="modern-modal" 
+        centered
+        className="modern-modal"
       >
-        <Form 
-            form={form} 
-            layout="vertical" 
-            onFinish={onHarcamaFinish}
-            initialValues={{
-                tarih: dayjs().toDate(), // Date objesi
-            }}
-            className="space-y-4" 
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onHarcamaFinish}
+          initialValues={{
+            tarih: dayjs().toDate(), // Date objesi
+          }}
+          className="space-y-4"
         >
           <Form.Item
             name="tarih"
@@ -428,9 +474,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
             {/* CustomDayPicker kullanımı (Harcama) */}
-            <CustomDayPicker 
-                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={false}
+            <CustomDayPicker
+              disabledDate={(current) =>
+                current && current.isAfter(dayjs(), "day")
+              }
+              isIncome={false}
             />
           </Form.Item>
 
@@ -446,29 +494,41 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
+              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200"
             />
           </Form.Item>
 
-          {(selectedCategory === "Market" || selectedCategory === "Giyim") && (
+          {/* 3. Değişiklik: Koşullu render'ı needsSubCategory ile yap */}
+          {needsSubCategory && (
             <Form.Item
               name="altKategori"
               label={
                 <span className="font-semibold text-gray-700">
-                  {selectedCategory === "Market" ? "Market Seç" : "Kişi Seç"}
+                  {subCategoryProps.label}
                 </span>
               }
-              // Bu alanı Market veya Giyim seçildiğinde zorunlu yapıyoruz
-              rules={[{ required: true, message: `${selectedCategory === "Market" ? "Market" : "Kişi"} seçimi zorunludur` }]} 
-              initialValue={selectedCategory === "Market" ? selectedMarket || undefined : undefined} 
+              // Alt kategorisi olan alanları zorunlu yap
+              rules={[
+                {
+                  required: true,
+                  message: `${subCategoryProps.label} seçimi zorunludur`,
+                },
+              ]}
+              initialValue={
+                selectedCategory === "Market"
+                  ? selectedMarket || undefined
+                  : undefined
+              }
             >
-              <Select 
-                placeholder={selectedCategory === "Market" ? "Market seçin" : "Kişi seçin"} 
-                onChange={selectedCategory === "Market" ? setSelectedMarket : undefined} // Sadece Market için state'i güncelleyelim
-                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200" 
+              <Select
+                placeholder={subCategoryProps.placeholder}
+                onChange={
+                  selectedCategory === "Market" ? setSelectedMarket : undefined
+                } // Sadece Market için state'i güncelleyelim
+                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200"
               >
                 {/* Seçenekleri kategoriye göre belirliyoruz */}
-                {(selectedCategory === "Market" ? MARKETLER : GIYIM_KISILERI).map((item) => (
+                {subCategoryProps.options.map((item) => (
                   <Option key={item} value={item}>
                     {item}
                   </Option>
@@ -477,14 +537,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             </Form.Item>
           )}
 
-          <Form.Item 
-            name="not" 
+          <Form.Item
+            name="not"
             label={<span className="font-semibold text-gray-700">Not</span>}
           >
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200" 
+              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200"
             />
           </Form.Item>
 
@@ -493,7 +553,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={harcamaMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200" 
+            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200"
           >
             Kaydet
           </Button>
@@ -503,24 +563,22 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       {/* Gelir Ekleme Modalı */}
       <Modal
         title={
-          <div className="text-2xl font-bold text-indigo-700">
-            Gelir Ekle
-          </div>
+          <div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>
         }
         open={isGelirModalVisible}
         onCancel={handleGelirCancel}
         footer={null}
-        centered 
-        className="modern-modal" 
+        centered
+        className="modern-modal"
       >
-        <Form 
-            form={gelirForm} 
-            layout="vertical" 
-            onFinish={onGelirFinish}
-            initialValues={{
-                tarih: dayjs().toDate(), // Date objesi
-            }}
-            className="space-y-4" 
+        <Form
+          form={gelirForm}
+          layout="vertical"
+          onFinish={onGelirFinish}
+          initialValues={{
+            tarih: dayjs().toDate(), // Date objesi
+          }}
+          className="space-y-4"
         >
           <Form.Item
             name="tarih"
@@ -528,9 +586,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
             {/* CustomDayPicker kullanımı (Gelir) */}
-            <CustomDayPicker 
-                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={true}
+            <CustomDayPicker
+              disabledDate={(current) =>
+                current && current.isAfter(dayjs(), "day")
+              }
+              isIncome={true}
             />
           </Form.Item>
 
@@ -543,7 +603,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               min={0.01}
               step={0.01}
               style={{ width: "100%" }}
-              inputMode="decimal" 
+              inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
               className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
@@ -555,9 +615,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label={<span className="font-semibold text-gray-700">Kategori</span>}
             rules={[{ required: true, message: "Kategori gerekli" }]}
           >
-            <Select 
-                placeholder="Gelir türü seçin"
-                className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200" 
+            <Select
+              placeholder="Gelir türü seçin"
+              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
             >
               <Option value="maaş">Maaş</Option>
               <Option value="tasarruf">Tasarruf</Option>
@@ -565,14 +625,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item 
-            name="not" 
+          <Form.Item
+            name="not"
             label={<span className="font-semibold text-gray-700">Not</span>}
           >
             <Input.TextArea
               rows={3}
               placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200" 
+              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200"
             />
           </Form.Item>
 
@@ -581,7 +641,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             htmlType="submit"
             block
             loading={gelirMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200" 
+            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200"
           >
             Kaydet
           </Button>

@@ -1,10 +1,10 @@
 // pages/Harcamalar.jsx (react-query ile TAM ve GÜNCEL VERSİYON)
 
-import React, { useState, useMemo, useCallback, useRef } from "react"; 
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   Typography,
   Button,
-  Modal, 
+  Modal,
   Input,
   Select,
   message,
@@ -49,12 +49,26 @@ const { Text, Title } = Typography;
 const { Option } = Select;
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
-const MESSAGE_KEY = 'harcamaSilmeIslemi'; // Geri Al mesaj anahtarı
+const MESSAGE_KEY = "harcamaSilmeIslemi"; // Geri Al mesaj anahtarı
 
+// Sabitler
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", 
-  "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", 
-  "İletisim", "Hediye", "Restoran", "Diğer",
+  "Market",
+  "Giyim",
+  "Bağış",
+  "Petrol",
+  "Kira",
+  "Fatura",
+  "Eğitim",
+  "Sağlık",
+  "Ulaşım",
+  "Eğlence",
+  "Elektronik",
+  "İletisim",
+  "Hediye",
+  "Restoran",
+  "Aile", // Aile kategorisi eklendi
+  "Diğer",
 ];
 
 const MARKETLER = [
@@ -77,14 +91,9 @@ const MARKETLER = [
   "Diğer",
 ];
 
-// YENİ SABİT: Giyim Alt Kategorileri (Kişiler)
-const GIYIM_KISILERI = [
-  "Ahmet",
-  "Ayşe",
-  "Yusuf",
-  "Zeynep",
-  "Hediye", 
-];
+// Giyim ve Aile için Kişi/Üye listeleri
+const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
+const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; // İstenen aile üyeleri listesi
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
@@ -94,6 +103,7 @@ const getCategoryDetails = (kategori) => {
     case "market":
     case "restoran":
     case "restoran / kafe":
+    case "aile": // Aile için ikon ve renk
       return {
         icon: <DollarCircleOutlined />,
         color: "bg-red-100 text-red-600",
@@ -114,22 +124,22 @@ const getCategoryDetails = (kategori) => {
 
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
-  const deleteTimerRef = useRef(null); // Silme zamanlayıcısı
+  const deleteTimerRef = useRef(null);
   const now = dayjs();
-  
+
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
-  const [selectedCategory, setSelectedCategory] = useState("Kategoriler"); 
+  const [selectedCategory, setSelectedCategory] = useState("Kategoriler");
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     miktar: "",
     kategori: "",
     altKategori: "",
     not: "",
-    tarih: dayjs().toDate(), 
+    tarih: dayjs().toDate(),
   });
 
   // ✅ Harcamaları Fetch Et
@@ -153,12 +163,11 @@ const HarcamalarContent = () => {
     onError: () => message.error("Güncelleme başarısız!"),
   });
 
-
-  // 1. KESİN SİLME İŞLEMİ (Sadece zamanlayıcı bitince veya Geri Al iptal edilince çağrılır)
+  // 1. KESİN SİLME İŞLEMİ
   const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
-      queryClient.invalidateQueries(["harcamalar"]); 
+      queryClient.invalidateQueries(["harcamalar"]);
     } catch (err) {
       console.error("Kesin silme hatası:", err);
     }
@@ -171,51 +180,52 @@ const HarcamalarContent = () => {
     message.info("Silme işlemi iptal edildi.");
   };
 
-  // 3. SİLME BAŞLATMA İŞLEMİ (3 saniyelik estetik bildirim)
+  // 3. SİLME BAŞLATMA İŞLEMİ
   const startDeleteProcess = (id) => {
     if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current);
+      clearTimeout(deleteTimerRef.current);
     }
-    
+
     const content = (
       <span className="flex items-center space-x-3">
-        <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
-        <Button 
-          type="link" 
-          icon={<UndoOutlined />} 
+        <Text strong className="text-gray-900">
+          🗑️ Silme başarılı oldu!
+        </Text>
+        <Button
+          type="link"
+          icon={<UndoOutlined />}
           size="small"
           onClick={() => handleUndo(MESSAGE_KEY)}
-          className="text-blue-500 hover:text-blue-700" 
+          className="text-blue-500 hover:text-blue-700"
         >
           Geri Al
         </Button>
       </span>
     );
-    
-    message.success({ 
-        content: content, 
-        key: MESSAGE_KEY, 
-        duration: 3, // 3 saniye sonra otomatik kapanacak
+
+    message.success({
+      content: content,
+      key: MESSAGE_KEY,
+      duration: 3, // 3 saniye sonra otomatik kapanacak
     });
 
-    // Anlık olarak cache'den silinmiş gibi göster, kesin silmeyi geciktir
-    // NOT: useQueryClient olmadığı için bu kısım burada uygulanmadı, cache'i manuel güncellemek gerekir.
-    // Şimdilik sadece API çağrısı geciktiriliyor.
     deleteTimerRef.current = setTimeout(() => {
       definitiveDelete(id);
-      message.destroy(MESSAGE_KEY); 
+      message.destroy(MESSAGE_KEY);
     }, 3000); // 3 saniye
   };
-  
+
   // ✅ Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
-    const ayFiltreli = harcamalar.filter((h) => {
-      const t = dayjs(h.createdAt);
-      return t.month() === selectedMonth && t.year() === selectedYear;
-    }).sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()); // Tarihe göre sıralama eklendi
+    const ayFiltreli = harcamalar
+      .filter((h) => {
+        const t = dayjs(h.createdAt);
+        return t.month() === selectedMonth && t.year() === selectedYear;
+      })
+      .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()); // Tarihe göre sıralama
 
     if (selectedCategory === "Tümü" || selectedCategory === "Kategoriler") {
-        return ayFiltreli;
+      return ayFiltreli;
     }
 
     return ayFiltreli.filter((h) => h.kategori === selectedCategory);
@@ -235,14 +245,14 @@ const HarcamalarContent = () => {
           : current.add(1, "month");
       setSelectedMonth(newDate.month());
       setSelectedYear(newDate.year());
-      setSelectedCategory("Tümü"); 
+      setSelectedCategory("Tümü");
     },
     [selectedMonth, selectedYear]
   );
 
   const isFutureMonth = useMemo(() => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
-    return current.isAfter(now, 'month');
+    return current.isAfter(now, "month");
   }, [selectedMonth, selectedYear, now]);
 
   const displayMonth = dayjs()
@@ -254,16 +264,20 @@ const HarcamalarContent = () => {
     dayjs(dateString).format("DD.MM.YYYY HH:mm");
 
   const openEditModal = (harcama) => {
-    const isMarketOrGiyim = harcama.kategori === "Market" || harcama.kategori === "Giyim";
+    // Alt kategori gerektiren kategoriler
+    const requiresSubCategory =
+      harcama.kategori === "Market" ||
+      harcama.kategori === "Giyim" || // Giyim dahil
+      harcama.kategori === "Aile"; // Aile dahil
 
     setEditingHarcama(harcama);
     setFormData({
       miktar: harcama.miktar,
       kategori: harcama.kategori,
-      // Market veya Giyim ise altKategori'yi set et
-      altKategori: isMarketOrGiyim ? harcama.altKategori || "" : "",
+      // Eğer kategori alt kategori gerektiriyorsa, mevcut altKategori'yi set et
+      altKategori: requiresSubCategory ? harcama.altKategori || "" : "",
       not: harcama.not || "",
-      tarih: dayjs(harcama.createdAt).toDate(), // Tarihi Date objesi olarak set et
+      tarih: dayjs(harcama.createdAt).toDate(),
     });
     setEditModalVisible(true);
   };
@@ -273,39 +287,42 @@ const HarcamalarContent = () => {
 
     const isMarket = formData.kategori === "Market";
     const isGiyim = formData.kategori === "Giyim";
+    const isAile = formData.kategori === "Aile";
 
-    if ((isMarket || isGiyim) && !formData.altKategori) {
-      return message.error(`${isMarket ? "Market" : "Kişi"} seçimi boş bırakılamaz!`);
+    // Zorunluluk kontrolü
+    if ((isMarket || isGiyim || isAile) && !formData.altKategori) {
+      let errorMessage = "Alt kategori seçimi boş bırakılamaz!";
+      if (isMarket) errorMessage = "Market seçimi boş bırakılamaz!";
+      else if (isGiyim) errorMessage = "Kişi seçimi boş bırakılamaz!";
+      else if (isAile) errorMessage = "Aile üyesi seçimi boş bırakılamaz!";
+      return message.error(errorMessage);
     }
-    
-    // ✅ Tarih, ISO string formatına çevrildi (Tarih güncelleme sorunu çözüldü)
+
     const updatedCreatedAt = dayjs(formData.tarih).toISOString();
 
     let finalAltKategori = "";
-    if (isMarket || isGiyim) {
-        finalAltKategori = formData.altKategori;
+    // Alt kategoriyi sadece alt kategori gerektirenler için dahil et
+    if (isMarket || isGiyim || isAile) {
+      finalAltKategori = formData.altKategori;
     }
-    
+
     const payload = {
-      // ✅ Miktar Sayıya Çevrildi
       miktar: parseFloat(formData.miktar),
       _id: editingHarcama._id,
       kategori: formData.kategori,
-      // Alt kategoriyi sadece Market veya Giyim ise dahil et
-      altKategori: finalAltKategori, 
+      altKategori: finalAltKategori,
       not: formData.not,
-      createdAt: updatedCreatedAt, // Güncellenmiş tarih eklendi
+      createdAt: updatedCreatedAt,
     };
 
     updateMutation.mutate(payload);
   };
-  
-  // KAYDIRMA SONRASI BASMA İLE SİLME (Trailing Actions - Silme)
+
+  // KAYDIRMA İŞLEMLERİ
   const trailingActions = (harcama) => (
     <TrailingActions>
       <SwipeAction
-        destructive={true} 
-        // ✅ Silme PC/Mobil stabilite ve Geri Al düzeltmesi
+        destructive={true}
         onClick={() => startDeleteProcess(harcama._id)}
         onSwipeEnd={() => startDeleteProcess(harcama._id)}
       >
@@ -316,12 +333,9 @@ const HarcamalarContent = () => {
     </TrailingActions>
   );
 
-  // KAYDIRARAK DÜZENLEME İÇİN YARDIMCI BİLEŞEN (Leading Actions - Düzenleme)
   const leadingActions = (harcama) => (
     <LeadingActions>
-      <SwipeAction
-        onClick={() => openEditModal(harcama)}
-      >
+      <SwipeAction onClick={() => openEditModal(harcama)}>
         <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <EditOutlined className="text-3xl" />
         </div>
@@ -337,8 +351,8 @@ const HarcamalarContent = () => {
     );
   }
 
-  const currentCategoryForDisplay = 
-      selectedCategory === "Kategoriler" ? "Tümü" : selectedCategory;
+  const currentCategoryForDisplay =
+    selectedCategory === "Kategoriler" ? "Tümü" : selectedCategory;
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -358,18 +372,21 @@ const HarcamalarContent = () => {
           <Title level={5} className="m-0 text-blue-600">
             {displayMonth}
           </Title>
-          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth}>
+          <Button
+            icon={<RightOutlined />}
+            onClick={() => changeMonth("next")}
+            disabled={isFutureMonth}
+          >
             Sonraki Ay
           </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          
           <Select
-            value={selectedCategory} 
+            value={selectedCategory}
             onChange={(v) => setSelectedCategory(v)}
             style={{ width: "100%" }}
-            popupMatchSelectWidth={true} 
+            popupMatchSelectWidth={true}
           >
             <Option value="Tümü">Tümü</Option>
             {ALL_CATEGORIES.map((cat) => (
@@ -393,8 +410,8 @@ const HarcamalarContent = () => {
           </div>
         )}
       </Card>
-      
-      {/* Kaydırarak Silme/Düzenleme Listesi - SwipeableList kullanıldı */}
+
+      {/* Kaydırarak Silme/Düzenleme Listesi */}
       <Card
         className="shadow-lg rounded-xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
@@ -404,28 +421,33 @@ const HarcamalarContent = () => {
             {`${displayMonth} ayında harcama bulunmamaktadır.`}
           </div>
         ) : (
-          <SwipeableList 
-            threshold={0.3} 
-            fullSwipe={true} 
-            listType={ListType.IOS} 
+          <SwipeableList
+            threshold={0.3}
+            fullSwipe={true}
+            listType={ListType.IOS}
           >
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
 
               let displayCategory = harcama.kategori;
-              if ((harcama.kategori === "Market" || harcama.kategori === "Giyim") && harcama.altKategori) {
-                  displayCategory = `${harcama.kategori} (${harcama.altKategori})`;
+              if (
+                (harcama.kategori === "Market" ||
+                  harcama.kategori === "Giyim" ||
+                  harcama.kategori === "Aile") &&
+                harcama.altKategori
+              ) {
+                displayCategory = `${harcama.kategori} (${harcama.altKategori})`;
               }
 
               return (
                 <SwipeableListItem
                   key={harcama._id}
-                  leadingActions={leadingActions(harcama)} 
-                  trailingActions={trailingActions(harcama)} 
-                  className="bg-white" 
+                  leadingActions={leadingActions(harcama)}
+                  trailingActions={trailingActions(harcama)}
+                  className="bg-white"
                 >
                   {/* List Item İçeriği */}
-                  <div 
+                  <div
                     className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer"
                   >
                     <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>
@@ -450,7 +472,6 @@ const HarcamalarContent = () => {
                       </div>
                     </div>
                   </div>
-                  
                 </SwipeableListItem>
               );
             })}
@@ -473,27 +494,28 @@ const HarcamalarContent = () => {
         destroyOnHidden
       >
         <div className="space-y-4 pt-4">
-          
           {/* ✅ TARİH ALANI: Tarih güncelleme için CustomDayPicker */}
           <div>
             <Text strong className="block mb-1">
               Tarih:
             </Text>
             <CustomDayPicker
-                value={formData.tarih}
-                onChange={(date) => setFormData({ ...formData, tarih: date })}
-                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={false} 
+              value={formData.tarih}
+              onChange={(date) => setFormData({ ...formData, tarih: date })}
+              disabledDate={(current) =>
+                current && current.isAfter(dayjs(), "day")
+              }
+              isIncome={false}
             />
           </div>
-          
+
           <div>
             <Text strong className="block mb-1">
               Miktar (₺):
             </Text>
             <Input
               type="number"
-              inputMode="decimal" 
+              inputMode="decimal"
               value={formData.miktar}
               onChange={(e) =>
                 setFormData({ ...formData, miktar: e.target.value })
@@ -540,7 +562,7 @@ const HarcamalarContent = () => {
               </div>
             )}
 
-            {/* YENİ: Giyim Alt Kategori Seçimi (Kişi) */}
+            {/* Giyim Alt Kategori Seçimi (Kişi) */}
             {formData.kategori === "Giyim" && (
               <div className="mt-2">
                 <Text strong className="block mb-1">
@@ -561,6 +583,26 @@ const HarcamalarContent = () => {
               </div>
             )}
 
+            {/* Aile Alt Kategori Seçimi (Aile Üyesi) */}
+            {formData.kategori === "Aile" && (
+              <div className="mt-2">
+                <Text strong className="block mb-1">
+                  Aile Üyesi Seç:
+                </Text>
+                <Select
+                  value={formData.altKategori}
+                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
+                  style={{ width: "100%" }}
+                  placeholder="Aile üyesi seçin"
+                >
+                  {AILE_UYELERI.map((uye) => (
+                    <Option key={uye} value={uye}>
+                      {uye}
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </div>
 
           <div>
@@ -570,7 +612,6 @@ const HarcamalarContent = () => {
             <Input.TextArea
               rows={2}
               value={formData.not}
-              // Not güncelleme düzeltildi
               onChange={(e) =>
                 setFormData({ ...formData, not: e.target.value })
               }
@@ -585,7 +626,6 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-
     <main className="pb-20">
       <HarcamalarContent />
     </main>

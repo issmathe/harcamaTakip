@@ -24,6 +24,7 @@ const HarcamaSchema = new mongoose.Schema(
         "Market",
         "Hediye",
         "Restoran",
+        "Aile",
         "Diğer",
       ],
       required: true,

@@ -17,9 +17,6 @@ const GelirSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    // ✨ KRİTİK DÜZELTME 1: timestamps: true kaldırıldı.
-    // ✨ KRİTİK DÜZELTME 2: createdAt ve updatedAt manuel eklendi.
-    // Artık createdAt güncellenebilir bir Date alanıdır.
     createdAt: {
       type: Date,
       default: Date.now,
@@ -32,8 +29,7 @@ const GelirSchema = new mongoose.Schema(
   // 💡 NOT: { timestamps: true } buradan KALDIRILDI
 );
 
-// Pre-save hook'u ekleyerek updatedAt'i manuel güncelliyoruz.
-// Bu, Mongoose'un varsayılan 'timestamps: true' davranışını taklit eder.
+
 GelirSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();
