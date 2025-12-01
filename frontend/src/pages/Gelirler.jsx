@@ -1,4 +1,4 @@
-// pages/Gelirler.jsx (NİHAİ VERSİYON: Estetik Geri Al Eklendi)
+// pages/Gelirler.jsx (NİHAİ VERSİYON – Saat Güncelleniyor)
 
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
@@ -13,10 +13,8 @@ import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
 
-// Özel bileşen importu
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
 
-// Kaydırarak silme ve düzenleme için bileşenler
 import {
   SwipeableList,
   SwipeableListItem,
@@ -82,7 +80,6 @@ const GelirlerContent = () => {
       return dayjs().year(selectedYear).month(selectedMonth).format('MMMM YYYY');
   }, [selectedMonth, selectedYear]);
 
-
   const filteredGelirler = useMemo(() => {
     const ayFiltreli = gelirler.filter((gelir) => {
       const gelirTarihi = dayjs(gelir.createdAt);
@@ -91,8 +88,8 @@ const GelirlerContent = () => {
     return ayFiltreli.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [gelirler, selectedMonth, selectedYear]); 
 
-  // ... (Geri kalan düzenleme ve silme mantığı)
 
+  // Düzenleme modalini aç
   const openEditModal = (gelir) => {
     setEditingGelir(gelir);
     setFormData({
@@ -104,17 +101,26 @@ const GelirlerContent = () => {
     setEditModalVisible(true);
   };
 
+  // 🔥 **ÇÖZÜM 1: Saat otomatik güncellesin**
   const handleEditSave = async () => {
     try {
       if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
-      
-      const updatedCreatedAt = dayjs(formData.tarih).toISOString();
-      
+
+      const selectedDay = dayjs(formData.tarih);
+
+      // Tarih → kullanıcının seçtiği gün
+      // Saat   → şu anki saat
+      const updatedCreatedAt = selectedDay
+        .hour(dayjs().hour())
+        .minute(dayjs().minute())
+        .second(dayjs().second())
+        .toISOString();
+
       const payload = {
         miktar: parseFloat(formData.miktar), 
         kategori: formData.kategori,
         not: formData.not,
-        createdAt: updatedCreatedAt, 
+        createdAt: updatedCreatedAt,
       };
       
       await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
@@ -128,7 +134,6 @@ const GelirlerContent = () => {
     }
   };
 
-  // KESİN SİLME İŞLEMİ
   const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/gelir/${id}`);
@@ -138,21 +143,17 @@ const GelirlerContent = () => {
     }
   };
 
-  // GERİ ALMA İŞLEMİ
   const handleUndo = (messageKey) => {
     clearTimeout(deleteTimerRef.current);
     message.destroy(messageKey);
     message.info("Silme işlemi iptal edildi.");
   };
 
-  // SİLME BAŞLATMA İŞLEMİ - Yeni Estetik Görünüm
   const startDeleteProcess = (id) => {
-    // Önceki zamanlayıcı varsa temizle
     if (deleteTimerRef.current) {
         clearTimeout(deleteTimerRef.current);
     }
     
-    // Ant Design'a özel uyarı içeriği
     const content = (
       <span className="flex items-center space-x-3">
         <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
@@ -168,24 +169,20 @@ const GelirlerContent = () => {
       </span>
     );
     
-    // 3 saniye süreli, success tipi bildirimi göster
     message.success({ 
         content: content, 
         key: MESSAGE_KEY, 
-        duration: 3, // 3 saniye sonra otomatik kapanacak
+        duration: 3,
     });
 
-    // 3 saniye sonra kesin silme işlemini başlatacak zamanlayıcıyı kur
     deleteTimerRef.current = setTimeout(() => {
       definitiveDelete(id);
       message.destroy(MESSAGE_KEY); 
-    }, 3000); // 3 saniye
+    }, 3000);
   };
   
   const formatDate = (dateString) => dayjs(dateString).format('DD.MM.YYYY HH:mm');
 
-  
-  // KAYDIRMA AKSİYONLARI
   const trailingActions = (gelir) => (
     <TrailingActions>
       <SwipeAction
@@ -202,17 +199,13 @@ const GelirlerContent = () => {
 
   const leadingActions = (gelir) => (
     <LeadingActions>
-      <SwipeAction
-        onClick={() => openEditModal(gelir)}
-      >
+      <SwipeAction onClick={() => openEditModal(gelir)}>
         <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <EditOutlined className="text-3xl" />
         </div>
       </SwipeAction>
     </LeadingActions>
   );
-  
-  // -----------------------------------------------------------------
 
   if (isContextLoading) {
     return (
@@ -226,7 +219,6 @@ const GelirlerContent = () => {
     <div className="p-0">
       <Title level={3} className="text-center text-gray-700 mt-4 mb-4 md:mt-6 md:mb-6">Gelir Kayıtları</Title>
 
-      {/* Tarih Filtreleme Card */}
       <Card 
         className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 mb-6 bg-white" 
         styles={{ body: { padding: '16px' } }} 
@@ -238,7 +230,6 @@ const GelirlerContent = () => {
         </div>
       </Card>
 
-      {/* Gelir Listesi */}
       <Card 
         className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 overflow-hidden mb-4" 
         styles={{ body: { padding: 0 } }} 
@@ -248,11 +239,7 @@ const GelirlerContent = () => {
             {`${displayMonth} ayında gelir bulunmamaktadır.`}
           </div>
         ) : (
-          <SwipeableList
-            threshold={0.3}     
-            fullSwipe={true} 
-            listType={ListType.IOS} 
-          >
+          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
             {filteredGelirler.map((gelir) => {
               const { icon, color } = getCategoryDetails(gelir.kategori);
               
@@ -263,21 +250,27 @@ const GelirlerContent = () => {
                   trailingActions={trailingActions(gelir)} 
                   className="bg-white"
                 >
-                  {/* Liste Öğesinin İçeriği */}
                   <div className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer">
                     <div className={`p-3 rounded-full mr-4 sm:mr-6 flex-shrink-0 ${color}`}>{icon}</div>
                     
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-center mb-1">
-                        <Text strong className="text-lg text-gray-800 truncate">{gelir.kategori.charAt(0).toUpperCase() + gelir.kategori.slice(1)}</Text>
-                        <Text className="text-xl font-bold text-green-600 ml-4 flex-shrink-0">+{gelir.miktar} ₺</Text>
+                        <Text strong className="text-lg text-gray-800 truncate">
+                          {gelir.kategori.charAt(0).toUpperCase() + gelir.kategori.slice(1)}
+                        </Text>
+                        <Text className="text-xl font-bold text-green-600 ml-4 flex-shrink-0">
+                          +{gelir.miktar} ₺
+                        </Text>
                       </div>
+
                       <div className="text-sm text-gray-500 mb-1">
                         <CalendarOutlined className="mr-1" />
                         <span className="text-xs sm:text-sm">{formatDate(gelir.createdAt)}</span>
                       </div>
+
                       <div className="text-sm text-gray-600 italic truncate">
-                        <SolutionOutlined className="mr-1" />Not: {gelir.not || "Yok"}
+                        <SolutionOutlined className="mr-1" />
+                        Not: {gelir.not || "Yok"}
                       </div>
                     </div>
                   </div>
@@ -288,7 +281,6 @@ const GelirlerContent = () => {
         )}
       </Card>
 
-      {/* Düzenleme Modal */}
       <Modal
         title={<Title level={4} className="text-center text-blue-600">Geliri Düzenle</Title>}
         open={editModalVisible}
@@ -299,7 +291,7 @@ const GelirlerContent = () => {
         destroyOnHidden 
       >
         <div className="space-y-4 pt-4">
-          
+
           <div>
             <Text strong className="block mb-1">Tarih:</Text>
             <CustomDayPicker
@@ -320,6 +312,7 @@ const GelirlerContent = () => {
                 placeholder="Miktar" 
             />
           </div>
+
           <div>
             <Text strong className="block mb-1">Kategori:</Text>
             <Select 
@@ -332,6 +325,7 @@ const GelirlerContent = () => {
               ))}
             </Select>
           </div>
+
           <div>
             <Text strong className="block mb-1">Not:</Text>
             <Input.TextArea 
@@ -341,6 +335,7 @@ const GelirlerContent = () => {
               placeholder="Ek notunuz (isteğe bağlı)" 
             />
           </div>
+
         </div>
       </Modal>
     </div>
@@ -350,7 +345,6 @@ const GelirlerContent = () => {
 const Gelirler = () => {
   return (
     <div className="relative min-h-screen bg-gray-50 flex flex-col">
-
       <main className="flex-grow overflow-y-auto"> 
         <GelirlerContent />
       </main>

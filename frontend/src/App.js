@@ -10,32 +10,31 @@ import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; 
+import Transfer from "./pages/Transfer"; // Transfer sayfası eklendi
 
 function App() {
   return (
     <TotalsProvider>
       <Router>
-        {/* 🔥 ÖNEMLİ DEĞİŞİKLİK BURADA: Sabit ve tam ekran layout */}
         <div className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none">
           
-          {/* Üst Sabit Header: En önde (z-index) ve yüksekliği sabit (flex-shrink-0) */}
+          {/* Üst Sabit Header */}
           <div className="z-[999] flex-shrink-0"> 
             <Header />
           </div>
 
-          {/* Orta Alan: Router'ın Sayfaları Render Ettiği, Kaydırılabilir Bölüm */}
-          {/* flex-1: Kalan tüm dikey alanı kapla */}
-          {/* overflow-y-auto: Eğer içerik taşarsa kendi içinde kaydırma yap */}
+          {/* Orta Alan */}
           <main className="flex-1 overflow-y-auto relative z-[1]"> 
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/gelirler" element={<Gelirler />} />
               <Route path="/harcamalar" element={<Harcamalar />} />
               <Route path="/raporlar" element={<Raporlar />} /> 
+              <Route path="/transfer" element={<Transfer />} /> {/* Transfer route */}
             </Routes>
           </main>
           
-          {/* Alt Sabit Navigasyon: Z-index'i Header'dan az ama İçerikten fazla. Yüksekliği sabit. */}
+          {/* Alt Sabit Navigasyon */}
           <div className="z-[998] flex-shrink-0"> 
             <BottomNav />
           </div>
