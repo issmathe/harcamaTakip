@@ -1,5 +1,3 @@
-// Header.jsx (GÖRSEL SIRALAMA GÜNCELLENMİŞ VERSİYON)
-
 import { Card, Typography, Statistic } from "antd";
 import {
   ArrowUpOutlined,
@@ -7,44 +5,50 @@ import {
   EuroOutlined,
   WalletOutlined,
   FireOutlined,
+  BankOutlined, // BankOutlined ikonu eklendi
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
 
 const { Title, Text } = Typography;
 
 const Header = () => {
-  // 🆕 cumulativeIncome ve cumulativeExpense eklendi
-  const { totalIncome, totalExpense, totalToday, cumulativeIncome, cumulativeExpense } = useTotalsContext();
+  // Gerekli toplamlar ve yeni bankBalance hook'tan çekiliyor
+  const { 
+    totalIncome, 
+    totalExpense, 
+    totalToday, 
+    cumulativeIncome, 
+    cumulativeExpense,
+    bankBalance // Sadece 'maaş' gelirlerini içeren bakiye
+  } = useTotalsContext();
   
-  // ✅ Kümülatif Bakiye
+  // Tüm gelir kaynaklarını içeren kümülatif bakiye (Toplam Bakiye)
   const cumulativeBalance = cumulativeIncome - cumulativeExpense; 
-
-  // 🎯 Aylık Bakiyeyi Hesapla (Aylık Gelir - Aylık Gider)
+  
+  // Aylık Bütçe Fazlası/Açığı
   const monthlyBalance = totalIncome - totalExpense;
 
-  // Yeni kartın stilini belirlemek için yardımcı değişken
+  // Stil belirleme yardımcıları
   const monthlyBalanceColor = monthlyBalance >= 0 ? "#38a169" : "#e53e3e";
   const monthlyBalanceIcon = monthlyBalance >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />;
-
+  const bankBalanceColor = bankBalance >= 0 ? '!text-green-300' : '!text-red-300';
 
   return (
     <header className="px-4 pt-4 pb-1 bg-white sticky top-0 z-10 shadow-lg">
       
-      {/* Güncel Bakiye Kartı - KOMPAKT DÜZEN */}
+      {/* Güncel Bakiye Kartı - Genel Bakış */}
       <Card
         className="rounded-xl shadow-xl border-none p-3"
-        styles={{
-          body: { padding: "12px" },
-        }}
+        styles={{ body: { padding: "12px" } }}
         style={{
-          // ✅ Kümülatif bakiyeye göre renk değişimi
+          // Kümülatif bakiyeye göre arka plan renk değişimi
           background:
             cumulativeBalance >= 0
               ? "linear-gradient(to right, #4c51bf, #667eea)"
               : "linear-gradient(to right, #f56565, #fc8181)",
         }}
       >
-        {/* Başlık ve Genel Bakış */}
+        {/* Başlık */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <WalletOutlined className="!text-white text-xl mr-2" />
@@ -56,10 +60,11 @@ const Header = () => {
             </Title>
           </div>
         </div>
-
-        {/* Bakiye Değeri ve Bugün Harcama */}
+        
+        {/* Ana İstatistikler (Toplam Bakiye, Banka Bakiye, Bugün Harcama) */}
         <div className="flex justify-between items-end mt-2">
-          {/* Güncel Bakiye */}
+          
+          {/* 1. TOPLAM BAKİYE (Ana Değer - Tüm Gelirler Dahil) */}
           <div className="flex flex-col text-white">
             <Text className="!text-white/90 text-xs mb-1">Toplam Bakiye</Text>
             <Title
@@ -67,12 +72,20 @@ const Header = () => {
               className="!text-white !mb-0 !mt-0 !py-0 font-extrabold !text-3xl"
             >
               <EuroOutlined className="mr-1 text-2xl" />
-              {/* Kümülatif bakiyeyi gösteriyoruz */}
-              {cumulativeBalance.toFixed(2)} 
+              {cumulativeBalance.toFixed(2)}
             </Title>
           </div>
+          
+          {/* 2. BANKA BAKİYESİ (Sadece Maaş Geliri Dahil) */}
+          <div className="text-right bg-white/10 p-1 rounded-md mr-2"> 
+            <Text className="!text-white/80 text-xs">Banka Bakiyesi</Text>
+            <div className={`text-lg font-bold flex items-center justify-end ${bankBalanceColor}`}>
+              <BankOutlined className="mr-1 text-sm" />
+              €{bankBalance.toFixed(2)} 
+            </div>
+          </div>
 
-          {/* Bugün Harcama (Aylık toplamdan geliyor) */}
+          {/* 3. BUGÜN HARCAMA */}
           <div className="text-right bg-white/10 p-1 rounded-md">
             <Text className="!text-white/80 text-xs">Bugünkü Harcama</Text>
             <div className="text-lg font-bold !text-white flex items-center justify-end">
@@ -83,9 +96,10 @@ const Header = () => {
         </div>
       </Card>
 
-      {/* Aylık Gelir, Kalan ve Gider Kartları */}
+      {/* Aylık Detay Kartları */}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        {/* 1. KART: Aylık Gelir (Yeşil) */}
+        
+        {/* 1. KART: Aylık Gelir */}
         <Card
           size="small"
           className="rounded-xl shadow-md border-t-4 border-green-500"
@@ -99,9 +113,8 @@ const Header = () => {
             suffix="€"
           />
         </Card>
-
-        {/* 2. KART: Aylık Kalan (Mavi/Kırmızı - Bütçe Fazlası/Açığı) */}
-        {/* 🎯 SIRALAMA DEĞİŞTİ: Artık ikinci sırada */}
+        
+        {/* 2. KART: Aylık Kalan (Bütçe Fazlası/Açığı) */}
         <Card
           size="small"
           className={`rounded-xl shadow-md border-t-4 ${monthlyBalance >= 0 ? 'border-blue-500' : 'border-red-500'}`}
@@ -110,14 +123,13 @@ const Header = () => {
             title="Aylık Kalan"
             value={monthlyBalance} 
             precision={2}
-            // Fazla ise yeşil, açık ise kırmızı
             valueStyle={{ color: monthlyBalanceColor, fontWeight: "bold", fontSize: "14px" }}
             prefix={monthlyBalanceIcon}
             suffix="€"
           />
         </Card>
         
-        {/* 3. KART: Aylık Gider (Kırmızı) */}
+        {/* 3. KART: Aylık Gider */}
         <Card
           size="small"
           className="rounded-xl shadow-md border-t-4 border-red-500"
