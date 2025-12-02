@@ -5,7 +5,7 @@ import {
   EuroOutlined,
   WalletOutlined,
   FireOutlined,
-  BankOutlined, // BankOutlined ikonu eklendi
+  BankOutlined,
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
 
@@ -85,10 +85,12 @@ const Header = () => {
             </div>
           </div>
 
-          {/* 3. BUGÜN HARCAMA */}
+          {/* 3. BUGÜN HARCAMA - text-sm kullanılarak küçültülmüş stil */}
           <div className="text-right bg-white/10 p-1 rounded-md">
+            {/* Başlık metin boyutu sabit kaldı */}
             <Text className="!text-white/80 text-xs">Bugünkü Harcama</Text>
-            <div className="text-lg font-bold !text-white flex items-center justify-end">
+            {/* Değer boyutu 'text-sm' (daha küçük) olarak ayarlandı */}
+            <div className="text-sm font-bold !text-white flex items-center justify-end">
               <FireOutlined className="mr-1 text-sm text-amber-300" />
               €{totalToday.toFixed(2)}
             </div>

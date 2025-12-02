@@ -10,7 +10,6 @@ import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; 
-import Transfer from "./pages/Transfer"; // Transfer sayfası eklendi
 
 function App() {
   return (
@@ -30,7 +29,6 @@ function App() {
               <Route path="/gelirler" element={<Gelirler />} />
               <Route path="/harcamalar" element={<Harcamalar />} />
               <Route path="/raporlar" element={<Raporlar />} /> 
-              <Route path="/transfer" element={<Transfer />} /> {/* Transfer route */}
             </Routes>
           </main>
           
