@@ -83,6 +83,7 @@ const MARKETLER = [
   "bäckerei",
   "Rewe",
   "Netto",
+    "Tedi",
   "Fundgrube",
   "Rossmann",
   "Edeka",

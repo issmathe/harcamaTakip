@@ -44,7 +44,7 @@ const ALL_CATEGORIES = [
 
 const MARKETLER = [
   "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk",
-  "Kaufland", "bäckerei", "Rewe", "Netto", "Fundgrube", "Rossmann",
+  "Kaufland", "bäckerei", "Rewe", "Netto",  "Tedi", "Fundgrube", "Rossmann",
   "Edeka", "Biomarkt", "Penny", "Diğer",
 ];
 

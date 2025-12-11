@@ -106,6 +106,7 @@ const MARKETLER = [
   "bäckerei",
   "Rewe",
   "Netto",
+  "Tedi",
   "Fundgrube",
   "Rossmann",
   "Edeka",
@@ -484,7 +485,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item
             name="miktar"
-            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
+            label={
+              <span className="font-semibold text-gray-700">Miktar (€)</span>
+            }
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
@@ -596,7 +599,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item
             name="miktar"
-            label={<span className="font-semibold text-gray-700">Miktar (€)</span>}
+            label={
+              <span className="font-semibold text-gray-700">Miktar (€)</span>
+            }
             rules={[{ required: true, message: "Miktar gerekli" }]}
           >
             <InputNumber
@@ -612,7 +617,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item
             name="kategori"
-            label={<span className="font-semibold text-gray-700">Kategori</span>}
+            label={
+              <span className="font-semibold text-gray-700">Kategori</span>
+            }
             rules={[{ required: true, message: "Kategori gerekli" }]}
           >
             <Select
