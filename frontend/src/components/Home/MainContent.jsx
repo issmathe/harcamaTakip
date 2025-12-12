@@ -107,6 +107,7 @@ const MARKETLER = [
   "Rewe",
   "Netto",
   "Tedi",
+  "Kik",
   "Fundgrube",
   "Rossmann",
   "Edeka",

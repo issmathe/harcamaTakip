@@ -1,4 +1,4 @@
-// pages/Harcamalar.jsx (react-query ile TAM ve GÜNCEL VERSİYON)
+// pages/Harcamalar.jsx (sticky top-0 eklendi)
 
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
@@ -20,7 +20,7 @@ import {
   SolutionOutlined,
   LeftOutlined,
   RightOutlined,
-  UndoOutlined, // Geri Al iconu eklendi
+  UndoOutlined, 
 } from "@ant-design/icons";
 
 // Özel bileşen importu
@@ -48,7 +48,8 @@ dayjs.locale(tr);
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+// API URL'sini kendi ortamınıza göre ayarlayın
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = "harcamaSilmeIslemi"; // Geri Al mesaj anahtarı
 
 // Sabitler
@@ -67,7 +68,7 @@ const ALL_CATEGORIES = [
   "İletisim",
   "Hediye",
   "Restoran",
-  "Aile", // Aile kategorisi eklendi
+  "Aile", 
   "Diğer",
 ];
 
@@ -83,7 +84,8 @@ const MARKETLER = [
   "bäckerei",
   "Rewe",
   "Netto",
-    "Tedi",
+  "Tedi",
+  "Kik",
   "Fundgrube",
   "Rossmann",
   "Edeka",
@@ -94,7 +96,7 @@ const MARKETLER = [
 
 // Giyim ve Aile için Kişi/Üye listeleri
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
-const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; // İstenen aile üyeleri listesi
+const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori === "Market" ? "Market" : kategori;
@@ -104,7 +106,7 @@ const getCategoryDetails = (kategori) => {
     case "market":
     case "restoran":
     case "restoran / kafe":
-    case "aile": // Aile için ikon ve renk
+    case "aile": 
       return {
         icon: <DollarCircleOutlined />,
         color: "bg-red-100 text-red-600",
@@ -126,7 +128,7 @@ const getCategoryDetails = (kategori) => {
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const deleteTimerRef = useRef(null);
-  const now = dayjs();
+  const now = dayjs(); // Şu anki an
 
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
@@ -143,7 +145,7 @@ const HarcamalarContent = () => {
     tarih: dayjs().toDate(),
   });
 
-  // ✅ Harcamaları Fetch Et
+  // Harcamaları Fetch Et
   const { data: harcamalar = [], isLoading } = useQuery({
     queryKey: ["harcamalar"],
     queryFn: async () => {
@@ -152,7 +154,7 @@ const HarcamalarContent = () => {
     },
   });
 
-  // ✅ Güncelleme (PUT)
+  // Güncelleme (PUT)
   const updateMutation = useMutation({
     mutationFn: async (payload) =>
       axios.put(`${API_URL}/harcama/${payload._id}`, payload),
@@ -164,7 +166,7 @@ const HarcamalarContent = () => {
     onError: () => message.error("Güncelleme başarısız!"),
   });
 
-  // 1. KESİN SİLME İŞLEMİ
+  // KESİN SİLME İŞLEMİ
   const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
@@ -174,14 +176,14 @@ const HarcamalarContent = () => {
     }
   };
 
-  // 2. GERİ ALMA İŞLEMİ
+  // GERİ ALMA İŞLEMİ
   const handleUndo = (messageKey) => {
     clearTimeout(deleteTimerRef.current);
     message.destroy(messageKey);
     message.info("Silme işlemi iptal edildi.");
   };
 
-  // 3. SİLME BAŞLATMA İŞLEMİ
+  // SİLME BAŞLATMA İŞLEMİ
   const startDeleteProcess = (id) => {
     if (deleteTimerRef.current) {
       clearTimeout(deleteTimerRef.current);
@@ -216,7 +218,7 @@ const HarcamalarContent = () => {
     }, 3000); // 3 saniye
   };
 
-  // ✅ Ay / Yıl filtreleme
+  // Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
     const ayFiltreli = harcamalar
       .filter((h) => {
@@ -268,8 +270,8 @@ const HarcamalarContent = () => {
     // Alt kategori gerektiren kategoriler
     const requiresSubCategory =
       harcama.kategori === "Market" ||
-      harcama.kategori === "Giyim" || // Giyim dahil
-      harcama.kategori === "Aile"; // Aile dahil
+      harcama.kategori === "Giyim" || 
+      harcama.kategori === "Aile"; 
 
     setEditingHarcama(harcama);
     setFormData({
@@ -361,9 +363,10 @@ const HarcamalarContent = () => {
         Harcamalarınız
       </Title>
 
-      {/* Filtreleme ve Ay Seçimi Kartı */}
+      {/* Filtreleme ve Ay Seçimi Kartı - ARTIK SABİT (STICKY) */}
       <Card
-        className="shadow-lg rounded-xl mb-6 bg-white"
+        className="shadow-lg rounded-xl mb-6 bg-white 
+                   sticky top-0 z-10 transition-all duration-300" 
         styles={{ body: { padding: "16px" } }}
       >
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
@@ -440,16 +443,21 @@ const HarcamalarContent = () => {
                 displayCategory = `${harcama.kategori} (${harcama.altKategori})`;
               }
 
+              // ✅ BUGÜN KONTROLÜ VE STİLİ
+              const isToday = dayjs(harcama.createdAt).isSame(now, "day");
+              const todayStyle = isToday
+                ? "bg-yellow-50 border-2 border-yellow-300 shadow-md"
+                : "bg-white border-b";
+
               return (
                 <SwipeableListItem
                   key={harcama._id}
                   leadingActions={leadingActions(harcama)}
                   trailingActions={trailingActions(harcama)}
-                  className="bg-white"
                 >
                   {/* List Item İçeriği */}
                   <div
-                    className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer"
+                    className={`flex items-center w-full p-4 sm:p-5 cursor-pointer transition-all duration-300 ${todayStyle}`}
                   >
                     <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>
                       {icon}
@@ -495,7 +503,7 @@ const HarcamalarContent = () => {
         destroyOnHidden
       >
         <div className="space-y-4 pt-4">
-          {/* ✅ TARİH ALANI: Tarih güncelleme için CustomDayPicker */}
+          {/* TARİH ALANI: Tarih güncelleme için CustomDayPicker */}
           <div>
             <Text strong className="block mb-1">
               Tarih:

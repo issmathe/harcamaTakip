@@ -1,10 +1,10 @@
+// Raporlar.jsx dosyasının tam ve hatasız hali (Sticky ve ESLint fix'li)
+
 import React, { useMemo, useState, useCallback } from "react";
 import { Card, Typography, Empty, Button } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
 import { Bar } from "react-chartjs-2";
-
-// ✅ YENİ TREND GRAFİĞİ BİLEŞENİNİ İMPORT ET
 
 import {
   Chart as ChartJS,
@@ -13,16 +13,15 @@ import {
   BarElement,
   Tooltip,
   Legend,
-  // LineElement ve PointElement ARTIK SİLİNDİ
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
 import AylikHarcamaTrendGrafigi from "../components/grafik/AylikHarcamaTrendGrafigi";
+
 dayjs.locale(tr);
 
-// LineElement ve PointElement ARTIK SİLİNDİĞİ İÇİN KAYITLARI DA TEMİZLENDİ
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -44,7 +43,7 @@ const ALL_CATEGORIES = [
 
 const MARKETLER = [
   "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk",
-  "Kaufland", "bäckerei", "Rewe", "Netto",  "Tedi", "Fundgrube", "Rossmann",
+  "Kaufland", "bäckerei", "Rewe", "Netto",  "Tedi", "Kik", "Fundgrube", "Rossmann",
   "Edeka", "Biomarkt", "Penny", "Diğer",
 ];
 
@@ -397,9 +396,10 @@ const RaporlarContent = () => {
   return (
     <div className="w-full">
       
-      {/* 1. AY GEZİNME KARTI */}
+      {/* 1. AY GEZİNME KARTI - ARTIK SABİT (STICKY) */}
       <Card 
-        className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4" 
+        className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4 
+                   sticky top-0 z-10 transition-all duration-300" 
         styles={{ body: { padding: '1rem' } }} 
       >
         <div className="flex justify-between items-center">
