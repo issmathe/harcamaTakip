@@ -1,4 +1,4 @@
-// pages/Gelirler.jsx (NİHAİ VERSİYON – Saat Güncelleniyor)
+// pages/Gelirler.jsx (NİHAİ VERSİYON – Sabit Ay Navigasyonu)
 
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
@@ -217,20 +217,29 @@ const GelirlerContent = () => {
 
   return (
     <div className="p-0">
+      
+      {/* BAŞLIK */}
       <Title level={3} className="text-center text-gray-700 mt-4 mb-4 md:mt-6 md:mb-6">Gelir Kayıtları</Title>
 
-      <Card 
-        className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 mb-6 bg-white" 
-        styles={{ body: { padding: '16px' } }} 
-      >
-        <div className="flex justify-between items-center">
-          <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
-          <Title level={5} className="m-0 text-green-600">{displayMonth}</Title>
-          <Button icon={<RightOutlined />} onClick={() => changeMonth('next')} disabled={isFutureMonth}>Sonraki Ay</Button>
-        </div>
-      </Card>
+      {/* 👇👇👇 AY NAVİGASYONUNU SABİTLEYEN KISIM 👇👇👇 */}
+      {/* Sayfanın en üstünde sabit kalması için 'sticky top-0 z-10' kullanıldı. */}
+      {/* pb-4 ile alttaki liste ile arasına biraz boşluk bırakıldı. */}
+      <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-2"> 
+        <Card 
+          className="shadow-xl rounded-xl mx-4 md:mx-6 lg:mx-8 bg-white" 
+          styles={{ body: { padding: '16px' } }} 
+        >
+          <div className="flex justify-between items-center">
+            <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
+            <Title level={5} className="m-0 text-green-600">{displayMonth}</Title>
+            <Button icon={<RightOutlined />} onClick={() => changeMonth('next')} disabled={isFutureMonth}>Sonraki Ay</Button>
+          </div>
+        </Card>
+      </div>
+      {/* 👆👆👆 SABİTLENEN KART SONU 👆👆👆 */}
 
       <Card 
+        // Sabitlenen kartın hemen altında listeye devam
         className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 overflow-hidden mb-4" 
         styles={{ body: { padding: 0 } }} 
       >
@@ -345,7 +354,9 @@ const GelirlerContent = () => {
 const Gelirler = () => {
   return (
     <div className="relative min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-grow overflow-y-auto"> 
+      {/* 👇👇👇 KRİTİK DEĞİŞİKLİK: Kaydırmayı yöneten 'overflow-y-auto' sınıfı kaldırıldı. */}
+      {/* Bu sayede, tarayıcı penceresinin ana kaydırması kullanılacak ve 'sticky' doğru çalışacaktır. */}
+      <main className="flex-grow"> 
         <GelirlerContent />
       </main>
       <BottomNav />
