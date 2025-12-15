@@ -32,7 +32,11 @@ import {
   Pencil,
   Utensils,
   HelpCircle,
-  Users, // 👈 Yeni İkon: Aile için Users ikonu
+  Users,
+  Wallet, // 👈 Yeni İkon: Harcama Kaynağı için Wallet ikonu
+  Landmark, // 👈 Yeni İkon: Banka/Genel için Landmark ikonu
+  PiggyBank, // 👈 Yeni İkon: Tasarruf için PiggyBank ikonu
+  MessageCircle, // 🆕 Not ekle butonu için ikon
 } from "lucide-react";
 
 import axios from "axios";
@@ -43,97 +47,58 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// 1. Değişiklik: CategoryIcons objesine "Aile" kategorisini ekle
+// Kategori ikonları ve renkleri (Kısaltıldı)
 const CategoryIcons = {
-  Market: {
-    icon: ShoppingCart,
-    color: "text-teal-500",
-    bgColor: "bg-teal-100",
-  },
+  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
   Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Bağış: {
-    icon: HeartHandshake,
-    color: "text-pink-500",
-    bgColor: "bg-pink-100",
-  },
+  Bağış: { icon: HeartHandshake, color: "text-pink-500", bgColor: "bg-pink-100" },
   Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
-  Fatura: {
-    icon: ReceiptText,
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-100",
-  },
+  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
   Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
-  Sağlık: {
-    icon: HeartPulse,
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-100",
-  },
+  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
   Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
   Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
   Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  Restoran: {
-    icon: Utensils,
-    color: "text-orange-500",
-    bgColor: "bg-orange-100",
-  },
-  // 👇 Yeni Aile Kategorisi
-  Aile: {
-    icon: Users,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-  },
-  Diğer: {
-    icon: HelpCircle,
-    color: "text-neutral-400",
-    bgColor: "bg-neutral-100",
-  },
+  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
+  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
+  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
 
 const MARKETLER = [
-  "Lidl",
-  "Aldi",
-  "DM",
-  "Action",
-  "Norma",
-  "Türk Market",
-  "Et-Tavuk",
-  "Kaufland",
-  "bäckerei",
-  "Rewe",
-  "Netto",
-  "Tedi",
-  "Kik",
-  "Fundgrube",
-  "Rossmann",
-  "Edeka",
-  "Biomarkt",
-  "Penny",
-  "Diğer",
+  "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", 
+  "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", 
+  "Biomarkt", "Penny", "Diğer",
 ];
 
-// Giyim Alt Kategori Listesi
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
+const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
 
-// 2. Değişiklik: Yeni Aile Üyeleri Alt Kategori Listesi
-const AILE_UYELERI = [
-  "Ahmet", // Örnek üyeler
-  "Ayşe",
-  "Yusuf",
-  "Zeynep",
+// Harcama Kaynağı Butonları için Sabitler
+const HARCAMA_KAYNAKLARI = [
+    { value: 'maaş', label: 'Maaş', color: 'bg-green-500', icon: Wallet },
+    { value: 'tasarruf', label: 'Tasarruf', color: 'bg-amber-500', icon: PiggyBank },
+    { value: 'genel', label: 'Genel', color: 'bg-indigo-500', icon: Landmark },
 ];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
-
+  
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedMarket, setSelectedMarket] = useState("");
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
+  
+  // Harcama Kaynağı State'i
+  const [selectedSource, setSelectedSource] = useState('maaş'); 
+
+  // 🆕 Not Alanı Görünürlük State'i
+  const [showNote, setShowNote] = useState(false);
+
   const [form] = Form.useForm();
   const [gelirForm] = Form.useForm();
   const [rotation, setRotation] = useState(0);
@@ -162,6 +127,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
+  
+  // ... (Geri kalan fonksiyonlar ve hook'lar değişmedi)
 
   const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
 
@@ -279,13 +246,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleIconClick = (category) => {
     if (isDragging) return;
     setSelectedCategory(category);
-    setSelectedMarket(""); // Market'i sıfırla
+    setSelectedMarket("");
     setIsModalVisible(true);
     form.resetFields();
-    // DayPicker için initial değeri Date objesi olarak ayarlayın
     form.setFieldsValue({
       tarih: dayjs().toDate(),
     });
+    setSelectedSource('maaş'); 
+    setShowNote(false); // 🆕 Not alanını varsayılan olarak gizle
   };
 
   const handleModalCancel = () => {
@@ -293,14 +261,16 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setSelectedCategory(null);
     setSelectedMarket("");
     form.resetFields();
+    setSelectedSource('maaş');
+    setShowNote(false); // 🆕 Not alanını sıfırla
   };
 
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
-    // DayPicker için initial değeri Date objesi olarak ayarlayın
     gelirForm.setFieldsValue({
       tarih: dayjs().toDate(),
+      kategori: "maaş",
     });
   };
 
@@ -310,14 +280,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
-    // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
     const selectedDate = values.tarih
       ? dayjs(values.tarih).toISOString()
       : new Date().toISOString();
 
     let altKategoriValue = "";
 
-    // Market, Giyim veya Aile kategorisi için altKategori değerini belirle
     if (
       selectedCategory === "Market" ||
       selectedCategory === "Giyim" ||
@@ -325,20 +293,21 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     ) {
       altKategoriValue = values.altKategori || "";
     }
+    
+    const harcamaKaynagi = selectedSource; 
 
     const harcamaData = {
       miktar: values.miktar,
       kategori: selectedCategory || "Diğer",
-      // Güncellenmiş altKategori ataması
       altKategori: altKategoriValue,
       not: values.not || "",
       createdAt: selectedDate,
+      harcamaKaynagi: harcamaKaynagi, 
     };
     harcamaMutation.mutate(harcamaData);
   };
 
   const onGelirFinish = (values) => {
-    // values.tarih bir Date objesi olarak gelir. ISO string'e çeviriyoruz.
     const selectedDate = values.tarih
       ? dayjs(values.tarih).toISOString()
       : new Date().toISOString();
@@ -352,28 +321,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     gelirMutation.mutate(gelirData);
   };
 
-  // Alt kategori listesini ve placeholder metnini kategoriye göre döndüren yardımcı fonksiyon
   const getSubCategoryProps = (category) => {
     switch (category) {
       case "Market":
-        return {
-          label: "Market Seç",
-          placeholder: "Market seçin",
-          options: MARKETLER,
-        };
+        return { label: "Market Seç", placeholder: "Market seçin", options: MARKETLER };
       case "Giyim":
-        return {
-          label: "Kişi Seç",
-          placeholder: "Kişi seçin",
-          options: GIYIM_KISILERI,
-        };
-      // 👇 3. Değişiklik: "Aile" için yeni durum
+        return { label: "Kişi Seç", placeholder: "Kişi seçin", options: GIYIM_KISILERI };
       case "Aile":
-        return {
-          label: "Aile Üyesi Seç",
-          placeholder: "Aile üyesi seçin",
-          options: AILE_UYELERI,
-        };
+        return { label: "Aile Üyesi Seç", placeholder: "Aile üyesi seçin", options: AILE_UYELERI };
       default:
         return { label: "", placeholder: "", options: [] };
     }
@@ -382,11 +337,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const needsSubCategory =
     selectedCategory === "Market" ||
     selectedCategory === "Giyim" ||
-    selectedCategory === "Aile"; // 3. Değişiklik: Aile'yi ekle
+    selectedCategory === "Aile";
   const subCategoryProps = getSubCategoryProps(selectedCategory);
 
   return (
     <main className="flex-1 px-4 pt-4 pb-4">
+      {/* ... (Döner Çark Alanı ve kategoriler) ... */}
       <div className="text-center mb-6 pt-4">
         <div className="text-blue-600 font-bold text-xl leading-snug">
           {currentTopCategory}
@@ -448,6 +404,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </div>
       </div>
 
+
       {/* Harcama Ekleme Modalı */}
       <Modal
         title={
@@ -466,7 +423,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           layout="vertical"
           onFinish={onHarcamaFinish}
           initialValues={{
-            tarih: dayjs().toDate(), // Date objesi
+            tarih: dayjs().toDate(), 
           }}
           className="space-y-4"
         >
@@ -475,7 +432,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
-            {/* CustomDayPicker kullanımı (Harcama) */}
             <CustomDayPicker
               disabledDate={(current) =>
                 current && current.isAfter(dayjs(), "day")
@@ -502,7 +458,37 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             />
           </Form.Item>
 
-          {/* 3. Değişiklik: Koşullu render'ı needsSubCategory ile yap */}
+          {/* Harcama Kaynağı Butonları */}
+          <div className="space-y-2">
+            <span className="font-semibold text-gray-700 block">Harcama Kaynağı</span>
+            <div className="flex justify-between space-x-2">
+              {HARCAMA_KAYNAKLARI.map((source) => {
+                const isSelected = selectedSource === source.value;
+                const Icon = source.icon;
+                return (
+                  <Button
+                    key={source.value}
+                    onClick={() => setSelectedSource(source.value)}
+                    className={`flex-1 flex flex-col items-center justify-center p-0 h-auto border-2 transition-all duration-200 
+                      ${isSelected 
+                        ? `${source.color} text-white border-${source.color.split('-')[1]}-600 shadow-md scale-[1.02]`
+                        : `bg-white text-gray-600 border-gray-300 hover:border-blue-400`
+                      }
+                    `}
+                    style={{ borderRadius: '8px' }}
+                  >
+                    <Icon className={isSelected ? "w-5 h-5 mb-0.5" : "w-5 h-5 mb-0.5 text-gray-500"} />
+                    <span className="text-xs font-medium">{source.label}</span>
+                  </Button>
+                );
+              })}
+            </div>
+            {selectedSource === null && (
+                <Text type="danger" className="text-xs block mt-1">Harcama kaynağı seçimi zorunludur</Text>
+            )}
+          </div>
+
+          {/* Alt Kategori Alanı */}
           {needsSubCategory && (
             <Form.Item
               name="altKategori"
@@ -511,7 +497,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                   {subCategoryProps.label}
                 </span>
               }
-              // Alt kategorisi olan alanları zorunlu yap
               rules={[
                 {
                   required: true,
@@ -528,10 +513,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 placeholder={subCategoryProps.placeholder}
                 onChange={
                   selectedCategory === "Market" ? setSelectedMarket : undefined
-                } // Sadece Market için state'i güncelleyelim
+                }
                 className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200"
               >
-                {/* Seçenekleri kategoriye göre belirliyoruz */}
                 {subCategoryProps.options.map((item) => (
                   <Option key={item} value={item}>
                     {item}
@@ -540,22 +524,58 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               </Select>
             </Form.Item>
           )}
+          
+          {/* 🆕 NOT ALANI KONTROL VE KOŞULLU RENDER */}
+          <div className="mt-2">
+            {!showNote && (
+              <Button
+                type="dashed"
+                onClick={() => setShowNote(true)}
+                icon={<MessageCircle className="w-4 h-4" />}
+                block
+                className="text-gray-600 hover:text-blue-500 border-gray-300 hover:border-blue-500 transition-all duration-200"
+              >
+                Not Ekle (İsteğe Bağlı)
+              </Button>
+            )}
 
-          <Form.Item
-            name="not"
-            label={<span className="font-semibold text-gray-700">Not</span>}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200"
-            />
-          </Form.Item>
+            {showNote && (
+              <Form.Item
+                name="not"
+                label={
+                  <span className="font-semibold text-gray-700 flex justify-between items-center w-full">
+                    Not
+                    <Button 
+                      type="text" 
+                      size="small" 
+                      onClick={() => {
+                        form.setFieldsValue({ not: "" }); // Form alanını temizle
+                        setShowNote(false); // Alanı kapat
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Kapat
+                    </Button>
+                  </span>
+                }
+                // marginBottom'u kaldırarak alttaki butona yaklaştırabiliriz
+                style={{ marginBottom: '16px' }} 
+              >
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Açıklama ekle (isteğe bağlı)"
+                  className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200"
+                />
+              </Form.Item>
+            )}
+          </div>
+          {/* 🆕 NOT ALANI BİTİŞ */}
 
           <Button
             type="primary"
             htmlType="submit"
             block
+            disabled={!selectedSource || harcamaMutation.isPending} 
             loading={harcamaMutation.isPending}
             className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200"
           >
@@ -564,7 +584,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* Gelir Ekleme Modalı */}
+      {/* Gelir Ekleme Modalı (Değişmedi) */}
       <Modal
         title={
           <div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>
@@ -580,7 +600,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           layout="vertical"
           onFinish={onGelirFinish}
           initialValues={{
-            tarih: dayjs().toDate(), // Date objesi
+            tarih: dayjs().toDate(), 
+            kategori: "maaş", 
           }}
           className="space-y-4"
         >
@@ -589,7 +610,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             label={<span className="font-semibold text-gray-700">Tarih</span>}
             rules={[{ required: true, message: "Tarih gerekli" }]}
           >
-            {/* CustomDayPicker kullanımı (Gelir) */}
             <CustomDayPicker
               disabledDate={(current) =>
                 current && current.isAfter(dayjs(), "day")
@@ -627,9 +647,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
               placeholder="Gelir türü seçin"
               className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
             >
-              <Option value="maaş">Maaş</Option>
-              <Option value="tasarruf">Tasarruf</Option>
-              <Option value="diğer">Diğer</Option>
+              <Option value="maaş">Maaş (Maaş Bakiyesine Ekle)</Option>
+              <Option value="tasarruf">Tasarruf (Tasarruf Bakiyesine Ekle)</Option>
+              <Option value="diğer">Diğer (Genel Bakiyeye Ekle)</Option>
             </Select>
           </Form.Item>
 
