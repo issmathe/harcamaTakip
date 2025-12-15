@@ -1,4 +1,4 @@
-// pages/Gelirler.jsx (NİHAİ VERSİYON – Sabit Ay Navigasyonu)
+// pages/Gelirler.jsx (NİHAİ VERSİYON – Hata Düzeltilmiş ve Optimize Edilmiş)
 
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
@@ -89,8 +89,8 @@ const GelirlerContent = () => {
   }, [gelirler, selectedMonth, selectedYear]); 
 
 
-  // Düzenleme modalini aç
-  const openEditModal = (gelir) => {
+  // Düzenleme modalini aç (useCallback ile sarıldı)
+  const openEditModal = useCallback((gelir) => {
     setEditingGelir(gelir);
     setFormData({
       miktar: gelir.miktar,
@@ -99,57 +99,27 @@ const GelirlerContent = () => {
       tarih: dayjs(gelir.createdAt).toDate(), 
     });
     setEditModalVisible(true);
-  };
+  }, []);
 
-  // 🔥 **ÇÖZÜM 1: Saat otomatik güncellesin**
-  const handleEditSave = async () => {
-    try {
-      if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
-
-      const selectedDay = dayjs(formData.tarih);
-
-      // Tarih → kullanıcının seçtiği gün
-      // Saat   → şu anki saat
-      const updatedCreatedAt = selectedDay
-        .hour(dayjs().hour())
-        .minute(dayjs().minute())
-        .second(dayjs().second())
-        .toISOString();
-
-      const payload = {
-        miktar: parseFloat(formData.miktar), 
-        kategori: formData.kategori,
-        not: formData.not,
-        createdAt: updatedCreatedAt,
-      };
-      
-      await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
-      
-      message.success("Gelir başarıyla güncellendi!");
-      setEditModalVisible(false);
-      if (typeof refetch === 'function') refetch(); 
-    } catch (err) {
-      console.error("Güncelleme hatası:", err);
-      message.error("Güncelleme başarısız!");
-    }
-  };
-
-  const definitiveDelete = async (id) => {
+  // Kesin silme fonksiyonu (useCallback ile sarıldı)
+  const definitiveDelete = useCallback(async (id) => {
     try {
       await axios.delete(`${API_URL}/gelir/${id}`);
       if (typeof refetch === 'function') refetch(); 
     } catch (err) {
       console.error("Kesin silme hatası:", err);
     }
-  };
-
-  const handleUndo = (messageKey) => {
+  }, [refetch]);
+  
+  // Undo fonksiyonu (useCallback ile sarıldı)
+  const handleUndo = useCallback((messageKey) => {
     clearTimeout(deleteTimerRef.current);
     message.destroy(messageKey);
     message.info("Silme işlemi iptal edildi.");
-  };
+  }, []);
 
-  const startDeleteProcess = (id) => {
+  // Silme sürecini başlatan fonksiyon (useCallback ile sarıldı)
+  const startDeleteProcess = useCallback((id) => {
     if (deleteTimerRef.current) {
         clearTimeout(deleteTimerRef.current);
     }
@@ -179,11 +149,44 @@ const GelirlerContent = () => {
       definitiveDelete(id);
       message.destroy(MESSAGE_KEY); 
     }, 3000);
-  };
+  }, [handleUndo, definitiveDelete]);
+
+
+  // 🔥 Güncelleme fonksiyonu (useCallback ile sarıldı)
+  const handleEditSave = useCallback(async () => {
+    try {
+      if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
+
+      const selectedDay = dayjs(formData.tarih);
+
+      const updatedCreatedAt = selectedDay
+        .hour(dayjs().hour())
+        .minute(dayjs().minute())
+        .second(dayjs().second())
+        .toISOString();
+
+      const payload = {
+        miktar: parseFloat(formData.miktar), 
+        kategori: formData.kategori,
+        not: formData.not,
+        createdAt: updatedCreatedAt,
+      };
+      
+      await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
+      
+      message.success("Gelir başarıyla güncellendi!");
+      setEditModalVisible(false);
+      if (typeof refetch === 'function') refetch(); 
+    } catch (err) {
+      console.error("Güncelleme hatası:", err);
+      message.error("Güncelleme başarısız!");
+    }
+  }, [formData, editingGelir, refetch]);
   
   const formatDate = (dateString) => dayjs(dateString).format('DD.MM.YYYY HH:mm');
 
-  const trailingActions = (gelir) => (
+  // Trailing Actions (useCallback ile sarıldı, bağımlılık eklendi)
+  const trailingActions = useCallback((gelir) => (
     <TrailingActions>
       <SwipeAction
         destructive={true} 
@@ -195,9 +198,10 @@ const GelirlerContent = () => {
         </div>
       </SwipeAction>
     </TrailingActions>
-  );
+  ), [startDeleteProcess]); // startDeleteProcess bağımlılığı eklendi
 
-  const leadingActions = (gelir) => (
+  // Leading Actions (useCallback ile sarıldı, bağımlılık eklendi)
+  const leadingActions = useCallback((gelir) => (
     <LeadingActions>
       <SwipeAction onClick={() => openEditModal(gelir)}>
         <div className="bg-blue-500 text-white flex justify-center items-center h-full w-full font-bold text-lg">
@@ -205,7 +209,7 @@ const GelirlerContent = () => {
         </div>
       </SwipeAction>
     </LeadingActions>
-  );
+  ), [openEditModal]); // openEditModal bağımlılığı eklendi
 
   if (isContextLoading) {
     return (
@@ -221,9 +225,7 @@ const GelirlerContent = () => {
       {/* BAŞLIK */}
       <Title level={3} className="text-center text-gray-700 mt-4 mb-4 md:mt-6 md:mb-6">Gelir Kayıtları</Title>
 
-      {/* 👇👇👇 AY NAVİGASYONUNU SABİTLEYEN KISIM 👇👇👇 */}
-      {/* Sayfanın en üstünde sabit kalması için 'sticky top-0 z-10' kullanıldı. */}
-      {/* pb-4 ile alttaki liste ile arasına biraz boşluk bırakıldı. */}
+      {/* 👇 AY NAVİGASYONUNU SABİTLEYEN KISIM 👇 */}
       <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-2"> 
         <Card 
           className="shadow-xl rounded-xl mx-4 md:mx-6 lg:mx-8 bg-white" 
@@ -236,10 +238,8 @@ const GelirlerContent = () => {
           </div>
         </Card>
       </div>
-      {/* 👆👆👆 SABİTLENEN KART SONU 👆👆👆 */}
 
       <Card 
-        // Sabitlenen kartın hemen altında listeye devam
         className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 overflow-hidden mb-4" 
         styles={{ body: { padding: 0 } }} 
       >
@@ -248,7 +248,8 @@ const GelirlerContent = () => {
             {`${displayMonth} ayında gelir bulunmamaktadır.`}
           </div>
         ) : (
-          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
+          /* OPTİMİZASYON: listType ANDROID olarak ayarlandı */
+          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.ANDROID}>
             {filteredGelirler.map((gelir) => {
               const { icon, color } = getCategoryDetails(gelir.kategori);
               
@@ -354,8 +355,6 @@ const GelirlerContent = () => {
 const Gelirler = () => {
   return (
     <div className="relative min-h-screen bg-gray-50 flex flex-col">
-      {/* 👇👇👇 KRİTİK DEĞİŞİKLİK: Kaydırmayı yöneten 'overflow-y-auto' sınıfı kaldırıldı. */}
-      {/* Bu sayede, tarayıcı penceresinin ana kaydırması kullanılacak ve 'sticky' doğru çalışacaktır. */}
       <main className="flex-grow"> 
         <GelirlerContent />
       </main>
