@@ -12,8 +12,6 @@ import {
 } from "antd";
 
 import dayjs from "dayjs";
-
-// Yeni import: CustomDayPicker bileşenini ayrı dosyasından içe aktarıyoruz
 import CustomDayPicker from "../Forms/CustomDayPicker";
 
 import {
@@ -33,10 +31,7 @@ import {
   Utensils,
   HelpCircle,
   Users,
-  Wallet, // 👈 Yeni İkon: Harcama Kaynağı için Wallet ikonu
-  Landmark, // 👈 Yeni İkon: Banka/Genel için Landmark ikonu
-  PiggyBank, // 👈 Yeni İkon: Tasarruf için PiggyBank ikonu
-  MessageCircle, // 🆕 Not ekle butonu için ikon
+  MessageCircle, 
 } from "lucide-react";
 
 import axios from "axios";
@@ -47,7 +42,6 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
-// Kategori ikonları ve renkleri (Kısaltıldı)
 const CategoryIcons = {
   Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
   Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
@@ -78,25 +72,12 @@ const MARKETLER = [
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
 
-// Harcama Kaynağı Butonları için Sabitler
-const HARCAMA_KAYNAKLARI = [
-    { value: 'maaş', label: 'Maaş', color: 'bg-green-500', icon: Wallet },
-    { value: 'tasarruf', label: 'Tasarruf', color: 'bg-amber-500', icon: PiggyBank },
-    { value: 'genel', label: 'Genel', color: 'bg-indigo-500', icon: Landmark },
-];
-
 const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
   
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedMarket, setSelectedMarket] = useState("");
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
-  
-  // Harcama Kaynağı State'i
-  const [selectedSource, setSelectedSource] = useState('maaş'); 
-
-  // 🆕 Not Alanı Görünürlük State'i
   const [showNote, setShowNote] = useState(false);
 
   const [form] = Form.useForm();
@@ -127,8 +108,6 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
-  
-  // ... (Geri kalan fonksiyonlar ve hook'lar değişmedi)
 
   const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
 
@@ -155,9 +134,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const currentTopCategory = getTopCategory();
   const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
-  const formattedTotal = (currentCategoryTotal ?? 0)
-    .toFixed(2)
-    .replace(".", ",");
+  const formattedTotal = (currentCategoryTotal ?? 0).toFixed(2).replace(".", ",");
 
   const getAngle = (centerX, centerY, pointX, pointY) =>
     Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
@@ -166,31 +143,21 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     e.preventDefault();
     setIsDragging(true);
     const rect = wheelRef.current.getBoundingClientRect();
-    setLastAngle(
-      getAngle(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-        e.clientX,
-        e.clientY
-      )
-    );
+    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY));
   };
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isDragging) return;
-      const rect = wheelRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const angle = getAngle(centerX, centerY, e.clientX, e.clientY);
-      let deltaAngle = angle - lastAngle;
-      if (deltaAngle > 180) deltaAngle -= 360;
-      if (deltaAngle < -180) deltaAngle += 360;
-      setRotation((prev) => prev + deltaAngle);
-      setLastAngle(angle);
-    },
-    [isDragging, lastAngle]
-  );
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    const rect = wheelRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const angle = getAngle(centerX, centerY, e.clientX, e.clientY);
+    let deltaAngle = angle - lastAngle;
+    if (deltaAngle > 180) deltaAngle -= 360;
+    if (deltaAngle < -180) deltaAngle += 360;
+    setRotation((prev) => prev + deltaAngle);
+    setLastAngle(angle);
+  }, [isDragging, lastAngle]);
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
@@ -203,28 +170,24 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
   };
 
-  const handleTouchMove = useCallback(
-    (e) => {
-      const touch = e.touches[0];
-      const dx = touch.clientX - touchStartPos.current.x;
-      const dy = touch.clientY - touchStartPos.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
-        e.preventDefault();
-        if (!isDragging) setIsDragging(true);
-
-        const rect = wheelRef.current.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
-        let deltaAngle = angle - lastAngle;
-        if (deltaAngle > 180) deltaAngle -= 360;
-        if (deltaAngle < -180) deltaAngle += 360;
-        setRotation((prev) => prev + deltaAngle);
-        setLastAngle(angle);
-      }
-    },
-    [isDragging, lastAngle]
-  );
+  const handleTouchMove = useCallback((e) => {
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartPos.current.x;
+    const dy = touch.clientY - touchStartPos.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
+      e.preventDefault();
+      if (!isDragging) setIsDragging(true);
+      const rect = wheelRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
+      let deltaAngle = angle - lastAngle;
+      if (deltaAngle > 180) deltaAngle -= 360;
+      if (deltaAngle < -180) deltaAngle += 360;
+      setRotation((prev) => prev + deltaAngle);
+      setLastAngle(angle);
+    }
+  }, [isDragging, lastAngle]);
 
   const handleTouchEnd = useCallback(() => setIsDragging(false), []);
 
@@ -246,32 +209,23 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const handleIconClick = (category) => {
     if (isDragging) return;
     setSelectedCategory(category);
-    setSelectedMarket("");
     setIsModalVisible(true);
     form.resetFields();
-    form.setFieldsValue({
-      tarih: dayjs().toDate(),
-    });
-    setSelectedSource('maaş'); 
-    setShowNote(false); // 🆕 Not alanını varsayılan olarak gizle
+    form.setFieldsValue({ tarih: dayjs().toDate() });
+    setShowNote(false);
   };
 
   const handleModalCancel = () => {
     setIsModalVisible(false);
     setSelectedCategory(null);
-    setSelectedMarket("");
     form.resetFields();
-    setSelectedSource('maaş');
-    setShowNote(false); // 🆕 Not alanını sıfırla
+    setShowNote(false);
   };
 
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     gelirForm.resetFields();
-    gelirForm.setFieldsValue({
-      tarih: dayjs().toDate(),
-      kategori: "maaş",
-    });
+    gelirForm.setFieldsValue({ tarih: dayjs().toDate() });
   };
 
   const handleGelirCancel = () => {
@@ -280,21 +234,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
-    const selectedDate = values.tarih
-      ? dayjs(values.tarih).toISOString()
-      : new Date().toISOString();
-
-    let altKategoriValue = "";
-
-    if (
-      selectedCategory === "Market" ||
-      selectedCategory === "Giyim" ||
-      selectedCategory === "Aile"
-    ) {
-      altKategoriValue = values.altKategori || "";
-    }
-    
-    const harcamaKaynagi = selectedSource; 
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
+    let altKategoriValue = (needsSubCategory) ? values.altKategori : "";
 
     const harcamaData = {
       miktar: values.miktar,
@@ -302,19 +243,15 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       altKategori: altKategoriValue,
       not: values.not || "",
       createdAt: selectedDate,
-      harcamaKaynagi: harcamaKaynagi, 
     };
     harcamaMutation.mutate(harcamaData);
   };
 
   const onGelirFinish = (values) => {
-    const selectedDate = values.tarih
-      ? dayjs(values.tarih).toISOString()
-      : new Date().toISOString();
-
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
     const gelirData = {
       miktar: values.miktar,
-      kategori: values.kategori,
+      kategori: values.kategori || "Gelir",
       not: values.not || "",
       createdAt: selectedDate,
     };
@@ -323,52 +260,31 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
   const getSubCategoryProps = (category) => {
     switch (category) {
-      case "Market":
-        return { label: "Market Seç", placeholder: "Market seçin", options: MARKETLER };
-      case "Giyim":
-        return { label: "Kişi Seç", placeholder: "Kişi seçin", options: GIYIM_KISILERI };
-      case "Aile":
-        return { label: "Aile Üyesi Seç", placeholder: "Aile üyesi seçin", options: AILE_UYELERI };
-      default:
-        return { label: "", placeholder: "", options: [] };
+      case "Market": return { label: "Market Seç", placeholder: "Market seçin", options: MARKETLER };
+      case "Giyim": return { label: "Kişi Seç", placeholder: "Kişi seçin", options: GIYIM_KISILERI };
+      case "Aile": return { label: "Aile Üyesi Seç", placeholder: "Aile üyesi seçin", options: AILE_UYELERI };
+      default: return { label: "", placeholder: "", options: [] };
     }
   };
 
-  const needsSubCategory =
-    selectedCategory === "Market" ||
-    selectedCategory === "Giyim" ||
-    selectedCategory === "Aile";
+  const needsSubCategory = ["Market", "Giyim", "Aile"].includes(selectedCategory);
   const subCategoryProps = getSubCategoryProps(selectedCategory);
 
   return (
     <main className="flex-1 px-4 pt-4 pb-4">
-      {/* ... (Döner Çark Alanı ve kategoriler) ... */}
       <div className="text-center mb-6 pt-4">
-        <div className="text-blue-600 font-bold text-xl leading-snug">
-          {currentTopCategory}
-        </div>
-        <div className="text-gray-700 font-semibold text-base mt-1">
-          {formattedTotal} €
-        </div>
+        <div className="text-blue-600 font-bold text-xl leading-snug">{currentTopCategory}</div>
+        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
       </div>
 
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        <div
-          onClick={handleGelirClick}
-          className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-[1.05] z-20 transition-all"
-        >
+        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-[1.05] z-20 transition-all">
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
 
-        <div
-          ref={wheelRef}
-          className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          style={{
-            transform: `rotate(${rotation}deg)`,
-            transition: isDragging ? "none" : "transform 0.3s ease-out",
-          }}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
+        <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.3s ease-out" }}
+          onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((category, i) => {
             const angle = (360 / CATEGORIES.length) * i - 90;
@@ -380,21 +296,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
             return (
               <Tooltip key={category} title={category} placement="top">
-                <button
-                  onClick={() => handleIconClick(category)}
+                <button onClick={() => handleIconClick(category)}
                   className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
-                    isTop
-                      ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10"
-                      : `${bgColor} ${color} hover:${bgColor.replace(
-                          "100",
-                          "200"
-                        )}`
+                    isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color} hover:${bgColor.replace("100", "200")}`
                   }`}
-                  style={{
-                    top: `${center + y}%`,
-                    left: `${center + x}%`,
-                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
-                  }}
+                  style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
                 >
                   <Icon className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} />
                 </button>
@@ -404,275 +310,83 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </div>
       </div>
 
-
-      {/* Harcama Ekleme Modalı */}
-      <Modal
-        title={
-          <div className="text-2xl font-bold text-blue-700">
-            {selectedCategory || "Harcama"} Ekle
-          </div>
-        }
-        open={isModalVisible}
-        onCancel={handleModalCancel}
-        footer={null}
-        centered
-        className="modern-modal"
+      <Modal title={<div className="text-2xl font-bold text-blue-700">{selectedCategory || "Harcama"} Ekle</div>}
+        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered className="modern-modal"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onHarcamaFinish}
-          initialValues={{
-            tarih: dayjs().toDate(), 
-          }}
-          className="space-y-4"
-        >
-          <Form.Item
-            name="tarih"
-            label={<span className="font-semibold text-gray-700">Tarih</span>}
-            rules={[{ required: true, message: "Tarih gerekli" }]}
-          >
-            <CustomDayPicker
-              disabledDate={(current) =>
-                current && current.isAfter(dayjs(), "day")
-              }
-              isIncome={false}
-            />
+        <Form form={form} layout="vertical" onFinish={onHarcamaFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
+          <Form.Item name="tarih" label={<span className="font-semibold text-gray-700">Tarih</span>} rules={[{ required: true, message: "Tarih gerekli" }]}>
+            <CustomDayPicker disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={false} />
           </Form.Item>
 
-          <Form.Item
-            name="miktar"
-            label={
-              <span className="font-semibold text-gray-700">Miktar (€)</span>
-            }
-            rules={[{ required: true, message: "Miktar gerekli" }]}
-          >
-            <InputNumber
-              min={0.01}
-              step={0.01}
-              style={{ width: "100%" }}
-              inputMode="decimal"
+          <Form.Item name="miktar" label={<span className="font-semibold text-gray-700">Miktar (€)</span>} rules={[{ required: true, message: "Miktar gerekli" }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200"
+              className="rounded-lg shadow-sm"
             />
           </Form.Item>
 
-          {/* Harcama Kaynağı Butonları */}
-          <div className="space-y-2">
-            <span className="font-semibold text-gray-700 block">Harcama Kaynağı</span>
-            <div className="flex justify-between space-x-2">
-              {HARCAMA_KAYNAKLARI.map((source) => {
-                const isSelected = selectedSource === source.value;
-                const Icon = source.icon;
-                return (
-                  <Button
-                    key={source.value}
-                    onClick={() => setSelectedSource(source.value)}
-                    className={`flex-1 flex flex-col items-center justify-center p-0 h-auto border-2 transition-all duration-200 
-                      ${isSelected 
-                        ? `${source.color} text-white border-${source.color.split('-')[1]}-600 shadow-md scale-[1.02]`
-                        : `bg-white text-gray-600 border-gray-300 hover:border-blue-400`
-                      }
-                    `}
-                    style={{ borderRadius: '8px' }}
-                  >
-                    <Icon className={isSelected ? "w-5 h-5 mb-0.5" : "w-5 h-5 mb-0.5 text-gray-500"} />
-                    <span className="text-xs font-medium">{source.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
-            {selectedSource === null && (
-                <Text type="danger" className="text-xs block mt-1">Harcama kaynağı seçimi zorunludur</Text>
-            )}
-          </div>
-
-          {/* Alt Kategori Alanı */}
           {needsSubCategory && (
-            <Form.Item
-              name="altKategori"
-              label={
-                <span className="font-semibold text-gray-700">
-                  {subCategoryProps.label}
-                </span>
-              }
-              rules={[
-                {
-                  required: true,
-                  message: `${subCategoryProps.label} seçimi zorunludur`,
-                },
-              ]}
-              initialValue={
-                selectedCategory === "Market"
-                  ? selectedMarket || undefined
-                  : undefined
-              }
-            >
-              <Select
-                placeholder={subCategoryProps.placeholder}
-                onChange={
-                  selectedCategory === "Market" ? setSelectedMarket : undefined
-                }
-                className="rounded-lg shadow-sm hover:border-blue-400 transition-all duration-200"
-              >
-                {subCategoryProps.options.map((item) => (
-                  <Option key={item} value={item}>
-                    {item}
-                  </Option>
-                ))}
+            <Form.Item name="altKategori" label={<span className="font-semibold text-gray-700">{subCategoryProps.label}</span>} rules={[{ required: true, message: "Seçim zorunludur" }]}>
+              <Select placeholder={subCategoryProps.placeholder} className="rounded-lg shadow-sm">
+                {subCategoryProps.options.map((item) => <Option key={item} value={item}>{item}</Option>)}
               </Select>
             </Form.Item>
           )}
           
-          {/* 🆕 NOT ALANI KONTROL VE KOŞULLU RENDER */}
           <div className="mt-2">
             {!showNote && (
-              <Button
-                type="dashed"
-                onClick={() => setShowNote(true)}
-                icon={<MessageCircle className="w-4 h-4" />}
-                block
-                className="text-gray-600 hover:text-blue-500 border-gray-300 hover:border-blue-500 transition-all duration-200"
-              >
+              <Button type="dashed" onClick={() => setShowNote(true)} icon={<MessageCircle className="w-4 h-4" />} block className="text-gray-600 border-gray-300">
                 Not Ekle (İsteğe Bağlı)
               </Button>
             )}
 
             {showNote && (
-              <Form.Item
-                name="not"
-                label={
+              <Form.Item name="not" label={
                   <span className="font-semibold text-gray-700 flex justify-between items-center w-full">
                     Not
-                    <Button 
-                      type="text" 
-                      size="small" 
-                      onClick={() => {
-                        form.setFieldsValue({ not: "" }); // Form alanını temizle
-                        setShowNote(false); // Alanı kapat
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Kapat
-                    </Button>
+                    <Button type="text" size="small" onClick={() => { form.setFieldsValue({ not: "" }); setShowNote(false); }} className="text-red-500">Kapat</Button>
                   </span>
                 }
-                // marginBottom'u kaldırarak alttaki butona yaklaştırabiliriz
-                style={{ marginBottom: '16px' }} 
               >
-                <Input.TextArea
-                  rows={3}
-                  placeholder="Açıklama ekle (isteğe bağlı)"
-                  className="rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200"
-                />
+                <Input.TextArea rows={3} placeholder="Açıklama ekle" className="rounded-lg shadow-sm" />
               </Form.Item>
             )}
           </div>
-          {/* 🆕 NOT ALANI BİTİŞ */}
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            disabled={!selectedSource || harcamaMutation.isPending} 
-            loading={harcamaMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transition-all duration-200"
-          >
-            Kaydet
-          </Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-12 text-lg font-bold bg-blue-600 rounded-lg">Kaydet</Button>
         </Form>
       </Modal>
 
-      {/* Gelir Ekleme Modalı (Değişmedi) */}
-      <Modal
-        title={
-          <div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>
-        }
-        open={isGelirModalVisible}
-        onCancel={handleGelirCancel}
-        footer={null}
-        centered
-        className="modern-modal"
+      <Modal title={<div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>}
+        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered className="modern-modal"
       >
-        <Form
-          form={gelirForm}
-          layout="vertical"
-          onFinish={onGelirFinish}
-          initialValues={{
-            tarih: dayjs().toDate(), 
-            kategori: "maaş", 
-          }}
-          className="space-y-4"
-        >
-          <Form.Item
-            name="tarih"
-            label={<span className="font-semibold text-gray-700">Tarih</span>}
-            rules={[{ required: true, message: "Tarih gerekli" }]}
-          >
-            <CustomDayPicker
-              disabledDate={(current) =>
-                current && current.isAfter(dayjs(), "day")
-              }
-              isIncome={true}
-            />
+        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
+          <Form.Item name="tarih" label={<span className="font-semibold text-gray-700">Tarih</span>} rules={[{ required: true, message: "Tarih gerekli" }]}>
+            <CustomDayPicker disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={true} />
           </Form.Item>
 
-          <Form.Item
-            name="miktar"
-            label={
-              <span className="font-semibold text-gray-700">Miktar (€)</span>
-            }
-            rules={[{ required: true, message: "Miktar gerekli" }]}
-          >
-            <InputNumber
-              min={0.01}
-              step={0.01}
-              style={{ width: "100%" }}
-              inputMode="decimal"
+          <Form.Item name="miktar" label={<span className="font-semibold text-gray-700">Miktar (€)</span>} rules={[{ required: true, message: "Miktar gerekli" }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal"
               formatter={(value) => `${value} €`.replace(".", ",")}
               parser={(value) => value.replace(" €", "").replace(",", ".")}
-              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
+              className="rounded-lg shadow-sm"
             />
           </Form.Item>
 
-          <Form.Item
-            name="kategori"
-            label={
-              <span className="font-semibold text-gray-700">Kategori</span>
-            }
-            rules={[{ required: true, message: "Kategori gerekli" }]}
-          >
-            <Select
-              placeholder="Gelir türü seçin"
-              className="rounded-lg shadow-sm hover:border-indigo-400 transition-all duration-200"
-            >
-              <Option value="maaş">Maaş (Maaş Bakiyesine Ekle)</Option>
-              <Option value="tasarruf">Tasarruf (Tasarruf Bakiyesine Ekle)</Option>
-              <Option value="diğer">Diğer (Genel Bakiyeye Ekle)</Option>
+          <Form.Item name="kategori" label={<span className="font-semibold text-gray-700">Gelir Türü</span>}>
+            <Select placeholder="Gelir türü seçin" className="rounded-lg shadow-sm">
+              <Option value="maaş">Maaş</Option>
+              <Option value="ek_gelir">Ek Gelir</Option>
+              <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="not"
-            label={<span className="font-semibold text-gray-700">Not</span>}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Açıklama ekle (isteğe bağlı)"
-              className="rounded-lg shadow-sm hover:border-indigo-400 focus:ring-2 focus:ring-indigo-300 transition-all duration-200"
-            />
+          <Form.Item name="not" label={<span className="font-semibold text-gray-700">Not</span>}>
+            <Input.TextArea rows={3} placeholder="Açıklama ekle" className="rounded-lg shadow-sm" />
           </Form.Item>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            loading={gelirMutation.isPending}
-            className="mt-6 h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg transition-all duration-200"
-          >
-            Kaydet
-          </Button>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-12 text-lg font-bold bg-indigo-600 rounded-lg">Kaydet</Button>
         </Form>
       </Modal>
     </main>
