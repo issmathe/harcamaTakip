@@ -25,6 +25,7 @@ const HarcamaSchema = new mongoose.Schema(
         "Hediye",
         "Restoran",
         "Aile",
+        "Transfer",
         "Diğer",
       ],
       required: true,

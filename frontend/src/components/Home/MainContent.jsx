@@ -31,7 +31,8 @@ import {
   Utensils,
   HelpCircle,
   Users,
-  MessageCircle, 
+  MessageCircle,
+  ArrowLeftRight, // Transfer için yeni ikon
 } from "lucide-react";
 
 import axios from "axios";
@@ -58,6 +59,7 @@ const CategoryIcons = {
   Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
   Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
   Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
+  Transfer: { icon: ArrowLeftRight, color: "text-slate-600", bgColor: "bg-slate-200" }, // Yeni kategori
   Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
 };
 
@@ -92,11 +94,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     mutationFn: async (harcamaData) =>
       axios.post(`${API_URL}/harcama`, harcamaData),
     onSuccess: async () => {
-      message.success("Harcama eklendi!");
+      message.success("İşlem başarıyla eklendi!");
       await refetch();
       handleModalCancel();
     },
-    onError: () => message.error("Harcama eklenirken hata oluştu."),
+    onError: () => message.error("Hata oluştu."),
   });
 
   const gelirMutation = useMutation({
@@ -310,7 +312,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </div>
       </div>
 
-      <Modal title={<div className="text-2xl font-bold text-blue-700">{selectedCategory || "Harcama"} Ekle</div>}
+      {/* Harcama/Transfer Modalı */}
+      <Modal title={<div className="text-2xl font-bold text-blue-700">{selectedCategory || "İşlem"} Ekle</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered className="modern-modal"
       >
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
@@ -358,6 +361,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         </Form>
       </Modal>
 
+      {/* Gelir Modalı */}
       <Modal title={<div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered className="modern-modal"
       >
