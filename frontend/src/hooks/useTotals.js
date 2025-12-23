@@ -21,12 +21,12 @@ export const fetchTotalsFromAPI = async () => {
     const cumulativeIncome = allGelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
     const cumulativeExpense = allHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
     
-    // 🆕 B. Kümülatif BANKA Geliri (Sadece 'maaş' kategorisi)
+    // 🆕 B. Kümülatif BANKA Geliri (Sadece 'gelir' kategorisi)
     const cumulativeBankIncome = allGelirler
-        .filter(i => i.kategori === 'maaş') // Sadece maaş olanları filtrele
+        .filter(i => i.kategori === 'gelir') // Sadece gelir olanları filtrele
         .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
         
-    // 🆕 C. BANKA BAKİYESİ: Maaş Geliri - Tüm Harcamalar
+    // 🆕 C. BANKA BAKİYESİ: gelir Geliri - Tüm Harcamalar
     const bankBalance = cumulativeBankIncome - cumulativeExpense;
     // --- 2. AYLIK TOPLAMLAR İÇİN FİLTRELEME VE HESAPLAMA ---
     

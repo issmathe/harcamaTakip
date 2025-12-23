@@ -31,11 +31,11 @@ const { Text, Title } = Typography;
 const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 
-const ALL_GELIR_CATEGORIES = ["Maaş", "Tasarruf", "Diğer"]; 
+const ALL_GELIR_CATEGORIES = ["gelir", "Tasarruf", "Diğer"]; 
 
 const getCategoryDetails = (kategori) => {
   switch (kategori.toLowerCase()) {
-    case 'maaş':
+    case 'gelir':
       return { icon: <BankOutlined />, color: 'bg-green-100 text-green-600' };
     case 'tasarruf':
       return { icon: <SaveOutlined />, color: 'bg-blue-100 text-blue-600' };

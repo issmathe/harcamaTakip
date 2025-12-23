@@ -19,7 +19,7 @@ const Header = () => {
     totalToday, 
     cumulativeIncome, 
     cumulativeExpense,
-    bankBalance // Sadece 'maaş' gelirlerini içeren bakiye
+    bankBalance // Sadece 'gelir' gelirlerini içeren bakiye
   } = useTotalsContext();
   
   // Tüm gelir kaynaklarını içeren kümülatif bakiye (Toplam Bakiye)
@@ -76,7 +76,7 @@ const Header = () => {
             </Title>
           </div>
           
-          {/* 2. BANKA BAKİYESİ (Sadece Maaş Geliri Dahil) */}
+          {/* 2. BANKA BAKİYESİ (Sadece gelir Geliri Dahil) */}
           <div className="text-right bg-white/10 p-1 rounded-md mr-2"> 
             <Text className="!text-white/80 text-xs">Banka Bakiyesi</Text>
             <div className={`text-lg font-bold flex items-center justify-end ${bankBalanceColor}`}>

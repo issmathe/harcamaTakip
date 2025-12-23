@@ -10,7 +10,7 @@ const GelirSchema = new mongoose.Schema(
     },
     kategori: {
       type: String,
-      enum: ["maaş", "tasarruf", "diğer"], // sadece 3 seçenek
+      enum: ["gelir", "tasarruf", "diğer"], // sadece 3 seçenek
       required: true,
     },
     not: {

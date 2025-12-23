@@ -376,8 +376,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item name="kategori" label={<span className="font-semibold text-gray-700">Gelir Türü</span>}>
             <Select placeholder="Gelir türü seçin" className="rounded-lg shadow-sm">
-              <Option value="maaş">Maaş</Option>
-              <Option value="ek_gelir">Ek Gelir</Option>
+              <Option value="gelir">Gelir</Option>
+              <Option value="tasarruf">Tasarruf</Option>
               <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>

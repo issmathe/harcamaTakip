@@ -1,3 +1,7 @@
+backend render sitahmet@gmail
+frontend vercel 
+
+
 backend/
 │
 ├─ models/                          # MongoDB modelleri (Mongoose şemaları)
@@ -47,6 +51,5 @@ src/
 ├─ App.jsx                  # Router ve genel 
 ├─ index.js                 # React root
 └─ index.css / tailwind.css # Global stiller ve Tailwind ayarları
-
 
 
