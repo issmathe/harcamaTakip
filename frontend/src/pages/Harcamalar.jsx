@@ -1,4 +1,4 @@
-// pages/Harcamalar.jsx (sticky top-0 eklendi)
+// pages/Harcamalar.jsx (Filtre Korumalı ve Transfer Entegreli Tam Kod)
 
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
@@ -21,12 +21,11 @@ import {
   LeftOutlined,
   RightOutlined,
   UndoOutlined, 
+  SwapOutlined,
 } from "@ant-design/icons";
 
-// Özel bileşen importu
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
 
-// Kaydırarak silme ve düzenleme için bileşenler
 import {
   SwipeableList,
   SwipeableListItem,
@@ -48,78 +47,42 @@ dayjs.locale(tr);
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-// API URL'sini kendi ortamınıza göre ayarlayın
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
-const MESSAGE_KEY = "harcamaSilmeIslemi"; // Geri Al mesaj anahtarı
+const MESSAGE_KEY = "harcamaSilmeIslemi";
 
-// Sabitler
 const ALL_CATEGORIES = [
-  "Market",
-  "Giyim",
-  "Bağış",
-  "Petrol",
-  "Kira",
-  "Fatura",
-  "Eğitim",
-  "Sağlık",
-  "Ulaşım",
-  "Eğlence",
-  "Elektronik",
-  "İletisim",
-  "Hediye",
-  "Restoran",
-  "Aile", 
-  "Diğer",
+  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim",
+  "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
+  "Restoran", "Aile", "Transfer", "Diğer",
 ];
 
 const MARKETLER = [
-  "Lidl",
-  "Aldi",
-  "DM",
-  "Action",
-  "Norma",
-  "Türk Market",
-  "Et-Tavuk",
-  "Kaufland",
-  "bäckerei",
-  "Rewe",
-  "Netto",
-  "Tedi",
-  "Kik",
-  "Fundgrube",
-  "Rossmann",
-  "Edeka",
-  "Biomarkt",
-  "Penny",
-  "Diğer",
+  "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk",
+  "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann",
+  "Edeka", "Biomarkt", "Penny", "Diğer",
 ];
 
-// Giyim ve Aile için Kişi/Üye listeleri
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
+const TRANSFER_HEDEFLERI = ["Banka", "Nakit", "Kasa", "Diğer"];
 
 const getCategoryDetails = (kategori) => {
-  const normalizedKategori = kategori === "Market" ? "Market" : kategori;
-
-  switch (normalizedKategori.toLowerCase()) {
+  const normalizedKategori = kategori?.toString().toLowerCase();
+  switch (normalizedKategori) {
+    case "transfer":
+      return { icon: <SwapOutlined />, color: "bg-amber-100 text-amber-600" };
     case "bağış":
     case "market":
     case "restoran":
     case "restoran / kafe":
     case "aile": 
-      return {
-        icon: <DollarCircleOutlined />,
-        color: "bg-red-100 text-red-600",
-      };
+      return { icon: <DollarCircleOutlined />, color: "bg-red-100 text-red-600" };
     case "kira":
     case "fatura":
       return { icon: <TagOutlined />, color: "bg-blue-100 text-blue-600" };
     case "ulaşım":
     case "petrol":
-      return {
-        icon: <CalendarOutlined />,
-        color: "bg-green-100 text-green-600",
-      };
+      return { icon: <CalendarOutlined />, color: "bg-green-100 text-green-600" };
     default:
       return { icon: <SolutionOutlined />, color: "bg-gray-100 text-gray-600" };
   }
@@ -128,7 +91,7 @@ const getCategoryDetails = (kategori) => {
 const HarcamalarContent = () => {
   const queryClient = useQueryClient();
   const deleteTimerRef = useRef(null);
-  const now = dayjs(); // Şu anki an
+  const now = dayjs();
 
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
@@ -145,7 +108,6 @@ const HarcamalarContent = () => {
     tarih: dayjs().toDate(),
   });
 
-  // Harcamaları Fetch Et
   const { data: harcamalar = [], isLoading } = useQuery({
     queryKey: ["harcamalar"],
     queryFn: async () => {
@@ -154,83 +116,62 @@ const HarcamalarContent = () => {
     },
   });
 
-  // Güncelleme (PUT)
   const updateMutation = useMutation({
     mutationFn: async (payload) =>
       axios.put(`${API_URL}/harcama/${payload._id}`, payload),
     onSuccess: () => {
-      message.success("✨ Harcamanız başarıyla güncellendi!");
+      message.success("✨ İşlem başarıyla güncellendi!");
       queryClient.invalidateQueries(["harcamalar"]);
+      queryClient.invalidateQueries(["totals"]);
       setEditModalVisible(false);
     },
     onError: () => message.error("Güncelleme başarısız!"),
   });
 
-  // KESİN SİLME İŞLEMİ
   const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
       queryClient.invalidateQueries(["harcamalar"]);
+      queryClient.invalidateQueries(["totals"]);
     } catch (err) {
-      console.error("Kesin silme hatası:", err);
+      console.error("Silme hatası:", err);
     }
   };
 
-  // GERİ ALMA İŞLEMİ
   const handleUndo = (messageKey) => {
     clearTimeout(deleteTimerRef.current);
     message.destroy(messageKey);
-    message.info("Silme işlemi iptal edildi.");
+    message.info("İşlem iptal edildi.");
   };
 
-  // SİLME BAŞLATMA İŞLEMİ
   const startDeleteProcess = (id) => {
-    if (deleteTimerRef.current) {
-      clearTimeout(deleteTimerRef.current);
-    }
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
 
     const content = (
       <span className="flex items-center space-x-3">
-        <Text strong className="text-gray-900">
-          🗑️ Silme başarılı oldu!
-        </Text>
-        <Button
-          type="link"
-          icon={<UndoOutlined />}
-          size="small"
-          onClick={() => handleUndo(MESSAGE_KEY)}
-          className="text-blue-500 hover:text-blue-700"
-        >
-          Geri Al
-        </Button>
+        <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
+        <Button type="link" icon={<UndoOutlined />} size="small" onClick={() => handleUndo(MESSAGE_KEY)}>Geri Al</Button>
       </span>
     );
 
-    message.success({
-      content: content,
-      key: MESSAGE_KEY,
-      duration: 3, // 3 saniye sonra otomatik kapanacak
-    });
-
+    message.success({ content, key: MESSAGE_KEY, duration: 3 });
     deleteTimerRef.current = setTimeout(() => {
       definitiveDelete(id);
       message.destroy(MESSAGE_KEY);
-    }, 3000); // 3 saniye
+    }, 3000);
   };
 
-  // Ay / Yıl filtreleme
   const filteredHarcamalar = useMemo(() => {
     const ayFiltreli = harcamalar
       .filter((h) => {
         const t = dayjs(h.createdAt);
         return t.month() === selectedMonth && t.year() === selectedYear;
       })
-      .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()); // Tarihe göre sıralama
+      .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
 
     if (selectedCategory === "Tümü" || selectedCategory === "Kategoriler") {
       return ayFiltreli;
     }
-
     return ayFiltreli.filter((h) => h.kategori === selectedCategory);
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory]);
 
@@ -239,18 +180,13 @@ const HarcamalarContent = () => {
     [filteredHarcamalar]
   );
 
-  const changeMonth = useCallback(
-    (direction) => {
+  const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
-      const newDate =
-        direction === "prev"
-          ? current.subtract(1, "month")
-          : current.add(1, "month");
+      const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
       setSelectedMonth(newDate.month());
       setSelectedYear(newDate.year());
-      setSelectedCategory("Tümü");
-    },
-    [selectedMonth, selectedYear]
+      // Kategori sıfırlama (setSelectedCategory("Tümü")) satırı kaldırıldı, böylece filtre korunur.
+    }, [selectedMonth, selectedYear]
   );
 
   const isFutureMonth = useMemo(() => {
@@ -258,26 +194,15 @@ const HarcamalarContent = () => {
     return current.isAfter(now, "month");
   }, [selectedMonth, selectedYear, now]);
 
-  const displayMonth = dayjs()
-    .year(selectedYear)
-    .month(selectedMonth)
-    .format("MMMM YYYY");
-
-  const formatDate = (dateString) =>
-    dayjs(dateString).format("DD.MM.YYYY HH:mm");
+  const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
 
   const openEditModal = (harcama) => {
-    // Alt kategori gerektiren kategoriler
-    const requiresSubCategory =
-      harcama.kategori === "Market" ||
-      harcama.kategori === "Giyim" || 
-      harcama.kategori === "Aile"; 
+    const requiresSubCategory = ["Market", "Giyim", "Aile", "Transfer"].includes(harcama.kategori);
 
     setEditingHarcama(harcama);
     setFormData({
       miktar: harcama.miktar,
       kategori: harcama.kategori,
-      // Eğer kategori alt kategori gerektiriyorsa, mevcut altKategori'yi set et
       altKategori: requiresSubCategory ? harcama.altKategori || "" : "",
       not: harcama.not || "",
       tarih: dayjs(harcama.createdAt).toDate(),
@@ -288,47 +213,27 @@ const HarcamalarContent = () => {
   const handleEditSave = () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
 
-    const isMarket = formData.kategori === "Market";
-    const isGiyim = formData.kategori === "Giyim";
-    const isAile = formData.kategori === "Aile";
+    const needsSub = ["Market", "Giyim", "Aile", "Transfer"].includes(formData.kategori);
 
-    // Zorunluluk kontrolü
-    if ((isMarket || isGiyim || isAile) && !formData.altKategori) {
-      let errorMessage = "Alt kategori seçimi boş bırakılamaz!";
-      if (isMarket) errorMessage = "Market seçimi boş bırakılamaz!";
-      else if (isGiyim) errorMessage = "Kişi seçimi boş bırakılamaz!";
-      else if (isAile) errorMessage = "Aile üyesi seçimi boş bırakılamaz!";
-      return message.error(errorMessage);
-    }
-
-    const updatedCreatedAt = dayjs(formData.tarih).toISOString();
-
-    let finalAltKategori = "";
-    // Alt kategoriyi sadece alt kategori gerektirenler için dahil et
-    if (isMarket || isGiyim || isAile) {
-      finalAltKategori = formData.altKategori;
+    if (needsSub && !formData.altKategori) {
+      return message.error(`${formData.kategori} için seçim yapmalısınız!`);
     }
 
     const payload = {
       miktar: parseFloat(formData.miktar),
       _id: editingHarcama._id,
       kategori: formData.kategori,
-      altKategori: finalAltKategori,
+      altKategori: needsSub ? formData.altKategori : "",
       not: formData.not,
-      createdAt: updatedCreatedAt,
+      createdAt: dayjs(formData.tarih).toISOString(),
     };
 
     updateMutation.mutate(payload);
   };
 
-  // KAYDIRMA İŞLEMLERİ
   const trailingActions = (harcama) => (
     <TrailingActions>
-      <SwipeAction
-        destructive={true}
-        onClick={() => startDeleteProcess(harcama._id)}
-        onSwipeEnd={() => startDeleteProcess(harcama._id)}
-      >
+      <SwipeAction destructive={true} onClick={() => startDeleteProcess(harcama._id)}>
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
         </div>
@@ -346,139 +251,63 @@ const HarcamalarContent = () => {
     </LeadingActions>
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  const currentCategoryForDisplay =
-    selectedCategory === "Kategoriler" ? "Tümü" : selectedCategory;
+  if (isLoading) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <Title level={3} className="text-center text-gray-700 mb-6">
-        Harcamalarınız
-      </Title>
+      <Title level={3} className="text-center text-gray-700 mb-6">Harcamalar ve Transferler</Title>
 
-      {/* Filtreleme ve Ay Seçimi Kartı - ARTIK SABİT (STICKY) */}
-      <Card
-        className="shadow-lg rounded-xl mb-6 bg-white 
-                   sticky top-0 z-10 transition-all duration-300" 
-        styles={{ body: { padding: "16px" } }}
-      >
+      {/* Filtre ve Ay Kartı */}
+      <Card className="shadow-lg rounded-xl mb-6 bg-white sticky top-0 z-10 transition-all duration-300" styles={{ body: { padding: "16px" } }}>
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
-          <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")}>
-            Önceki Ay
-          </Button>
-          <Title level={5} className="m-0 text-blue-600">
-            {displayMonth}
-          </Title>
-          <Button
-            icon={<RightOutlined />}
-            onClick={() => changeMonth("next")}
-            disabled={isFutureMonth}
-          >
-            Sonraki Ay
-          </Button>
+          <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")}>Önceki Ay</Button>
+          <Title level={5} className="m-0 text-blue-600">{displayMonth}</Title>
+          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth}>Sonraki Ay</Button>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <Select
-            value={selectedCategory}
-            onChange={(v) => setSelectedCategory(v)}
-            style={{ width: "100%" }}
-            popupMatchSelectWidth={true}
-          >
+          <Select value={selectedCategory} onChange={(v) => setSelectedCategory(v)} style={{ width: "100%" }}>
             <Option value="Tümü">Tümü</Option>
-            {ALL_CATEGORIES.map((cat) => (
-              <Option key={cat} value={cat}>
-                {cat}
-              </Option>
-            ))}
+            {ALL_CATEGORIES.map((cat) => <Option key={cat} value={cat}>{cat}</Option>)}
           </Select>
         </div>
 
-        {/* Toplamı göster */}
-        {currentCategoryForDisplay !== "Tümü" && (
+        {selectedCategory !== "Tümü" && selectedCategory !== "Kategoriler" && (
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
-            {getCategoryDetails(currentCategoryForDisplay).icon}
+            {getCategoryDetails(selectedCategory).icon}
             <span className="ml-2 text-gray-700 font-medium">
-              {currentCategoryForDisplay} Toplamı:{" "}
-              <span className="text-red-600 font-bold">
-                {kategoriToplam.toFixed(2)} ₺
-              </span>
+              {selectedCategory} Toplamı: <span className={`${selectedCategory === "Transfer" ? "text-amber-600" : "text-red-600"} font-bold`}>{kategoriToplam.toFixed(2)} €</span>
             </span>
           </div>
         )}
       </Card>
 
-      {/* Kaydırarak Silme/Düzenleme Listesi */}
-      <Card
-        className="shadow-lg rounded-xl overflow-hidden"
-        styles={{ body: { padding: 0 } }}
-      >
+      {/* Liste Kartı */}
+      <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         {filteredHarcamalar.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
-            {`${displayMonth} ayında harcama bulunmamaktadır.`}
-          </div>
+          <div className="p-6 text-center text-gray-500">{`${displayMonth} döneminde veri bulunmamaktadır.`}</div>
         ) : (
-          <SwipeableList
-            threshold={0.3}
-            fullSwipe={true}
-            listType={ListType.IOS}
-          >
+          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
-
-              let displayCategory = harcama.kategori;
-              if (
-                (harcama.kategori === "Market" ||
-                  harcama.kategori === "Giyim" ||
-                  harcama.kategori === "Aile") &&
-                harcama.altKategori
-              ) {
-                displayCategory = `${harcama.kategori} (${harcama.altKategori})`;
-              }
-
-              // ✅ BUGÜN KONTROLÜ VE STİLİ
+              const isTransfer = harcama.kategori === "Transfer";
               const isToday = dayjs(harcama.createdAt).isSame(now, "day");
-              const todayStyle = isToday
-                ? "bg-yellow-50 border-2 border-yellow-300 shadow-md"
-                : "bg-white border-b";
 
               return (
-                <SwipeableListItem
-                  key={harcama._id}
-                  leadingActions={leadingActions(harcama)}
-                  trailingActions={trailingActions(harcama)}
-                >
-                  {/* List Item İçeriği */}
-                  <div
-                    className={`flex items-center w-full p-4 sm:p-5 cursor-pointer transition-all duration-300 ${todayStyle}`}
-                  >
-                    <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>
-                      {icon}
-                    </div>
+                <SwipeableListItem key={harcama._id} leadingActions={leadingActions(harcama)} trailingActions={trailingActions(harcama)}>
+                  <div className={`flex items-center w-full p-4 sm:p-5 cursor-pointer transition-all duration-300 ${isToday ? "bg-yellow-50 border-2 border-yellow-300 shadow-md" : "bg-white border-b"}`}>
+                    <div className={`p-3 rounded-full mr-4 sm:mr-6 ${color}`}>{icon}</div>
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-center mb-1">
                         <Text strong className="text-lg text-gray-800 truncate">
-                          {displayCategory}
+                          {harcama.altKategori ? `${harcama.kategori} (${harcama.altKategori})` : harcama.kategori}
                         </Text>
-                        <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
-                          -{harcama.miktar} ₺
+                        <Text className={`text-xl font-bold ${isTransfer ? "text-amber-600" : "text-red-600"} ml-4 flex-shrink-0`}>
+                          {isTransfer ? "⇄" : "-"}{harcama.miktar} €
                         </Text>
                       </div>
-                      <div className="text-sm text-gray-500 mb-1">
-                        <CalendarOutlined className="mr-1" />
-                        <span>{formatDate(harcama.createdAt)}</span>
-                      </div>
-                      <div className="text-sm text-gray-600 italic truncate">
-                        <SolutionOutlined className="mr-1" />
-                        Not: {harcama.not || "Yok"}
-                      </div>
+                      <div className="text-sm text-gray-500 mb-1"><CalendarOutlined className="mr-1" />{dayjs(harcama.createdAt).format("DD.MM.YYYY HH:mm")}</div>
+                      <div className="text-sm text-gray-600 italic truncate"><SolutionOutlined className="mr-1" />Not: {harcama.not || "Yok"}</div>
                     </div>
                   </div>
                 </SwipeableListItem>
@@ -490,142 +319,72 @@ const HarcamalarContent = () => {
 
       {/* Düzenleme Modalı */}
       <Modal
-        title={
-          <Title level={4} className="text-center text-blue-600">
-            Harcamayı Düzenle
-          </Title>
-        }
+        title={<Title level={4} className="text-center text-blue-600">İşlemi Düzenle</Title>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSave}
         okText="Kaydet"
         cancelText="İptal"
-        destroyOnHidden
+        destroyOnClose={true}
       >
         <div className="space-y-4 pt-4">
-          {/* TARİH ALANI: Tarih güncelleme için CustomDayPicker */}
           <div>
-            <Text strong className="block mb-1">
-              Tarih:
-            </Text>
-            <CustomDayPicker
-              value={formData.tarih}
-              onChange={(date) => setFormData({ ...formData, tarih: date })}
-              disabledDate={(current) =>
-                current && current.isAfter(dayjs(), "day")
-              }
-              isIncome={false}
-            />
+            <Text strong className="block mb-1">Tarih:</Text>
+            <CustomDayPicker value={formData.tarih} onChange={(date) => setFormData({ ...formData, tarih: date })} disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={false} />
           </div>
 
           <div>
-            <Text strong className="block mb-1">
-              Miktar (₺):
-            </Text>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={formData.miktar}
-              onChange={(e) =>
-                setFormData({ ...formData, miktar: e.target.value })
-              }
-            />
+            <Text strong className="block mb-1">Miktar (€):</Text>
+            <Input type="number" value={formData.miktar} onChange={(e) => setFormData({ ...formData, miktar: e.target.value })} prefix="€" />
           </div>
 
           <div>
-            <Text strong className="block mb-1">
-              Kategori:
-            </Text>
-            <Select
-              value={formData.kategori}
-              onChange={(v) =>
-                setFormData({ ...formData, kategori: v, altKategori: "" })
-              }
-              style={{ width: "100%" }}
-            >
-              {ALL_CATEGORIES.map((cat) => (
-                <Option key={cat} value={cat}>
-                  {cat}
-                </Option>
-              ))}
+            <Text strong className="block mb-1">Kategori:</Text>
+            <Select value={formData.kategori} onChange={(v) => setFormData({ ...formData, kategori: v, altKategori: "" })} style={{ width: "100%" }}>
+              {ALL_CATEGORIES.map((cat) => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
 
-            {/* Market Alt Kategori Seçimi */}
+            {/* Alt Kategori Seçenekleri */}
             {formData.kategori === "Market" && (
-              <div className="mt-2">
-                <Text strong className="block mb-1">
-                  Market Seç:
-                </Text>
-                <Select
-                  value={formData.altKategori}
-                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
-                  style={{ width: "100%" }}
-                  placeholder="Market seçin"
-                >
-                  {MARKETLER.map((m) => (
-                    <Option key={m} value={m}>
-                      {m}
-                    </Option>
-                  ))}
+              <div className="mt-3">
+                <Text strong className="block mb-1">Market Seç:</Text>
+                <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Market seçin">
+                  {MARKETLER.map((m) => <Option key={m} value={m}>{m}</Option>)}
                 </Select>
               </div>
             )}
 
-            {/* Giyim Alt Kategori Seçimi (Kişi) */}
             {formData.kategori === "Giyim" && (
-              <div className="mt-2">
-                <Text strong className="block mb-1">
-                  Kişi Seç:
-                </Text>
-                <Select
-                  value={formData.altKategori}
-                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
-                  style={{ width: "100%" }}
-                  placeholder="Kişi seçin"
-                >
-                  {GIYIM_KISILERI.map((kisi) => (
-                    <Option key={kisi} value={kisi}>
-                      {kisi}
-                    </Option>
-                  ))}
+              <div className="mt-3">
+                <Text strong className="block mb-1">Kişi Seç:</Text>
+                <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Kişi seçin">
+                  {GIYIM_KISILERI.map((k) => <Option key={k} value={k}>{k}</Option>)}
                 </Select>
               </div>
             )}
 
-            {/* Aile Alt Kategori Seçimi (Aile Üyesi) */}
             {formData.kategori === "Aile" && (
-              <div className="mt-2">
-                <Text strong className="block mb-1">
-                  Aile Üyesi Seç:
-                </Text>
-                <Select
-                  value={formData.altKategori}
-                  onChange={(v) => setFormData({ ...formData, altKategori: v })}
-                  style={{ width: "100%" }}
-                  placeholder="Aile üyesi seçin"
-                >
-                  {AILE_UYELERI.map((uye) => (
-                    <Option key={uye} value={uye}>
-                      {uye}
-                    </Option>
-                  ))}
+              <div className="mt-3">
+                <Text strong className="block mb-1">Aile Üyesi Seç:</Text>
+                <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Üye seçin">
+                  {AILE_UYELERI.map((u) => <Option key={u} value={u}>{u}</Option>)}
+                </Select>
+              </div>
+            )}
+
+            {formData.kategori === "Transfer" && (
+              <div className="mt-3">
+                <Text strong className="block mb-1">Transfer Hedefi:</Text>
+                <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Hedef seçin">
+                  {TRANSFER_HEDEFLERI.map((t) => <Option key={t} value={t}>{t}</Option>)}
                 </Select>
               </div>
             )}
           </div>
 
           <div>
-            <Text strong className="block mb-1">
-              Not:
-            </Text>
-            <Input.TextArea
-              rows={2}
-              value={formData.not}
-              onChange={(e) =>
-                setFormData({ ...formData, not: e.target.value })
-              }
-              placeholder="Ek notunuz (isteğe bağlı)"
-            />
+            <Text strong className="block mb-1">Not:</Text>
+            <Input.TextArea rows={2} value={formData.not} onChange={(e) => setFormData({ ...formData, not: e.target.value })} placeholder="Ek not" />
           </div>
         </div>
       </Modal>
@@ -635,9 +394,7 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <main className="pb-20">
-      <HarcamalarContent />
-    </main>
+    <main className="pb-20"><HarcamalarContent /></main>
     <BottomNav />
   </div>
 );
