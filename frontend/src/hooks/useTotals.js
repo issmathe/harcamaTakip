@@ -13,40 +13,39 @@ export const fetchTotalsFromAPI = async () => {
   try {
     const [gelirRes, harcamaRes] = await Promise.all([
       axios.get(`${API_URL}/gelir`),
-      axios.get(`${axios.defaults.baseURL || API_URL}/harcama`),
+      axios.get(`${API_URL}/harcama`), // baseURL hatası ihtimaline karşı API_URL kullanıldı
     ]);
     
     const allGelirler = gelirRes.data || [];
     const allHarcamalar = harcamaRes.data || [];
 
-    // Kategori kontrolü için yardımcı fonksiyon (Büyük-küçük harf duyarsız)
+    // Kategori kontrolü (Küçük/Büyük harf duyarsız)
     const isTransfer = (item) => item.kategori?.toString().trim().toLowerCase() === "transfer";
 
     // --- 1. KÜMÜLATİF HESAPLAMALAR ---
+    // Toplam giren para
     const cumulativeIncome = allGelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
     
-    // Toplam Gider: Transferler hariç
-    const cumulativeExpense = allHarcamalar
-      .filter(i => !isTransfer(i)) 
-      .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    // Toplam çıkan para (Artık Transferler de dahil, böylece bakiye düşer)
+    const cumulativeExpense = allHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // BANKA BAKİYESİ: (Banka Geliri) - (Tüm harcamalar + Transferler)
+    // Banka Bakiyesi: Sadece 'gelir' olarak girilenler - (Tüm harcamalar + Transferler)
     const cumulativeBankIncome = allGelirler
         .filter(i => i.kategori?.toString().trim().toLowerCase() === 'gelir')
         .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
         
-    const bankBalance = cumulativeBankIncome - allHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    const bankBalance = cumulativeBankIncome - cumulativeExpense;
 
     // --- 2. AYLIK VE GÜNLÜK TOPLAMLAR ---
     const currentMonthPrefix = getCurrentMonthString();
     const todayStr = new Date().toISOString().split("T")[0];
 
-    // AYLIK HARCAMA: Transfer Hariç (SABİT)
+    // Aylık Harcama: Grafikte/Yakıt deposunda "Transfer" görünmemesi için onu hariç tutuyoruz
     const monthlyExpense = allHarcamalar
       .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && !isTransfer(i))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // AYLIK TRANSFER: Aylık Kalan'dan düşmek için
+    // Aylık Transfer: Bütçe panelinde ayrıca göstermek isterseniz
     const monthlyTransfers = allHarcamalar
       .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && isTransfer(i))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
@@ -55,7 +54,7 @@ export const fetchTotalsFromAPI = async () => {
       .filter(i => i.createdAt?.startsWith(currentMonthPrefix))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // BUGÜNKÜ HARCAMA: Transfer Hariç (SABİT)
+    // Günlük Harcama: Transferleri dahil etmiyoruz
     const totalToday = allHarcamalar
       .filter(i => i.createdAt?.startsWith(todayStr) && !isTransfer(i))
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
@@ -73,6 +72,10 @@ export const fetchTotalsFromAPI = async () => {
     };
   } catch (err) {
     console.error("Veri çekme hatası:", err);
-    return { totalIncome: 0, totalExpense: 0, cumulativeIncome: 0, cumulativeExpense: 0, bankBalance: 0, totalToday: 0, gelirler: [], harcamalar: [] };
+    return { 
+      totalIncome: 0, totalExpense: 0, monthlyTransfers: 0,
+      cumulativeIncome: 0, cumulativeExpense: 0, bankBalance: 0, 
+      totalToday: 0, gelirler: [], harcamalar: [] 
+    };
   }
 };
