@@ -4,11 +4,10 @@ import { fetchTotalsFromAPI } from "../hooks/useTotals";
 
 const TotalsContext = createContext();
 
-// UYARI ALMAMAK İÇİN: Sabit objeyi fonksiyonun TAMAMEN dışına yazıyoruz.
+// monthlyTransfers kaldırıldı, diğerleri korundu.
 const defaultTotals = {
   totalIncome: 0, 
   totalExpense: 0, 
-  monthlyTransfers: 0,
   cumulativeIncome: 0, 
   cumulativeExpense: 0, 
   bankBalance: 0, 
@@ -21,11 +20,10 @@ export const TotalsProvider = ({ children }) => {
   const { data: totals, refetch } = useQuery({
     queryKey: ["totals"],
     queryFn: fetchTotalsFromAPI,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 dakika boyunca veriyi taze kabul et
   });
 
   // totals veya refetch değiştiğinde güncellenir.
-  // defaultTotals dışarıda olduğu için bağımlılık dizisine eklemeye gerek kalmaz.
   const contextValue = useMemo(() => {
     return {
       ...(totals || defaultTotals),
@@ -40,4 +38,10 @@ export const TotalsProvider = ({ children }) => {
   );
 };
 
-export const useTotalsContext = () => useContext(TotalsContext);
+export const useTotalsContext = () => {
+  const context = useContext(TotalsContext);
+  if (!context) {
+    throw new Error("useTotalsContext bir TotalsProvider içinde kullanılmalıdır.");
+  }
+  return context;
+};

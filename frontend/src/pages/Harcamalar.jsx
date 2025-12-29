@@ -265,14 +265,18 @@ const HarcamalarContent = () => {
           </Select>
         </div>
 
-        {selectedCategory !== "Tümü" && selectedCategory !== "Kategoriler" && (
-          <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
-            {getCategoryDetails(selectedCategory).icon}
-            <span className="ml-2 text-gray-700 font-medium">
-              {selectedCategory} Toplamı: <span className="text-red-600 font-bold">{kategoriToplam.toFixed(2)} €</span>
-            </span>
-          </div>
-        )}
+        {/* Toplam Bilgi Alanı: Her durumda gösterilir */}
+        <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
+          {(selectedCategory === "Tümü" || selectedCategory === "Kategoriler") ? (
+            <SolutionOutlined className="text-gray-600" />
+          ) : (
+            getCategoryDetails(selectedCategory).icon
+          )}
+          <span className="ml-2 text-gray-700 font-medium">
+            {(selectedCategory === "Tümü" || selectedCategory === "Kategoriler") ? "Toplam Harcama" : `${selectedCategory} Toplamı`}: 
+            <span className="text-red-600 font-bold ml-1">{kategoriToplam.toFixed(2)} €</span>
+          </span>
+        </div>
       </Card>
 
       <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding: 0 } }}>
