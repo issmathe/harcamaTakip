@@ -1,17 +1,46 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Modal, Form, Input, InputNumber, Button, message, Select } from "antd";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import {
+  Typography,
+  Tooltip,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Button,
+  message,
+  Select,
+} from "antd";
+
 import dayjs from "dayjs";
-import { 
-  ShoppingCart, Shirt, HeartHandshake, Fuel, Home, ReceiptText, 
-  BookOpen, HeartPulse, Car, Gift, Laptop, Zap, Pencil, 
-  Utensils, Users, ArrowLeftRight, HelpCircle, MessageCircle 
+import CustomDayPicker from "../Forms/CustomDayPicker";
+
+import {
+  Shirt,
+  HeartHandshake,
+  Fuel,
+  Home,
+  ReceiptText,
+  BookOpen,
+  HeartPulse,
+  Car,
+  Gift,
+  Laptop,
+  Zap,
+  ShoppingCart,
+  Pencil,
+  Utensils,
+  HelpCircle,
+  Users,
+  MessageCircle, 
 } from "lucide-react";
+
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
-import CustomDayPicker from "../Forms/CustomDayPicker";
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const { Text } = Typography;
+const { Option } = Select;
 
 const CategoryIcons = {
   Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
@@ -29,209 +58,339 @@ const CategoryIcons = {
   Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
   Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
   Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
-  Transfer: { icon: ArrowLeftRight, color: "text-slate-600", bgColor: "bg-slate-200" },
   Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
-const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Kaufland", "Rewe", "Edeka", "Diğer"];
-const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
+
+const MARKETLER = [
+  "Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", 
+  "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", 
+  "Biomarkt", "Penny", "Diğer",
+];
+
+const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
+const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
-  const [form] = Form.useForm();
-  const [gelirForm] = Form.useForm();
-
+  
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [showNote, setShowNote] = useState(false);
-  const [rotation, setRotation] = useState(0);
 
+  const [form] = Form.useForm();
+  const [gelirForm] = Form.useForm();
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastAngle, setLastAngle] = useState(0);
   const wheelRef = useRef(null);
-  const isDragging = useRef(false);
-  const lastAngle = useRef(0);
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
   const harcamaMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
-    onSuccess: () => { 
-      message.success("İşlem kaydedildi"); 
-      refetch(); 
-      setIsModalVisible(false); 
-      form.resetFields();
-      setShowNote(false);
-    }
+    mutationFn: async (harcamaData) =>
+      axios.post(`${API_URL}/harcama`, harcamaData),
+    onSuccess: async () => {
+      message.success("Harcama eklendi!");
+      await refetch();
+      handleModalCancel();
+    },
+    onError: () => message.error("Harcama eklenirken hata oluştu."),
   });
 
   const gelirMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/gelir`, data),
-    onSuccess: () => { 
-      message.success("Gelir eklendi"); 
-      refetch(); 
-      setIsGelirModalVisible(false); 
-      gelirForm.resetFields(); 
-    }
+    mutationFn: async (gelirData) => axios.post(`${API_URL}/gelir`, gelirData),
+    onSuccess: async () => {
+      message.success("Gelir eklendi!");
+      await refetch();
+      handleGelirCancel();
+    },
+    onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  const currentMonth = useMemo(() => new Date().toISOString().slice(0, 7), []);
+  const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
+
   const monthlyCategoryTotals = useMemo(() => {
-    return (harcamalar ?? []).reduce((acc, h) => {
-      if (h?.createdAt?.startsWith(currentMonth)) {
-        acc[h.kategori] = (acc[h.kategori] || 0) + Number(h.miktar || 0);
+    const currentMonth = getCurrentMonthYear();
+    return (harcamalar ?? []).reduce((acc, harcama) => {
+      if (harcama?.createdAt?.startsWith(currentMonth)) {
+        const kategori = harcama.kategori;
+        const miktar = Number(harcama.miktar || 0);
+        if (kategori) acc[kategori] = (acc[kategori] || 0) + miktar;
       }
       return acc;
     }, {});
-  }, [harcamalar, currentMonth]);
+  }, [harcamalar]);
 
-  const currentTopCategory = useMemo(() => {
+  const getTopCategory = useCallback(() => {
     const categoryAngle = 360 / CATEGORIES.length;
-    const normalized = ((rotation % 360) + 360) % 360;
-    const idx = (Math.round(-normalized / categoryAngle) + CATEGORIES.length) % CATEGORIES.length;
-    return CATEGORIES[idx];
+    const normalizedRotation = ((rotation % 360) + 360) % 360;
+    const topIndex =
+      (Math.round(-normalizedRotation / categoryAngle) + CATEGORIES.length) %
+      CATEGORIES.length;
+    return CATEGORIES[topIndex];
   }, [rotation]);
 
-  const getAngle = (e, rect) => {
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return Math.atan2(clientY - (rect.top + rect.height / 2), clientX - (rect.left + rect.width / 2)) * (180 / Math.PI);
-  };
+  const currentTopCategory = getTopCategory();
+  const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
+  const formattedTotal = (currentCategoryTotal ?? 0).toFixed(2).replace(".", ",");
 
-  const onMove = useCallback((e) => {
-    if (!isDragging.current) return;
+  const getAngle = (centerX, centerY, pointX, pointY) =>
+    Math.atan2(pointY - centerY, pointX - centerX) * (180 / Math.PI);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
     const rect = wheelRef.current.getBoundingClientRect();
-    const angle = getAngle(e, rect);
-    let delta = angle - lastAngle.current;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-    setRotation(prev => prev + delta);
-    lastAngle.current = angle;
-  }, []);
-
-  useEffect(() => {
-    const handleUp = () => { isDragging.current = false; };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", handleUp);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", handleUp);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", handleUp);
-    };
-  }, [onMove]);
-
-  const startDrag = (e) => {
-    isDragging.current = true;
-    lastAngle.current = getAngle(e, wheelRef.current.getBoundingClientRect());
+    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY));
   };
 
-  const handleIconClick = (cat) => {
-    setSelectedCategory(cat);
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    const rect = wheelRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const angle = getAngle(centerX, centerY, e.clientX, e.clientY);
+    let deltaAngle = angle - lastAngle;
+    if (deltaAngle > 180) deltaAngle -= 360;
+    if (deltaAngle < -180) deltaAngle += 360;
+    setRotation((prev) => prev + deltaAngle);
+    setLastAngle(angle);
+  }, [isDragging, lastAngle]);
+
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    const rect = wheelRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    setLastAngle(getAngle(centerX, centerY, touch.clientX, touch.clientY));
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchMove = useCallback((e) => {
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartPos.current.x;
+    const dy = touch.clientY - touchStartPos.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
+      e.preventDefault();
+      if (!isDragging) setIsDragging(true);
+      const rect = wheelRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const angle = getAngle(centerX, centerY, touch.clientX, touch.clientY);
+      let deltaAngle = angle - lastAngle;
+      if (deltaAngle > 180) deltaAngle -= 360;
+      if (deltaAngle < -180) deltaAngle += 360;
+      setRotation((prev) => prev + deltaAngle);
+      setLastAngle(angle);
+    }
+  }, [isDragging, lastAngle]);
+
+  const handleTouchEnd = useCallback(() => setIsDragging(false), []);
+
+  React.useEffect(() => {
+    const wheel = wheelRef.current;
+    if (!wheel) return;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    wheel.addEventListener("touchmove", handleTouchMove, { passive: false });
+    wheel.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      wheel.removeEventListener("touchmove", handleTouchMove);
+      wheel.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  const handleIconClick = (category) => {
+    if (isDragging) return;
+    setSelectedCategory(category);
     setIsModalVisible(true);
     form.resetFields();
-    form.setFieldsValue({ tarih: dayjs() });
+    form.setFieldsValue({ tarih: dayjs().toDate() });
+    setShowNote(false);
   };
 
-  const needsSub = ["Market", "Giyim", "Aile"].includes(selectedCategory);
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    setSelectedCategory(null);
+    form.resetFields();
+    setShowNote(false);
+  };
+
+  const handleGelirClick = () => {
+    setIsGelirModalVisible(true);
+    gelirForm.resetFields();
+    gelirForm.setFieldsValue({ tarih: dayjs().toDate() });
+  };
+
+  const handleGelirCancel = () => {
+    setIsGelirModalVisible(false);
+    gelirForm.resetFields();
+  };
+
+  const onHarcamaFinish = (values) => {
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
+    let altKategoriValue = (needsSubCategory) ? values.altKategori : "";
+
+    const harcamaData = {
+      miktar: values.miktar,
+      kategori: selectedCategory || "Diğer",
+      altKategori: altKategoriValue,
+      not: values.not || "",
+      createdAt: selectedDate,
+    };
+    harcamaMutation.mutate(harcamaData);
+  };
+
+  const onGelirFinish = (values) => {
+    const selectedDate = values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString();
+    const gelirData = {
+      miktar: values.miktar,
+      kategori: values.kategori || "Gelir",
+      not: values.not || "",
+      createdAt: selectedDate,
+    };
+    gelirMutation.mutate(gelirData);
+  };
+
+  const getSubCategoryProps = (category) => {
+    switch (category) {
+      case "Market": return { label: "Market Seç", placeholder: "Market seçin", options: MARKETLER };
+      case "Giyim": return { label: "Kişi Seç", placeholder: "Kişi seçin", options: GIYIM_KISILERI };
+      case "Aile": return { label: "Aile Üyesi Seç", placeholder: "Aile üyesi seçin", options: AILE_UYELERI };
+      default: return { label: "", placeholder: "", options: [] };
+    }
+  };
+
+  const needsSubCategory = ["Market", "Giyim", "Aile"].includes(selectedCategory);
+  const subCategoryProps = getSubCategoryProps(selectedCategory);
 
   return (
-    <main className="flex-1 px-4 py-8 select-none">
-      <div className="text-center mb-8">
-        <div className="text-blue-600 font-bold text-2xl">{currentTopCategory}</div>
-        <div className="text-gray-600 text-lg font-semibold">
-          {(monthlyCategoryTotals[currentTopCategory] || 0).toFixed(2).replace(".", ",")} €
-        </div>
+    <main className="flex-1 px-4 pt-4 pb-4">
+      <div className="text-center mb-6 pt-4">
+        <div className="text-blue-600 font-bold text-xl leading-snug">{currentTopCategory}</div>
+        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
       </div>
 
-      <div className="relative flex items-center justify-center h-80 w-80 mx-auto">
-        <div 
-          onClick={() => setIsGelirModalVisible(true)}
-          className="w-28 h-28 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-xl cursor-pointer z-30 hover:scale-105 active:scale-95 transition-all"
-        >
-          <span className="font-bold text-lg">GELİR</span>
+      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
+        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-[1.05] z-20 transition-all">
+          <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
 
-        <div 
-          ref={wheelRef}
-          onMouseDown={startDrag}
-          onTouchStart={startDrag}
-          className="absolute inset-0 will-change-transform"
-          style={{ transform: `rotate(${rotation}deg)` }}
+        <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.3s ease-out" }}
+          onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
         >
-          {CATEGORIES.map((cat, i) => {
+          {CATEGORIES.map((category, i) => {
             const angle = (360 / CATEGORIES.length) * i - 90;
             const rad = (angle * Math.PI) / 180;
-            const isTop = cat === currentTopCategory;
-            const { icon: Icon, color, bgColor } = CategoryIcons[cat];
+            const x = radius * Math.cos(rad);
+            const y = radius * Math.sin(rad);
+            const isTop = category === currentTopCategory;
+            const { icon: Icon, color, bgColor } = CategoryIcons[category];
 
             return (
-              <div
-                key={cat}
-                onClick={() => handleIconClick(cat)}
-                className={`absolute w-14 h-14 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-all ${
-                  isTop ? "bg-blue-600 scale-125 z-20" : `${bgColor} ${color}`
-                }`}
-                style={{ 
-                  top: `${center + radius * Math.sin(rad)}%`, 
-                  left: `${center + radius * Math.cos(rad)}%`,
-                  transform: `translate(-50%, -50%) rotate(${-rotation}deg)` 
-                }}
-              >
-                <Icon className={isTop ? "text-white" : ""} size={22} />
-              </div>
+              <Tooltip key={category} title={category} placement="top">
+                <button onClick={() => handleIconClick(category)}
+                  className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
+                    isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color} hover:${bgColor.replace("100", "200")}`
+                  }`}
+                  style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
+                >
+                  <Icon className={isTop ? "w-6 h-6 text-white" : "w-5 h-5"} />
+                </button>
+              </Tooltip>
             );
           })}
         </div>
       </div>
 
-      <Modal 
-        title={`${selectedCategory} İşlemi`} 
-        open={isModalVisible} 
-        onCancel={() => { setIsModalVisible(false); setShowNote(false); }} 
-        footer={null}
-        destroyOnClose
+      <Modal title={<div className="text-2xl font-bold text-blue-700">{selectedCategory || "Harcama"} Ekle</div>}
+        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered className="modern-modal"
       >
-        <Form form={form} layout="vertical" onFinish={(v) => harcamaMutation.mutate({...v, kategori: selectedCategory})} initialValues={{ tarih: dayjs() }}>
-          <Form.Item name="tarih" label="Tarih" rules={[{ required: true }]}><CustomDayPicker /></Form.Item>
-          <Form.Item name="miktar" label="Miktar (€)" rules={[{ required: true }]}><InputNumber className="w-full" step={0.01} min={0.01} inputMode="decimal" /></Form.Item>
-          
-          {needsSub && (
-            <Form.Item name="altKategori" label="Alt Kategori" rules={[{ required: true }]}>
-              <Select placeholder="Seçim yapın">
-                {(selectedCategory === "Market" ? MARKETLER : GIYIM_KISILERI).map(i => (
-                  <Select.Option key={i} value={i}>{i}</Select.Option>
-                ))}
+        <Form form={form} layout="vertical" onFinish={onHarcamaFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
+          <Form.Item name="tarih" label={<span className="font-semibold text-gray-700">Tarih</span>} rules={[{ required: true, message: "Tarih gerekli" }]}>
+            <CustomDayPicker disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={false} />
+          </Form.Item>
+
+          <Form.Item name="miktar" label={<span className="font-semibold text-gray-700">Miktar (€)</span>} rules={[{ required: true, message: "Miktar gerekli" }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal"
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
+              className="rounded-lg shadow-sm"
+            />
+          </Form.Item>
+
+          {needsSubCategory && (
+            <Form.Item name="altKategori" label={<span className="font-semibold text-gray-700">{subCategoryProps.label}</span>} rules={[{ required: true, message: "Seçim zorunludur" }]}>
+              <Select placeholder={subCategoryProps.placeholder} className="rounded-lg shadow-sm">
+                {subCategoryProps.options.map((item) => <Option key={item} value={item}>{item}</Option>)}
               </Select>
             </Form.Item>
           )}
+          
+          <div className="mt-2">
+            {!showNote && (
+              <Button type="dashed" onClick={() => setShowNote(true)} icon={<MessageCircle className="w-4 h-4" />} block className="text-gray-600 border-gray-300">
+                Not Ekle (İsteğe Bağlı)
+              </Button>
+            )}
 
-          {!showNote ? (
-            <Button type="dashed" block icon={<MessageCircle size={16} />} onClick={() => setShowNote(true)}>Not Ekle</Button>
-          ) : (
-            <Form.Item name="not" label="Not"><Input.TextArea rows={3} /></Form.Item>
-          )}
+            {showNote && (
+              <Form.Item name="not" label={
+                  <span className="font-semibold text-gray-700 flex justify-between items-center w-full">
+                    Not
+                    <Button type="text" size="small" onClick={() => { form.setFieldsValue({ not: "" }); setShowNote(false); }} className="text-red-500">Kapat</Button>
+                  </span>
+                }
+              >
+                <Input.TextArea rows={3} placeholder="Açıklama ekle" className="rounded-lg shadow-sm" />
+              </Form.Item>
+            )}
+          </div>
 
-          <Button type="primary" htmlType="submit" block className="mt-4 bg-blue-600" loading={harcamaMutation.isPending}>Kaydet</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-12 text-lg font-bold bg-blue-600 rounded-lg">Kaydet</Button>
         </Form>
       </Modal>
 
-      <Modal title="Gelir Ekle" open={isGelirModalVisible} onCancel={() => setIsGelirModalVisible(false)} footer={null}>
-        <Form form={gelirForm} layout="vertical" onFinish={(v) => gelirMutation.mutate(v)} initialValues={{ tarih: dayjs() }}>
-          <Form.Item name="tarih" label="Tarih" rules={[{ required: true }]}><CustomDayPicker isIncome /></Form.Item>
-          <Form.Item name="miktar" label="Miktar (€)" rules={[{ required: true }]}><InputNumber className="w-full" step={0.01} /></Form.Item>
-          <Form.Item name="kategori" label="Gelir Türü">
-            <Select>
-              <Select.Option value="gelir">Maaş / Gelir</Select.Option>
-              <Select.Option value="tasarruf">Tasarruf</Select.Option>
+      <Modal title={<div className="text-2xl font-bold text-indigo-700">Gelir Ekle</div>}
+        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered className="modern-modal"
+      >
+        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
+          <Form.Item name="tarih" label={<span className="font-semibold text-gray-700">Tarih</span>} rules={[{ required: true, message: "Tarih gerekli" }]}>
+            <CustomDayPicker disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={true} />
+          </Form.Item>
+
+          <Form.Item name="miktar" label={<span className="font-semibold text-gray-700">Miktar (€)</span>} rules={[{ required: true, message: "Miktar gerekli" }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} inputMode="decimal"
+              formatter={(value) => `${value} €`.replace(".", ",")}
+              parser={(value) => value.replace(" €", "").replace(",", ".")}
+              className="rounded-lg shadow-sm"
+            />
+          </Form.Item>
+
+          <Form.Item name="kategori" label={<span className="font-semibold text-gray-700">Gelir Türü</span>}>
+            <Select placeholder="Gelir türü seçin" className="rounded-lg shadow-sm">
+              <Option value="gelir">Gelir</Option>
+              <Option value="tasarruf">Tasarruf</Option>
+              <Option value="diğer">Diğer</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="not" label="Not"><Input.TextArea /></Form.Item>
-          <Button type="primary" htmlType="submit" block className="bg-indigo-600" loading={gelirMutation.isPending}>Gelir Kaydet</Button>
+
+          <Form.Item name="not" label={<span className="font-semibold text-gray-700">Not</span>}>
+            <Input.TextArea rows={3} placeholder="Açıklama ekle" className="rounded-lg shadow-sm" />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-12 text-lg font-bold bg-indigo-600 rounded-lg">Kaydet</Button>
         </Form>
       </Modal>
     </main>
   );
 };
 
-export default MainContent;
+export default MainContent; 
