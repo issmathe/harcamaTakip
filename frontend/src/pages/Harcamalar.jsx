@@ -1,5 +1,4 @@
-// pages/Harcamalar.jsx (Filtre Korumalı ve Transfer Entegreli Tam Kod)
-
+// pages/Harcamalar.jsx
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   Typography,
@@ -20,8 +19,7 @@ import {
   SolutionOutlined,
   LeftOutlined,
   RightOutlined,
-  UndoOutlined, 
-  SwapOutlined,
+  UndoOutlined,
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -53,7 +51,7 @@ const MESSAGE_KEY = "harcamaSilmeIslemi";
 const ALL_CATEGORIES = [
   "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim",
   "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
-  "Restoran", "Aile", "Transfer", "Diğer",
+  "Restoran", "Aile", "Diğer",
 ];
 
 const MARKETLER = [
@@ -64,13 +62,10 @@ const MARKETLER = [
 
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
-const TRANSFER_HEDEFLERI = ["Banka", "Nakit", "Kasa", "Diğer"];
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toString().toLowerCase();
   switch (normalizedKategori) {
-    case "transfer":
-      return { icon: <SwapOutlined />, color: "bg-amber-100 text-amber-600" };
     case "bağış":
     case "market":
     case "restoran":
@@ -185,7 +180,6 @@ const HarcamalarContent = () => {
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
       setSelectedMonth(newDate.month());
       setSelectedYear(newDate.year());
-      // Kategori sıfırlama (setSelectedCategory("Tümü")) satırı kaldırıldı, böylece filtre korunur.
     }, [selectedMonth, selectedYear]
   );
 
@@ -197,7 +191,7 @@ const HarcamalarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
 
   const openEditModal = (harcama) => {
-    const requiresSubCategory = ["Market", "Giyim", "Aile", "Transfer"].includes(harcama.kategori);
+    const requiresSubCategory = ["Market", "Giyim", "Aile"].includes(harcama.kategori);
 
     setEditingHarcama(harcama);
     setFormData({
@@ -213,7 +207,7 @@ const HarcamalarContent = () => {
   const handleEditSave = () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
 
-    const needsSub = ["Market", "Giyim", "Aile", "Transfer"].includes(formData.kategori);
+    const needsSub = ["Market", "Giyim", "Aile"].includes(formData.kategori);
 
     if (needsSub && !formData.altKategori) {
       return message.error(`${formData.kategori} için seçim yapmalısınız!`);
@@ -255,10 +249,9 @@ const HarcamalarContent = () => {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <Title level={3} className="text-center text-gray-700 mb-6">Harcamalar ve Transferler</Title>
+      <Title level={3} className="text-center text-gray-700 mb-6">Harcamalar</Title>
 
-      {/* Filtre ve Ay Kartı */}
-      <Card className="shadow-lg rounded-xl mb-6 bg-white sticky top-0 z-10 transition-all duration-300" styles={{ body: { padding: "16px" } }}>
+      <Card className="shadow-lg rounded-xl mb-6 bg-white sticky top-0 z-10" styles={{ body: { padding: "16px" } }}>
         <div className="flex justify-between items-center mb-4 pb-4 border-b">
           <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")}>Önceki Ay</Button>
           <Title level={5} className="m-0 text-blue-600">{displayMonth}</Title>
@@ -276,13 +269,12 @@ const HarcamalarContent = () => {
           <div className="flex items-center justify-center mt-4 bg-gray-50 p-3 rounded-lg border">
             {getCategoryDetails(selectedCategory).icon}
             <span className="ml-2 text-gray-700 font-medium">
-              {selectedCategory} Toplamı: <span className={`${selectedCategory === "Transfer" ? "text-amber-600" : "text-red-600"} font-bold`}>{kategoriToplam.toFixed(2)} €</span>
+              {selectedCategory} Toplamı: <span className="text-red-600 font-bold">{kategoriToplam.toFixed(2)} €</span>
             </span>
           </div>
         )}
       </Card>
 
-      {/* Liste Kartı */}
       <Card className="shadow-lg rounded-xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         {filteredHarcamalar.length === 0 ? (
           <div className="p-6 text-center text-gray-500">{`${displayMonth} döneminde veri bulunmamaktadır.`}</div>
@@ -290,7 +282,6 @@ const HarcamalarContent = () => {
           <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
-              const isTransfer = harcama.kategori === "Transfer";
               const isToday = dayjs(harcama.createdAt).isSame(now, "day");
 
               return (
@@ -302,8 +293,8 @@ const HarcamalarContent = () => {
                         <Text strong className="text-lg text-gray-800 truncate">
                           {harcama.altKategori ? `${harcama.kategori} (${harcama.altKategori})` : harcama.kategori}
                         </Text>
-                        <Text className={`text-xl font-bold ${isTransfer ? "text-amber-600" : "text-red-600"} ml-4 flex-shrink-0`}>
-                          {isTransfer ? "⇄" : "-"}{harcama.miktar} €
+                        <Text className="text-xl font-bold text-red-600 ml-4 flex-shrink-0">
+                          -{harcama.miktar} €
                         </Text>
                       </div>
                       <div className="text-sm text-gray-500 mb-1"><CalendarOutlined className="mr-1" />{dayjs(harcama.createdAt).format("DD.MM.YYYY HH:mm")}</div>
@@ -317,9 +308,8 @@ const HarcamalarContent = () => {
         )}
       </Card>
 
-      {/* Düzenleme Modalı */}
       <Modal
-        title={<Title level={4} className="text-center text-blue-600">İşlemi Düzenle</Title>}
+        title={<Title level={4} className="text-center text-blue-600">Harcamayı Düzenle</Title>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSave}
@@ -344,7 +334,6 @@ const HarcamalarContent = () => {
               {ALL_CATEGORIES.map((cat) => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
 
-            {/* Alt Kategori Seçenekleri */}
             {formData.kategori === "Market" && (
               <div className="mt-3">
                 <Text strong className="block mb-1">Market Seç:</Text>
@@ -368,15 +357,6 @@ const HarcamalarContent = () => {
                 <Text strong className="block mb-1">Aile Üyesi Seç:</Text>
                 <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Üye seçin">
                   {AILE_UYELERI.map((u) => <Option key={u} value={u}>{u}</Option>)}
-                </Select>
-              </div>
-            )}
-
-            {formData.kategori === "Transfer" && (
-              <div className="mt-3">
-                <Text strong className="block mb-1">Transfer Hedefi:</Text>
-                <Select value={formData.altKategori} onChange={(v) => setFormData({ ...formData, altKategori: v })} style={{ width: "100%" }} placeholder="Hedef seçin">
-                  {TRANSFER_HEDEFLERI.map((t) => <Option key={t} value={t}>{t}</Option>)}
                 </Select>
               </div>
             )}

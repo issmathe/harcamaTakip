@@ -26,7 +26,13 @@ const Header = () => {
   // Yakıt durumu renk skalası
   const fuelColor = remainingFuel > 50 ? "#10b981" : remainingFuel > 20 ? "#f59e0b" : "#ef4444";
 
-  const formatCurrency = (val) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2 });
+  // Tüm para birimleri için standart formatlayıcı
+  const formatCurrency = (val) => {
+    return (val || 0).toLocaleString("tr-TR", { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  };
 
   return (
     <header className="px-4 pt-4 pb-3 bg-white sticky top-0 z-10 shadow-sm">
@@ -80,7 +86,7 @@ const Header = () => {
           <Text className="text-emerald-700 text-[10px] font-bold">GELİR</Text>
           <div className="flex items-center text-emerald-600">
             <ArrowUpOutlined className="text-xs mr-1" />
-            <span className="text-sm font-black italic">€{totalIncome.toFixed(0)}</span>
+            <span className="text-sm font-black italic">€{formatCurrency(totalIncome)}</span>
           </div>
         </div>
 
@@ -89,7 +95,7 @@ const Header = () => {
           <Text className={`${monthlyBalance >= 0 ? 'text-blue-700' : 'text-red-700'} text-[10px] font-bold`}>KALAN</Text>
           <div className={`flex items-center ${monthlyBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
             <ThunderboltOutlined className="text-xs mr-1" />
-            <span className="text-sm font-black italic">€{monthlyBalance.toFixed(0)}</span>
+            <span className="text-sm font-black italic">€{formatCurrency(monthlyBalance)}</span>
           </div>
         </div>
 
@@ -100,7 +106,7 @@ const Header = () => {
             <HistoryOutlined className="text-orange-400 text-[10px]" />
           </div>
           <div className="text-orange-600">
-            <span className="text-sm font-black italic">€{totalToday.toFixed(0)}</span>
+            <span className="text-sm font-black italic">€{formatCurrency(totalToday)}</span>
           </div>
         </div>
       </div>
