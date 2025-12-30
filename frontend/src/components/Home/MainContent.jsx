@@ -9,6 +9,7 @@ import {
   Button,
   message,
   Select,
+  Radio,
 } from "antd";
 
 import dayjs from "dayjs";
@@ -31,7 +32,9 @@ import {
   Utensils,
   HelpCircle,
   Users,
-  MessageCircle, 
+  MessageCircle,
+  Wallet,
+  CreditCard,
 } from "lucide-react";
 
 import axios from "axios";
@@ -211,7 +214,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setSelectedCategory(category);
     setIsModalVisible(true);
     form.resetFields();
-    form.setFieldsValue({ tarih: dayjs().toDate() });
+    // Varsayılan ödeme yöntemi: Banka
+    form.setFieldsValue({ tarih: dayjs().toDate(), odemeYontemi: "banka" });
     setShowNote(false);
   };
 
@@ -242,6 +246,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       kategori: selectedCategory || "Diğer",
       altKategori: altKategoriValue,
       not: values.not || "",
+      odemeYontemi: values.odemeYontemi, // Yeni: Nakit mi Banka mı?
       createdAt: selectedDate,
     };
     harcamaMutation.mutate(harcamaData);
@@ -313,7 +318,19 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       <Modal title={<div className="text-2xl font-bold text-blue-700">{selectedCategory || "Harcama"} Ekle</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered className="modern-modal"
       >
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish} initialValues={{ tarih: dayjs().toDate() }} className="space-y-4">
+        <Form form={form} layout="vertical" onFinish={onHarcamaFinish} initialValues={{ tarih: dayjs().toDate(), odemeYontemi: "banka" }} className="space-y-4">
+          
+          <Form.Item name="odemeYontemi" label={<span className="font-semibold text-gray-700">Ödeme Yöntemi</span>} rules={[{ required: true }]}>
+            <Radio.Group className="w-full grid grid-cols-2 gap-2">
+              <Radio.Button value="banka" className="flex items-center justify-center h-10">
+                <div className="flex items-center gap-2"><CreditCard size={16} /> Banka / Kart</div>
+              </Radio.Button>
+              <Radio.Button value="nakit" className="flex items-center justify-center h-10">
+                <div className="flex items-center gap-2"><Wallet size={16} /> Nakit</div>
+              </Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
           <Form.Item name="tarih" label={<span className="font-semibold text-gray-700">Tarih</span>} rules={[{ required: true, message: "Tarih gerekli" }]}>
             <CustomDayPicker disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={false} />
           </Form.Item>
@@ -376,7 +393,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item name="kategori" label={<span className="font-semibold text-gray-700">Gelir Türü</span>}>
             <Select placeholder="Gelir türü seçin" className="rounded-lg shadow-sm">
-              <Option value="gelir">Gelir</Option>
+              <Option value="gelir">Gelir (Banka)</Option>
+              <Option value="nakit">Nakit Girişi (Kasa)</Option>
               <Option value="tasarruf">Tasarruf</Option>
               <Option value="diğer">Diğer</Option>
             </Select>
@@ -393,4 +411,4 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   );
 };
 
-export default MainContent; 
+export default MainContent;

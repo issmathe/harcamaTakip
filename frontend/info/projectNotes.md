@@ -10,7 +10,7 @@ backend/
 │
 ├─ routes/                          # API endpoint dosyaları
 │  ├─ gelirs.js                     # /api/gelirs -> Gelir CRUD işlemleri
-│  ├─ harcama.js                    # /api/harcama -> Harcama CRUD işlemleri
+│  ├─ harcamas.js                    # /api/harcama -> Harcama CRUD işlemleri
 │
 ├─ node_modules/                    # Bağımlılıkların bulunduğu klasör (otomatik)
 │
