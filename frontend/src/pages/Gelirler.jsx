@@ -1,4 +1,4 @@
-// pages/Gelirler.jsx (NİHAİ VERSİYON – Hata Düzeltilmiş ve Optimize Edilmiş)
+// pages/Gelirler.jsx (Hatasız ve Sadeleştirilmiş Versiyon)
 
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin } from "antd";
@@ -34,7 +34,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const ALL_GELIR_CATEGORIES = ["gelir", "Tasarruf", "Diğer"]; 
 
 const getCategoryDetails = (kategori) => {
-  switch (kategori.toLowerCase()) {
+  switch (kategori?.toLowerCase()) {
     case 'gelir':
       return { icon: <BankOutlined />, color: 'bg-green-100 text-green-600' };
     case 'tasarruf':
@@ -81,15 +81,26 @@ const GelirlerContent = () => {
   }, [selectedMonth, selectedYear]);
 
   const filteredGelirler = useMemo(() => {
-    const ayFiltreli = gelirler.filter((gelir) => {
+    const ayFiltreli = (gelirler || []).filter((gelir) => {
       const gelirTarihi = dayjs(gelir.createdAt);
       return gelirTarihi.month() === selectedMonth && gelirTarihi.year() === selectedYear;
     });
     return ayFiltreli.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [gelirler, selectedMonth, selectedYear]); 
 
+  // --- KATEGORİK TOPLAM HESAPLAMA ---
+  const categoryTotals = useMemo(() => {
+    const stats = { gelir: 0, tasarruf: 0, diger: 0 };
+    filteredGelirler.forEach(item => {
+      const m = Number(item.miktar || 0);
+      const cat = item.kategori?.toLowerCase();
+      if (cat === 'gelir') stats.gelir += m;
+      else if (cat === 'tasarruf') stats.tasarruf += m;
+      else stats.diger += m;
+    });
+    return stats;
+  }, [filteredGelirler]);
 
-  // Düzenleme modalini aç (useCallback ile sarıldı)
   const openEditModal = useCallback((gelir) => {
     setEditingGelir(gelir);
     setFormData({
@@ -101,7 +112,6 @@ const GelirlerContent = () => {
     setEditModalVisible(true);
   }, []);
 
-  // Kesin silme fonksiyonu (useCallback ile sarıldı)
   const definitiveDelete = useCallback(async (id) => {
     try {
       await axios.delete(`${API_URL}/gelir/${id}`);
@@ -111,96 +121,56 @@ const GelirlerContent = () => {
     }
   }, [refetch]);
   
-  // Undo fonksiyonu (useCallback ile sarıldı)
   const handleUndo = useCallback((messageKey) => {
     clearTimeout(deleteTimerRef.current);
     message.destroy(messageKey);
     message.info("Silme işlemi iptal edildi.");
   }, []);
 
-  // Silme sürecini başlatan fonksiyon (useCallback ile sarıldı)
   const startDeleteProcess = useCallback((id) => {
-    if (deleteTimerRef.current) {
-        clearTimeout(deleteTimerRef.current);
-    }
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     
     const content = (
       <span className="flex items-center space-x-3">
-        <Text strong className="text-gray-900">🗑️ Silme başarılı oldu!</Text>
-        <Button 
-          type="link" 
-          icon={<UndoOutlined />} 
-          size="small"
-          onClick={() => handleUndo(MESSAGE_KEY)}
-          className="text-blue-500 hover:text-blue-700" 
-        >
-          Geri Al
-        </Button>
+        <Text strong className="text-gray-900">🗑️ Silme başarılı!</Text>
+        <Button type="link" icon={<UndoOutlined />} size="small" onClick={() => handleUndo(MESSAGE_KEY)}>Geri Al</Button>
       </span>
     );
     
-    message.success({ 
-        content: content, 
-        key: MESSAGE_KEY, 
-        duration: 3,
-    });
-
+    message.success({ content, key: MESSAGE_KEY, duration: 3 });
     deleteTimerRef.current = setTimeout(() => {
       definitiveDelete(id);
       message.destroy(MESSAGE_KEY); 
     }, 3000);
   }, [handleUndo, definitiveDelete]);
 
-
-  // 🔥 Güncelleme fonksiyonu (useCallback ile sarıldı)
   const handleEditSave = useCallback(async () => {
     try {
       if (!formData.miktar) return message.error("Miktar alanı boş bırakılamaz!");
-
       const selectedDay = dayjs(formData.tarih);
-
-      const updatedCreatedAt = selectedDay
-        .hour(dayjs().hour())
-        .minute(dayjs().minute())
-        .second(dayjs().second())
-        .toISOString();
-
-      const payload = {
-        miktar: parseFloat(formData.miktar), 
-        kategori: formData.kategori,
-        not: formData.not,
-        createdAt: updatedCreatedAt,
-      };
-      
+      const updatedCreatedAt = selectedDay.hour(dayjs().hour()).minute(dayjs().minute()).second(dayjs().second()).toISOString();
+      const payload = { miktar: parseFloat(formData.miktar), kategori: formData.kategori, not: formData.not, createdAt: updatedCreatedAt };
       await axios.put(`${API_URL}/gelir/${editingGelir._id}`, payload); 
-      
       message.success("Gelir başarıyla güncellendi!");
       setEditModalVisible(false);
       if (typeof refetch === 'function') refetch(); 
     } catch (err) {
-      console.error("Güncelleme hatası:", err);
       message.error("Güncelleme başarısız!");
     }
   }, [formData, editingGelir, refetch]);
   
   const formatDate = (dateString) => dayjs(dateString).format('DD.MM.YYYY HH:mm');
 
-  // Trailing Actions (useCallback ile sarıldı, bağımlılık eklendi)
   const trailingActions = useCallback((gelir) => (
     <TrailingActions>
-      <SwipeAction
-        destructive={true} 
-        onClick={() => startDeleteProcess(gelir._id)} 
-        onSwipeEnd={() => startDeleteProcess(gelir._id)}
-      >
+      <SwipeAction destructive={true} onClick={() => startDeleteProcess(gelir._id)} onSwipeEnd={() => startDeleteProcess(gelir._id)}>
         <div className="bg-red-600 text-white flex justify-center items-center h-full w-full font-bold text-lg">
           <DeleteOutlined className="text-3xl" />
         </div>
       </SwipeAction>
     </TrailingActions>
-  ), [startDeleteProcess]); // startDeleteProcess bağımlılığı eklendi
+  ), [startDeleteProcess]);
 
-  // Leading Actions (useCallback ile sarıldı, bağımlılık eklendi)
   const leadingActions = useCallback((gelir) => (
     <LeadingActions>
       <SwipeAction onClick={() => openEditModal(gelir)}>
@@ -209,143 +179,112 @@ const GelirlerContent = () => {
         </div>
       </SwipeAction>
     </LeadingActions>
-  ), [openEditModal]); // openEditModal bağımlılığı eklendi
+  ), [openEditModal]);
 
-  if (isContextLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
-  }
+  if (isContextLoading) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
 
   return (
     <div className="p-0">
       
-      {/* BAŞLIK */}
-      <Title level={3} className="text-center text-gray-700 mt-4 mb-4 md:mt-6 md:mb-6">Gelir Kayıtları</Title>
+      {/* 👇 AY NAVİGASYONU VE KATEGORİK ÖZET 👇 */}
+      <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-4"> 
+        <Card className="shadow-xl rounded-2xl mx-4 md:mx-6 bg-white border-none" styles={{ body: { padding: '16px' } }}>
+          <div className="flex flex-col space-y-4">
+            {/* Ay Seçimi */}
+            <div className="flex justify-between items-center border-b pb-3 border-gray-50">
+              <Button type="text" size="small" icon={<LeftOutlined />} onClick={() => changeMonth('prev')} />
+              <div className="text-center">
+                <Text className="text-gray-700 font-bold text-sm uppercase">{displayMonth}</Text>
+              </div>
+              <Button type="text" size="small" icon={<RightOutlined />} onClick={() => changeMonth('next')} disabled={isFutureMonth} />
+            </div>
+            
+            {/* Kategorik Toplamlar (Yan Yana) */}
+            <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+              <div className="flex-1 min-w-[80px] bg-green-50 border border-green-100 rounded-xl p-2 text-center">
+                <Text className="block text-[9px] text-green-600 font-bold uppercase tracking-tight">Gelir</Text>
+                <Text className="text-green-700 font-black text-xs">₺{categoryTotals.gelir.toLocaleString('tr-TR')}</Text>
+              </div>
 
-      {/* 👇 AY NAVİGASYONUNU SABİTLEYEN KISIM 👇 */}
-      <div className="sticky top-0 z-10 bg-gray-50 pb-4 pt-2"> 
-        <Card 
-          className="shadow-xl rounded-xl mx-4 md:mx-6 lg:mx-8 bg-white" 
-          styles={{ body: { padding: '16px' } }} 
-        >
-          <div className="flex justify-between items-center">
-            <Button icon={<LeftOutlined />} onClick={() => changeMonth('prev')}>Önceki Ay</Button>
-            <Title level={5} className="m-0 text-green-600">{displayMonth}</Title>
-            <Button icon={<RightOutlined />} onClick={() => changeMonth('next')} disabled={isFutureMonth}>Sonraki Ay</Button>
+              <div className="flex-1 min-w-[80px] bg-blue-50 border border-blue-100 rounded-xl p-2 text-center">
+                <Text className="block text-[9px] text-blue-600 font-bold uppercase tracking-tight">Tasarruf</Text>
+                <Text className="text-blue-700 font-black text-xs">₺{categoryTotals.tasarruf.toLocaleString('tr-TR')}</Text>
+              </div>
+
+              <div className="flex-1 min-w-[80px] bg-gray-50 border border-gray-100 rounded-xl p-2 text-center">
+                <Text className="block text-[9px] text-gray-500 font-bold uppercase tracking-tight">Diğer</Text>
+                <Text className="text-gray-700 font-black text-xs">₺{categoryTotals.diger.toLocaleString('tr-TR')}</Text>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
 
-      <Card 
-        className="shadow-lg rounded-xl mx-4 md:mx-6 lg:mx-8 overflow-hidden mb-4" 
-        styles={{ body: { padding: 0 } }} 
-      >
+      <div className="px-4 md:px-6 mb-24">
         {filteredGelirler.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
-            {`${displayMonth} ayında gelir bulunmamaktadır.`}
-          </div>
+          <Card className="rounded-2xl border-dashed border-2 border-gray-200 bg-transparent py-10 text-center">
+            <Text className="text-gray-400 italic">Bu ay henüz kayıt girilmemiş.</Text>
+          </Card>
         ) : (
-          /* OPTİMİZASYON: listType ANDROID olarak ayarlandı */
-          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.ANDROID}>
-            {filteredGelirler.map((gelir) => {
-              const { icon, color } = getCategoryDetails(gelir.kategori);
-              
-              return (
-                <SwipeableListItem
-                  key={gelir._id}
-                  leadingActions={leadingActions(gelir)} 
-                  trailingActions={trailingActions(gelir)} 
-                  className="bg-white"
-                >
-                  <div className="flex items-center w-full bg-white p-4 sm:p-5 border-b cursor-pointer">
-                    <div className={`p-3 rounded-full mr-4 sm:mr-6 flex-shrink-0 ${color}`}>{icon}</div>
-                    
-                    <div className="flex-grow min-w-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <Text strong className="text-lg text-gray-800 truncate">
-                          {gelir.kategori.charAt(0).toUpperCase() + gelir.kategori.slice(1)}
-                        </Text>
-                        <Text className="text-xl font-bold text-green-600 ml-4 flex-shrink-0">
-                          +{gelir.miktar} ₺
-                        </Text>
-                      </div>
-
-                      <div className="text-sm text-gray-500 mb-1">
-                        <CalendarOutlined className="mr-1" />
-                        <span className="text-xs sm:text-sm">{formatDate(gelir.createdAt)}</span>
-                      </div>
-
-                      <div className="text-sm text-gray-600 italic truncate">
-                        <SolutionOutlined className="mr-1" />
-                        Not: {gelir.not || "Yok"}
+          <Card className="shadow-lg rounded-2xl overflow-hidden border-none" styles={{ body: { padding: 0 } }}>
+            <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.ANDROID}>
+              {filteredGelirler.map((gelir) => {
+                const { icon, color } = getCategoryDetails(gelir.kategori);
+                return (
+                  <SwipeableListItem key={gelir._id} leadingActions={leadingActions(gelir)} trailingActions={trailingActions(gelir)} className="bg-white">
+                    <div className="flex items-center w-full bg-white p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <div className={`p-3 rounded-xl mr-4 flex-shrink-0 ${color} shadow-sm`}>{icon}</div>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex justify-between items-start mb-0.5">
+                          <Text strong className="text-sm text-gray-800 truncate uppercase tracking-tight">
+                            {gelir.kategori}
+                          </Text>
+                          <Text className="text-base font-black text-green-600 ml-4 flex-shrink-0">
+                            + ₺{Number(gelir.miktar).toLocaleString('tr-TR')}
+                          </Text>
+                        </div>
+                        <div className="flex items-center text-[10px] text-gray-400 space-x-2">
+                          <span><CalendarOutlined className="mr-1" />{formatDate(gelir.createdAt)}</span>
+                          {gelir.not && <span className="truncate max-w-[120px]"><SolutionOutlined className="mr-1" />{gelir.not}</span>}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </SwipeableListItem>
-              );
-            })}
-          </SwipeableList>
+                  </SwipeableListItem>
+                );
+              })}
+            </SwipeableList>
+          </Card>
         )}
-      </Card>
+      </div>
 
       <Modal
-        title={<Title level={4} className="text-center text-blue-600">Geliri Düzenle</Title>}
+        title={<Title level={4} className="text-center text-indigo-600 m-0">Kaydı Düzenle</Title>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSave}
-        okText="Kaydet"
-        cancelText="İptal"
-        destroyOnHidden 
+        okText="Güncelle"
+        cancelText="Vazgeç"
+        centered
       >
         <div className="space-y-4 pt-4">
-
           <div>
-            <Text strong className="block mb-1">Tarih:</Text>
-            <CustomDayPicker
-                value={formData.tarih}
-                onChange={(date) => setFormData({ ...formData, tarih: date })}
-                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
-                isIncome={true}
-            />
+            <Text strong className="block mb-1 text-xs text-gray-400 uppercase">İşlem Tarihi</Text>
+            <CustomDayPicker value={formData.tarih} onChange={(date) => setFormData({ ...formData, tarih: date })} disabledDate={(current) => current && current.isAfter(dayjs(), 'day')} isIncome={true} />
           </div>
-
           <div>
-            <Text strong className="block mb-1">Miktar (₺):</Text>
-            <Input 
-                type="number"
-                inputMode="decimal"
-                value={formData.miktar} 
-                onChange={e => setFormData({...formData, miktar:e.target.value})} 
-                placeholder="Miktar" 
-            />
+            <Text strong className="block mb-1 text-xs text-gray-400 uppercase">Tutar (₺)</Text>
+            <Input type="number" inputMode="decimal" className="rounded-xl h-12 text-lg font-bold" value={formData.miktar} onChange={e => setFormData({...formData, miktar:e.target.value})} />
           </div>
-
           <div>
-            <Text strong className="block mb-1">Kategori:</Text>
-            <Select 
-              value={formData.kategori} 
-              onChange={v => setFormData({...formData, kategori:v})} 
-              style={{ width:"100%" }}
-            >
-              {ALL_GELIR_CATEGORIES.map(cat => (
-                <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>
-              ))}
+            <Text strong className="block mb-1 text-xs text-gray-400 uppercase">Kategori</Text>
+            <Select className="w-full h-12 rounded-xl" value={formData.kategori} onChange={v => setFormData({...formData, kategori:v})}>
+              {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>)}
             </Select>
           </div>
-
           <div>
-            <Text strong className="block mb-1">Not:</Text>
-            <Input.TextArea 
-              rows={2} 
-              value={formData.not} 
-              onChange={e => setFormData({...formData, not:e.target.value})} 
-              placeholder="Ek notunuz (isteğe bağlı)" 
-            />
+            <Text strong className="block mb-1 text-xs text-gray-400 uppercase">Açıklama</Text>
+            <Input.TextArea className="rounded-xl" rows={3} value={formData.not} onChange={e => setFormData({...formData, not:e.target.value})} placeholder="İsteğe bağlı not..." />
           </div>
-
         </div>
       </Modal>
     </div>
@@ -355,9 +294,7 @@ const GelirlerContent = () => {
 const Gelirler = () => {
   return (
     <div className="relative min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-grow"> 
-        <GelirlerContent />
-      </main>
+      <main className="flex-grow"><GelirlerContent /></main>
       <BottomNav />
     </div>
   );

@@ -26,11 +26,16 @@ const Header = () => {
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
+// --- Önceki Ay Hesaplamaları ---
   const lastMonthData = useMemo(() => {
     const lastMonth = dayjs().subtract(1, "month");
     
     const prevIncome = (gelirler || [])
-      .filter(g => dayjs(g.createdAt).isSame(lastMonth, "month") && dayjs(g.createdAt).isSame(lastMonth, "year"))
+      .filter(g => {
+        const isLastMonth = dayjs(g.createdAt).isSame(lastMonth, "month") && dayjs(g.createdAt).isSame(lastMonth, "year");
+        const isNotSavings = g.kategori?.toString().trim().toLowerCase() !== "tasarruf"; // 🔥 TASARRUFU FİLTRELE
+        return isLastMonth && isNotSavings;
+      })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
     const prevExpense = (harcamalar || [])
