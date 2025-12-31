@@ -11,7 +11,7 @@ const GelirSchema = new mongoose.Schema(
     kategori: {
       type: String,
       // Frontend'deki "nakit" seçeneği buradaki enum listesine eklendi
-      enum: ["gelir", "tasarruf", "diğer", "nakit"], 
+      enum: ["gelir", "tasarruf", "diğer"], 
       required: true,
     },
     not: {

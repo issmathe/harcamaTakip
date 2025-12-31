@@ -45,7 +45,7 @@ const MARKETLER = [
 ];
 
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
-const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
+const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
 const categoryColors = {
   "Giyim": "#FF6384", "Bağış": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
@@ -56,7 +56,7 @@ const categoryColors = {
 
 const marketColors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40", "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF", "#FF3333", "#33FF8A", "#AAAAAA"];
 const giyimColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"];
-const aileColors = ["#8E24AA", "#FF7043", "#00ACC1", "#FFD54F"];
+const aileColors = ["#FF7043", "#00ACC1", "#FFD54F"];
 
 const RaporlarContent = () => {
   const { harcamalar = [] } = useTotalsContext();
@@ -83,7 +83,6 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  // I. Kategori Harcama Toplamları
   const barData = useMemo(() => {
     const totals = {};
     ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
@@ -138,14 +137,34 @@ const RaporlarContent = () => {
 
   const aileBarData = useMemo(() => {
     const aileTotals = {};
-    const aileHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Aile");
     AILE_UYELERI.forEach(uye => aileTotals[uye] = 0);
+    
+    const aileHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Aile");
     aileHarcamalar.forEach(h => {
-      const key = AILE_UYELERI.includes(h.altKategori) ? h.altKategori : "Ahmet";
-      aileTotals[key] = (aileTotals[key] || 0) + Number(h.miktar || 0);
+      const key = h.altKategori;
+      // Sadece listedeki 3 kişi için veri varsa toplama ekle
+      if (AILE_UYELERI.includes(key)) {
+        aileTotals[key] = (aileTotals[key] || 0) + Number(h.miktar || 0);
+      }
     });
-    const items = Object.keys(aileTotals).filter(k => aileTotals[k] > 0).map((label, idx) => ({ label, data: aileTotals[label], color: aileColors[idx % aileColors.length] })).sort((a, b) => a.data - b.data);
-    return { labels: items.map(i => i.label), datasets: [{ label: "Aile (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
+
+    const items = Object.keys(aileTotals)
+      .filter(k => aileTotals[k] > 0)
+      .map((label, idx) => ({ 
+        label, 
+        data: aileTotals[label], 
+        color: aileColors[idx % aileColors.length] 
+      }))
+      .sort((a, b) => a.data - b.data);
+
+    return { 
+      labels: items.map(i => i.label), 
+      datasets: [{ 
+        label: "Aile (€)", 
+        data: items.map(i => i.data), 
+        backgroundColor: items.map(i => i.color) 
+      }] 
+    };
   }, [filteredHarcamalar]);
 
   const barOptions = {

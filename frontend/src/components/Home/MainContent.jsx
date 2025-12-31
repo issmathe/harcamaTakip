@@ -70,7 +70,7 @@ const MARKETLER = [
 ];
 
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
-const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
+const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
 const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
@@ -377,8 +377,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
           <Form.Item name="kategori" label={<span className="font-semibold text-gray-700">Gelir Türü</span>}>
             <Select placeholder="Gelir türü seçin" className="rounded-lg shadow-sm">
-              <Option value="gelir">Maaş / Gelir</Option>
-              <Option value="ek_gelir">Ek Gelir</Option>
+              <Option value="gelir">Gelir</Option>
               <Option value="tasarruf">Tasarruf</Option>
               <Option value="diğer">Diğer</Option>
             </Select>
