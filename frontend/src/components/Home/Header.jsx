@@ -17,15 +17,15 @@ const Header = () => {
   const { 
     totalIncome, totalExpense, totalToday, 
     cumulativeIncome, cumulativeExpense, bankBalance,
-    harcamalar = [], gelirler = [] // Context'ten ham verileri de alıyoruz
+    harcamalar = [], gelirler = [] 
   } = useTotalsContext();
   
-  const [hoveredBox, setHoveredBox] = useState(null);
+  // Hangi kutunun "Geçen Ay" modunda olduğunu tutan state
+  const [activePrevMonthBox, setActivePrevMonthBox] = useState(null);
 
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
-  // --- Önceki Ay Hesaplamaları ---
   const lastMonthData = useMemo(() => {
     const lastMonth = dayjs().subtract(1, "month");
     
@@ -55,23 +55,24 @@ const Header = () => {
     });
   };
 
-  // Veri kutusu bileşeni (Kod tekrarını önlemek için)
+  const handleBoxClick = (id) => {
+    // Eğer tıklanan kutu zaten aktifse kapat (null yap), değilse o id'yi set et
+    setActivePrevMonthBox(prev => prev === id ? null : id);
+  };
+
   const StatBox = ({ id, label, currentVal, prevVal, colorClass, borderClass, icon: Icon }) => {
-    const isHovered = hoveredBox === id;
-    const displayVal = isHovered ? prevVal : currentVal;
+    const isShowingPrev = activePrevMonthBox === id;
+    const displayVal = isShowingPrev ? prevVal : currentVal;
 
     return (
       <div 
-        className={`flex-1 ${isHovered ? 'bg-gray-800 border-gray-900 scale-95' : colorClass} border-l-4 ${borderClass} rounded-xl p-2 flex flex-col justify-between shadow-sm transition-all duration-300 cursor-help`}
-        onMouseEnter={() => setHoveredBox(id)}
-        onMouseLeave={() => setHoveredBox(null)}
-        onTouchStart={() => setHoveredBox(id)}
-        onTouchEnd={() => setHoveredBox(null)}
+        onClick={() => handleBoxClick(id)}
+        className={`flex-1 ${isShowingPrev ? 'bg-gray-800 border-gray-900 scale-95 shadow-inner' : colorClass + ' shadow-sm'} border-l-4 ${borderClass} rounded-xl p-2 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none`}
       >
-        <Text className={`${isHovered ? '!text-gray-400' : ''} text-[10px] font-bold uppercase`}>
-          {isHovered ? "Geçen Ay" : label}
+        <Text className={`${isShowingPrev ? '!text-gray-400' : ''} text-[10px] font-bold uppercase`}>
+          {isShowingPrev ? "Geçen Ay" : label}
         </Text>
-        <div className={`flex items-center ${isHovered ? 'text-white' : ''}`}>
+        <div className={`flex items-center ${isShowingPrev ? 'text-white' : ''}`}>
           <Icon className="text-xs mr-1" />
           <span className="text-sm font-black italic">€{formatCurrency(displayVal)}</span>
         </div>
