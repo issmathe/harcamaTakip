@@ -31,10 +31,10 @@ ChartJS.register(
 
 const { Title } = Typography;
 
-// --- SABİTLER ---
+// --- SABİT SIRALAMA LİSTELERİ ---
 const ALL_CATEGORIES = [
-  "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık",
-  "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Market", "Hediye",
+  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim",
+  "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
   "Restoran", "Aile", "Diğer",
 ];
 
@@ -53,10 +53,6 @@ const categoryColors = {
   "Eğlence": "#FF33F6", "Elektronik": "#33FFF3", "İletisim": "#FF8A33", "Market": "#338AFF",
   "Hediye": "#FF3333", "Restoran": "#33FF8A", "Aile": "#AF52DE", "Diğer": "#AAAAAA"
 };
-
-const marketColors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40", "#C9CBCF", "#8AFF33", "#FF33F6", "#33FFF3", "#FF8A33", "#338AFF", "#FF3333", "#33FF8A", "#AAAAAA"];
-const giyimColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"];
-const aileColors = ["#FF7043", "#00ACC1", "#FFD54F"];
 
 const RaporlarContent = () => {
   const { harcamalar = [] } = useTotalsContext();
@@ -83,22 +79,20 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
+  // --- KATEGORİ GRAFİĞİ (0'lar Dahil) ---
   const barData = useMemo(() => {
     const totals = {};
-    ALL_CATEGORIES.forEach(cat => totals[cat] = 0);
-
     filteredHarcamalar.forEach(h => {
-      let key = h.kategori;
-      if (key === "Restoran / Kafe") key = "Restoran";
-      else if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
-      
+      let key = h.kategori === "Restoran / Kafe" ? "Restoran" : h.kategori;
+      if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
       totals[key] = (totals[key] || 0) + Number(h.miktar || 0);
     });
 
-    const chartDataItems = Object.keys(totals)
-      .filter(k => totals[k] > 0)
-      .map(label => ({ label, data: totals[label], color: categoryColors[label] || "#AAAAAA" }))
-      .sort((a, b) => a.data - b.data);
+    const chartDataItems = ALL_CATEGORIES.map(cat => ({
+      label: cat,
+      data: totals[cat] || 0,
+      color: categoryColors[cat] || "#AAAAAA"
+    }));
 
     return {
       labels: chartDataItems.map(item => item.label),
@@ -111,72 +105,76 @@ const RaporlarContent = () => {
     };
   }, [filteredHarcamalar]);
 
+  // --- MARKET GRAFİĞİ (0'lar Dahil) ---
   const marketBarData = useMemo(() => {
     const marketTotals = {};
-    const marketHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Market");
-    marketHarcamalar.forEach(h => {
-      const altKategori = h.altKategori || "Diğer";
-      const key = MARKETLER.includes(altKategori) ? altKategori : "Diğer";
+    filteredHarcamalar.filter(h => h.kategori === "Market").forEach(h => {
+      const key = MARKETLER.includes(h.altKategori) ? h.altKategori : "Diğer";
       marketTotals[key] = (marketTotals[key] || 0) + Number(h.miktar || 0);
     });
-    const items = Object.keys(marketTotals).filter(k => marketTotals[k] > 0).map((label, idx) => ({ label, data: marketTotals[label], color: marketColors[idx % marketColors.length] })).sort((a, b) => a.data - b.data);
+
+    const items = MARKETLER.map((m, idx) => ({
+      label: m,
+      data: marketTotals[m] || 0,
+      color: `hsl(${(idx * 360) / MARKETLER.length}, 70%, 60%)`
+    }));
+
     return { labels: items.map(i => i.label), datasets: [{ label: "Market (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
+  // --- GİYİM GRAFİĞİ (0'lar Dahil) ---
   const giyimBarData = useMemo(() => {
     const giyimTotals = {};
-    const giyimHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Giyim");
-    GIYIM_KISILERI.forEach(kisi => giyimTotals[kisi] = 0);
-    giyimHarcamalar.forEach(h => {
+    filteredHarcamalar.filter(h => h.kategori === "Giyim").forEach(h => {
       const key = GIYIM_KISILERI.includes(h.altKategori) ? h.altKategori : "Hediye";
       giyimTotals[key] = (giyimTotals[key] || 0) + Number(h.miktar || 0);
     });
-    const items = Object.keys(giyimTotals).filter(k => giyimTotals[k] > 0).map((label, idx) => ({ label, data: giyimTotals[label], color: giyimColors[idx % giyimColors.length] })).sort((a, b) => a.data - b.data);
+
+    const items = GIYIM_KISILERI.map((kisi, idx) => ({
+      label: kisi,
+      data: giyimTotals[kisi] || 0,
+      color: `hsl(${(idx * 60) + 200}, 70%, 50%)`
+    }));
+
     return { labels: items.map(i => i.label), datasets: [{ label: "Giyim (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
+  // --- AİLE GRAFİĞİ (0'lar Dahil) ---
   const aileBarData = useMemo(() => {
     const aileTotals = {};
-    AILE_UYELERI.forEach(uye => aileTotals[uye] = 0);
-    
-    const aileHarcamalar = filteredHarcamalar.filter(h => h.kategori === "Aile");
-    aileHarcamalar.forEach(h => {
-      const key = h.altKategori;
-      // Sadece listedeki 3 kişi için veri varsa toplama ekle
-      if (AILE_UYELERI.includes(key)) {
-        aileTotals[key] = (aileTotals[key] || 0) + Number(h.miktar || 0);
+    filteredHarcamalar.filter(h => h.kategori === "Aile").forEach(h => {
+      if (AILE_UYELERI.includes(h.altKategori)) {
+        aileTotals[h.altKategori] = (aileTotals[h.altKategori] || 0) + Number(h.miktar || 0);
       }
     });
 
-    const items = Object.keys(aileTotals)
-      .filter(k => aileTotals[k] > 0)
-      .map((label, idx) => ({ 
-        label, 
-        data: aileTotals[label], 
-        color: aileColors[idx % aileColors.length] 
-      }))
-      .sort((a, b) => a.data - b.data);
+    const items = AILE_UYELERI.map((uye, idx) => ({
+      label: uye,
+      data: aileTotals[uye] || 0,
+      color: `hsl(${(idx * 40) + 20}, 80%, 60%)`
+    }));
 
-    return { 
-      labels: items.map(i => i.label), 
-      datasets: [{ 
-        label: "Aile (€)", 
-        data: items.map(i => i.data), 
-        backgroundColor: items.map(i => i.color) 
-      }] 
-    };
+    return { labels: items.map(i => i.label), datasets: [{ label: "Aile (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
   const barOptions = {
     responsive: true, indexAxis: 'y', maintainAspectRatio: false,
-    scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } },
-    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', formatter: (val) => `${val.toFixed(2)}€`, font: { weight: 'bold' } } }
+    scales: { 
+      x: { beginAtZero: true, grid: { display: false } }, 
+      y: { grid: { display: false }, ticks: { autoSkip: false } } 
+    },
+    plugins: { 
+      legend: { display: false }, 
+      datalabels: { 
+        anchor: 'end', 
+        align: 'end', 
+        formatter: (val) => val > 0 ? `${val.toFixed(2)}€` : '0€', 
+        font: { weight: 'bold', size: 10 } 
+      } 
+    }
   };
 
-  const hasData = barData.datasets[0]?.data.length > 0;
-  const hasMarketData = marketBarData.datasets[0]?.data.length > 0;
-  const hasGiyimData = giyimBarData.datasets[0]?.data.length > 0; 
-  const hasAileData = aileBarData.datasets[0]?.data.length > 0;
+  const hasData = filteredHarcamalar.length > 0;
 
   return (
     <div className="w-full">
@@ -190,36 +188,36 @@ const RaporlarContent = () => {
 
       <AylikHarcamaTrendGrafigi />
       
-      <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-        <Title level={4} className="text-center text-gray-700 mb-4">Kategorilere Göre Harcama Dağılımı</Title>
-        {hasData ? (
-          <div className="p-2" style={{ height: `${(barData.labels.length * 35) + 100}px`, minHeight: '300px' }}>
-            <Bar data={barData} options={barOptions} />
-          </div>
-        ) : <Empty description="Harcama verisi yok." />}
-      </Card>
-      
-      {hasGiyimData && (
-        <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-          <Title level={4} className="text-center text-gray-700 mb-4">Giyim Harcamaları 👕</Title>
-          <div className="p-2" style={{ height: '250px' }}><Bar data={giyimBarData} options={barOptions} /></div>
+      {!hasData ? (
+        <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4 p-8 text-center">
+          <Empty description={`${displayMonth} dönemi için harcama kaydı bulunamadı.`} />
         </Card>
-      )}
+      ) : (
+        <>
+          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
+            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Harcama Dağılımı</Title>
+            <div className="p-2" style={{ height: `${(ALL_CATEGORIES.length * 35) + 100}px` }}>
+              <Bar data={barData} options={barOptions} />
+            </div>
+          </Card>
+          
+          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
+            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Giyim Harcamaları 👕</Title>
+            <div className="p-2" style={{ height: '280px' }}><Bar data={giyimBarData} options={barOptions} /></div>
+          </Card>
 
-      {hasAileData && (
-        <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-          <Title level={4} className="text-center text-gray-700 mb-4">Aile Harcamaları 👨‍👩‍👧‍👦</Title>
-          <div className="p-2" style={{ height: '250px' }}><Bar data={aileBarData} options={barOptions} /></div>
-        </Card>
-      )}
+          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
+            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Aile Harcamaları 👨‍👩‍👧‍👦</Title>
+            <div className="p-2" style={{ height: '220px' }}><Bar data={aileBarData} options={barOptions} /></div>
+          </Card>
 
-      {hasMarketData && (
-        <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-          <Title level={4} className="text-center text-gray-700 mb-4">Market Harcamaları Detayı</Title>
-          <div className="p-2" style={{ height: `${(marketBarData.labels.length * 30) + 100}px`, minHeight: '300px' }}>
-            <Bar data={marketBarData} options={barOptions} />
-          </div>
-        </Card>
+          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
+            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Market Detayı</Title>
+            <div className="p-2" style={{ height: `${(MARKETLER.length * 32) + 100}px` }}>
+              <Bar data={marketBarData} options={barOptions} />
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );

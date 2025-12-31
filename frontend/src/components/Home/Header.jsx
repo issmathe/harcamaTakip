@@ -1,29 +1,51 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Typography, Progress } from "antd";
 import {
   ArrowUpOutlined,
+  ArrowDownOutlined,
   BankOutlined,
   ThunderboltOutlined,
   DashboardOutlined,
   HistoryOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
 const Header = () => {
   const { 
     totalIncome, totalExpense, totalToday, 
-    cumulativeIncome, cumulativeExpense, bankBalance 
+    cumulativeIncome, cumulativeExpense, bankBalance,
+    harcamalar = [], gelirler = [] // Context'ten ham verileri de alıyoruz
   } = useTotalsContext();
   
+  const [hoveredBox, setHoveredBox] = useState(null);
+
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
-  // Transferler çıkarıldı: Sadece Gelir - Gider
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
+  // --- Önceki Ay Hesaplamaları ---
+  const lastMonthData = useMemo(() => {
+    const lastMonth = dayjs().subtract(1, "month");
+    
+    const prevIncome = (gelirler || [])
+      .filter(g => dayjs(g.createdAt).isSame(lastMonth, "month") && dayjs(g.createdAt).isSame(lastMonth, "year"))
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+
+    const prevExpense = (harcamalar || [])
+      .filter(h => dayjs(h.createdAt).isSame(lastMonth, "month") && dayjs(h.createdAt).isSame(lastMonth, "year"))
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+    return {
+      income: prevIncome,
+      expense: prevExpense,
+      balance: prevIncome - prevExpense
+    };
+  }, [harcamalar, gelirler]);
+
   const spendingPercentage = totalIncome > 0 ? Math.min((totalExpense / totalIncome) * 100, 100) : 0;
   const remainingFuel = 100 - spendingPercentage;
-
   const fuelColor = remainingFuel > 50 ? "#10b981" : remainingFuel > 20 ? "#f59e0b" : "#ef4444";
 
   const formatCurrency = (val) => {
@@ -33,13 +55,35 @@ const Header = () => {
     });
   };
 
+  // Veri kutusu bileşeni (Kod tekrarını önlemek için)
+  const StatBox = ({ id, label, currentVal, prevVal, colorClass, borderClass, icon: Icon }) => {
+    const isHovered = hoveredBox === id;
+    const displayVal = isHovered ? prevVal : currentVal;
+
+    return (
+      <div 
+        className={`flex-1 ${isHovered ? 'bg-gray-800 border-gray-900 scale-95' : colorClass} border-l-4 ${borderClass} rounded-xl p-2 flex flex-col justify-between shadow-sm transition-all duration-300 cursor-help`}
+        onMouseEnter={() => setHoveredBox(id)}
+        onMouseLeave={() => setHoveredBox(null)}
+        onTouchStart={() => setHoveredBox(id)}
+        onTouchEnd={() => setHoveredBox(null)}
+      >
+        <Text className={`${isHovered ? '!text-gray-400' : ''} text-[10px] font-bold uppercase`}>
+          {isHovered ? "Geçen Ay" : label}
+        </Text>
+        <div className={`flex items-center ${isHovered ? 'text-white' : ''}`}>
+          <Icon className="text-xs mr-1" />
+          <span className="text-sm font-black italic">€{formatCurrency(displayVal)}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <header className="px-4 pt-4 pb-3 bg-white sticky top-0 z-10 shadow-sm">
       <div 
         className="rounded-3xl p-5 shadow-xl text-white relative overflow-hidden mb-4"
-        style={{
-          background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
-        }}
+        style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)" }}
       >
         <div className="relative z-10">
           <div className="flex justify-between items-start">
@@ -65,37 +109,34 @@ const Header = () => {
                 %{remainingFuel.toFixed(0)} Kalan
               </span>
             </div>
-            <Progress 
-              percent={remainingFuel} 
-              showInfo={false} 
-              strokeColor={fuelColor}
-              trailColor="rgba(255,255,255,0.1)"
-              strokeWidth={10}
-            />
+            <Progress percent={remainingFuel} showInfo={false} strokeColor={fuelColor} trailColor="rgba(255,255,255,0.1)" strokeWidth={10} />
           </div>
         </div>
       </div>
 
       <div className="flex gap-2 h-20">
-        <div className="flex-1 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl p-2 flex flex-col justify-between shadow-sm">
-          <Text className="text-emerald-700 text-[10px] font-bold">GELİR</Text>
-          <div className="flex items-center text-emerald-600">
-            <ArrowUpOutlined className="text-xs mr-1" />
-            <span className="text-sm font-black italic">€{formatCurrency(totalIncome)}</span>
-          </div>
-        </div>
+        <StatBox 
+          id="gelir" label="Gelir" icon={ArrowUpOutlined}
+          currentVal={totalIncome} prevVal={lastMonthData.income}
+          colorClass="bg-emerald-50 text-emerald-700" borderClass="border-emerald-500"
+        />
 
-        <div className={`flex-1 ${monthlyBalance >= 0 ? 'bg-blue-50 border-blue-500' : 'bg-red-50 border-red-500'} border-l-4 rounded-xl p-2 flex flex-col justify-between shadow-sm`}>
-          <Text className={`${monthlyBalance >= 0 ? 'text-blue-700' : 'text-red-700'} text-[10px] font-bold`}>KALAN</Text>
-          <div className={`flex items-center ${monthlyBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-            <ThunderboltOutlined className="text-xs mr-1" />
-            <span className="text-sm font-black italic">€{formatCurrency(monthlyBalance)}</span>
-          </div>
-        </div>
+        <StatBox 
+          id="gider" label="Gider" icon={ArrowDownOutlined}
+          currentVal={totalExpense} prevVal={lastMonthData.expense}
+          colorClass="bg-rose-50 text-rose-700" borderClass="border-rose-500"
+        />
+
+        <StatBox 
+          id="kalan" label="Kalan" icon={ThunderboltOutlined}
+          currentVal={monthlyBalance} prevVal={lastMonthData.balance}
+          colorClass={monthlyBalance >= 0 ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}
+          borderClass={monthlyBalance >= 0 ? "border-blue-500" : "border-red-500"}
+        />
 
         <div className="flex-1 bg-orange-50 border-l-4 border-orange-500 rounded-xl p-2 flex flex-col justify-between shadow-sm">
           <div className="flex justify-between items-center">
-            <Text className="text-orange-700 text-[10px] font-bold">BUGÜN</Text>
+            <Text className="text-orange-700 text-[10px] font-bold uppercase">Bugün</Text>
             <HistoryOutlined className="text-orange-400 text-[10px]" />
           </div>
           <div className="text-orange-600">
