@@ -20,26 +20,32 @@ const Header = () => {
     harcamalar = [], gelirler = [] 
   } = useTotalsContext();
   
-  // Hangi kutunun "Geçen Ay" modunda olduğunu tutan state
   const [activePrevMonthBox, setActivePrevMonthBox] = useState(null);
 
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
-// --- Önceki Ay Hesaplamaları ---
+  // --- Önceki Ay ve Mevcut Ay Kesin Hesaplamaları ---
   const lastMonthData = useMemo(() => {
-    const lastMonth = dayjs().subtract(1, "month");
+    const now = dayjs();
+    const lastMonth = now.subtract(1, "month");
     
+    // Geçen ayın toplam geliri (Tasarruf hariç, Yıl ve Ay kontrolü dahil)
     const prevIncome = (gelirler || [])
       .filter(g => {
-        const isLastMonth = dayjs(g.createdAt).isSame(lastMonth, "month") && dayjs(g.createdAt).isSame(lastMonth, "year");
-        const isNotSavings = g.kategori?.toString().trim().toLowerCase() !== "tasarruf"; // 🔥 TASARRUFU FİLTRELE
+        const d = dayjs(g.createdAt);
+        const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
+        const isNotSavings = g.kategori?.toString().trim().toLowerCase() !== "tasarruf";
         return isLastMonth && isNotSavings;
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
+    // Geçen ayın toplam gideri (Yıl ve Ay kontrolü dahil)
     const prevExpense = (harcamalar || [])
-      .filter(h => dayjs(h.createdAt).isSame(lastMonth, "month") && dayjs(h.createdAt).isSame(lastMonth, "year"))
+      .filter(h => {
+        const d = dayjs(h.createdAt);
+        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
+      })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     return {
@@ -61,7 +67,6 @@ const Header = () => {
   };
 
   const handleBoxClick = (id) => {
-    // Eğer tıklanan kutu zaten aktifse kapat (null yap), değilse o id'yi set et
     setActivePrevMonthBox(prev => prev === id ? null : id);
   };
 
