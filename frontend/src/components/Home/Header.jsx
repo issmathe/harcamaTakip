@@ -107,7 +107,7 @@ const Header = () => {
             <div className="flex flex-col items-end">
               <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl border border-white/20 flex items-center gap-2">
                 <BankOutlined className="text-emerald-400" />
-                <span className="font-bold text-sm">€{formatCurrency(bankBalance)}</span>
+                <span className="font-bold text-sm">banka€{formatCurrency(bankBalance)}</span>
               </div>
             </div>
           </div>

@@ -29,17 +29,15 @@ export const TotalsProvider = ({ children }) => {
     const now = dayjs();
     const startOfToday = now.startOf("day");
 
-    // --- FRONTEND TARAFINDA YENİDEN HESAPLAMA (Zaman dilimi hatasını ezer) ---
-    
-    // 1. Bu Ayın Gelirleri (Yıl ve Ay kontrolü)
+    // 1. Bu Ayın Gelirleri (Tasarruf hariç)
     const totalIncome = (totals.gelirler || [])
       .filter(g => {
         const d = dayjs(g.createdAt);
-        return d.isSame(now, "month") && d.isSame(now, "year") && g.kategori?.toLowerCase() !== "tasarruf";
+        return d.isSame(now, "month") && d.isSame(now, "year") && g.kategori?.toLowerCase() === "gelir";
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Yıl ve Ay kontrolü)
+    // 2. Bu Ayın Giderleri
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -52,24 +50,35 @@ export const TotalsProvider = ({ children }) => {
       .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 4. Kümülatif Hesaplamalar (Tüm zamanlar)
-    const cumulativeIncome = (totals.gelirler || [])
-      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
-      
+    // 4. Kümülatif Hesaplamalar
+    // Tüm zamanların gideri
     const cumulativeExpense = (totals.harcamalar || [])
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Banka bakiyesi genelde kümülatif farktır
-    const bankBalance = cumulativeIncome - cumulativeExpense;
+    // Banka bakiyesi için sadece 'gelir' kategorisindekileri kümülatif topla
+    const cumulativeOnlyIncome = (totals.gelirler || [])
+      .filter(g => g.kategori?.toLowerCase() === "gelir")
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+
+    // Tüm gelir türlerinin toplamı (Portföy için)
+    const cumulativeTotalIncome = (totals.gelirler || [])
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+
+    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - Tüm Giderler
+    const bankBalance = cumulativeOnlyIncome - cumulativeExpense;
+    
+    // Kümülatif Bakiye (Portföy): Tüm Gelirler (Tasarruf dahil) - Tüm Giderler
+    const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {
       ...totals,
       totalIncome,
       totalExpense,
       totalToday,
-      cumulativeIncome,
+      cumulativeIncome: cumulativeTotalIncome, 
       cumulativeExpense,
       bankBalance,
+      cumulativeBalance,
       refetch,
     };
   }, [totals, refetch]);
