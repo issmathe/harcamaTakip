@@ -33,7 +33,7 @@ const { Title } = Typography;
 
 // --- SABİT SIRALAMA LİSTELERİ ---
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim",
+  "Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim",
   "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
   "Restoran", "Aile", "Diğer",
 ];
@@ -48,7 +48,7 @@ const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
 const categoryColors = {
-  "Giyim": "#FF6384", "Bağış": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
+  "Giyim": "#FF6384", "Tasarruf": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
   "Fatura": "#9966FF", "Eğitim": "#FF9F40", "Sağlık": "#C9CBCF", "Ulaşım": "#8AFF33",
   "Eğlence": "#FF33F6", "Elektronik": "#33FFF3", "İletisim": "#FF8A33", "Market": "#338AFF",
   "Hediye": "#FF3333", "Restoran": "#33FF8A", "Aile": "#AF52DE", "Diğer": "#AAAAAA"

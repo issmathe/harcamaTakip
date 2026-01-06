@@ -21,9 +21,13 @@ export const fetchTotalsFromAPI = async () => {
 
     // --- 1. KÜMÜLATİF HESAPLAMALAR ---
     const cumulativeIncome = allGelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
-    const cumulativeExpense = allHarcamalar.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    
+    // Toplam Gider: Tasarruf kategorisi olanları hesaplamaya dahil etme
+    const cumulativeExpense = allHarcamalar
+      .filter(h => h.kategori?.toString().trim().toLowerCase() !== "tasarruf")
+      .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // Banka Bakiyesi: Sadece 'gelir' kategorisi - Toplam Harcama
+    // Banka Bakiyesi: Sadece 'gelir' kategorisi - Tasarruf olmayan harcamalar
     const cumulativeBankIncome = allGelirler
         .filter(i => i.kategori?.toString().trim().toLowerCase() === 'gelir')
         .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
@@ -34,23 +38,31 @@ export const fetchTotalsFromAPI = async () => {
     const currentMonthPrefix = getCurrentMonthString();
     const todayStr = new Date().toISOString().split("T")[0];
 
-    // Aylık Harcama (Transfer ayrımı kaldırıldı, tüm harcamalar dahil)
+    // Aylık Harcama: Tasarruf hariç
     const monthlyExpense = allHarcamalar
-      .filter(i => i.createdAt?.startsWith(currentMonthPrefix))
+      .filter(i => {
+        const isCurrentMonth = i.createdAt?.startsWith(currentMonthPrefix);
+        const isNotSavings = i.kategori?.toString().trim().toLowerCase() !== "tasarruf";
+        return isCurrentMonth && isNotSavings;
+      })
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // AYLIK GELİR: Sadece 'tasarruf' olmayanlar
+    // AYLIK GELİR: Sadece 'tasarruf' olmayanlar (Sadece 'gelir' tipi)
     const monthlyIncome = allGelirler
       .filter(i => {
         const isCurrentMonth = i.createdAt?.startsWith(currentMonthPrefix);
         const category = i.kategori?.toString().trim().toLowerCase();
-        return isCurrentMonth && category !== "tasarruf";
+        return isCurrentMonth && category === "gelir";
       })
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // Günlük Harcama
+    // Günlük Harcama: Tasarruf hariç
     const totalToday = allHarcamalar
-      .filter(i => i.createdAt?.startsWith(todayStr))
+      .filter(i => {
+        const isToday = i.createdAt?.startsWith(todayStr);
+        const isNotSavings = i.kategori?.toString().trim().toLowerCase() !== "tasarruf";
+        return isToday && isNotSavings;
+      })
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
     return { 

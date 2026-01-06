@@ -37,25 +37,31 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri
+    // 2. Bu Ayın Giderleri (Tasarruf kategorisi HARİÇ)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
-        return d.isSame(now, "month") && d.isSame(now, "year");
+        const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf";
+        return d.isSame(now, "month") && d.isSame(now, "year") && isNotSavings;
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 3. Bugünün Toplam Harcaması
+    // 3. Bugünün Toplam Harcaması (Tasarruf hariç)
     const totalToday = (totals.harcamalar || [])
-      .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
+      .filter(h => {
+        const isToday = dayjs(h.createdAt).isSame(startOfToday, "day");
+        const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf";
+        return isToday && isNotSavings;
+      })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     // 4. Kümülatif Hesaplamalar
-    // Tüm zamanların gideri
+    // Tüm zamanların gideri (Tasarruf HARİÇ)
     const cumulativeExpense = (totals.harcamalar || [])
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Banka bakiyesi için sadece 'gelir' kategorisindekileri kümülatif topla
+    // Banka bakiyesi için sadece 'gelir' kategorisindekiler
     const cumulativeOnlyIncome = (totals.gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "gelir")
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
@@ -64,10 +70,10 @@ export const TotalsProvider = ({ children }) => {
     const cumulativeTotalIncome = (totals.gelirler || [])
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - Tüm Giderler
+    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - Giderler (Tasarruflar burada gider olarak düşülmez)
     const bankBalance = cumulativeOnlyIncome - cumulativeExpense;
     
-    // Kümülatif Bakiye (Portföy): Tüm Gelirler (Tasarruf dahil) - Tüm Giderler
+    // Kümülatif Bakiye (Portföy): Tüm Gelirler - Giderler
     const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {

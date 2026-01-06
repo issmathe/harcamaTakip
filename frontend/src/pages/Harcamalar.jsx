@@ -49,7 +49,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const MESSAGE_KEY = "harcamaSilmeIslemi";
 
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Bağış", "Petrol", "Kira", "Fatura", "Eğitim",
+  "Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim",
   "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
   "Restoran", "Aile", "Diğer",
 ];
@@ -66,7 +66,7 @@ const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"];
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toString().toLowerCase();
   switch (normalizedKategori) {
-    case "bağış":
+    case "Tasarruf":
     case "market":
     case "restoran":
     case "restoran / kafe":

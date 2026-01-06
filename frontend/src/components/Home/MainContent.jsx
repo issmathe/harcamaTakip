@@ -16,7 +16,7 @@ import CustomDayPicker from "../Forms/CustomDayPicker";
 
 import {
   Shirt,
-  HeartHandshake,
+  Wallet,
   Fuel,
   Home,
   ReceiptText,
@@ -27,7 +27,7 @@ import {
   Laptop,
   Zap,
   ShoppingCart,
-  Pencil,
+  PartyPopper,
   Utensils,
   HelpCircle,
   Users,
@@ -45,17 +45,17 @@ const { Option } = Select;
 const CategoryIcons = {
   Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
   Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Bağış: { icon: HeartHandshake, color: "text-pink-500", bgColor: "bg-pink-100" },
+  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" }, // Domuz yerine Cüzdan eklendi
   Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
   Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
   Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
   Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
   Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
-  Eğlence: { icon: Gift, color: "text-yellow-500", bgColor: "bg-yellow-100" },
+  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100" }, // Daha uygun bir ikon
   Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
   İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Hediye: { icon: Pencil, color: "text-cyan-500", bgColor: "bg-cyan-100" },
+  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100" }, // Kalem yerine Hediye Paketi
   Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
   Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
   Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
