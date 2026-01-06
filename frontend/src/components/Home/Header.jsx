@@ -25,35 +25,38 @@ const Header = () => {
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
-  // --- Önceki Ay ve Mevcut Ay Kesin Hesaplamaları ---
-  const lastMonthData = useMemo(() => {
-    const now = dayjs();
-    const lastMonth = now.subtract(1, "month");
-    
-    // Geçen ayın toplam geliri (Tasarruf hariç, Yıl ve Ay kontrolü dahil)
-    const prevIncome = (gelirler || [])
-      .filter(g => {
-        const d = dayjs(g.createdAt);
-        const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
-        const isNotSavings = g.kategori?.toString().trim().toLowerCase() !== "tasarruf";
-        return isLastMonth && isNotSavings;
-      })
-      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+// Header.jsx içindeki lastMonthData kısmını bu şekilde güncelle:
 
-    // Geçen ayın toplam gideri (Yıl ve Ay kontrolü dahil)
-    const prevExpense = (harcamalar || [])
-      .filter(h => {
-        const d = dayjs(h.createdAt);
-        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
-      })
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+const lastMonthData = useMemo(() => {
+  const now = dayjs();
+  const lastMonth = now.subtract(1, "month");
+  
+  // Geçen ayın toplam geliri (Sadece 'gelir' kategorisi)
+  const prevIncome = (gelirler || [])
+    .filter(g => {
+      const d = dayjs(g.createdAt);
+      const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
+      const isPureIncome = g.kategori?.toLowerCase() === "gelir"; // Sadece gerçek gelirler
+      return isLastMonth && isPureIncome;
+    })
+    .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    return {
-      income: prevIncome,
-      expense: prevExpense,
-      balance: prevIncome - prevExpense
-    };
-  }, [harcamalar, gelirler]);
+  // Geçen ayın toplam gideri (Tasarruf HARİÇ)
+  const prevExpense = (harcamalar || [])
+    .filter(h => {
+      const d = dayjs(h.createdAt);
+      const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
+      const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf"; // Tasarrufları giderden çıkar
+      return isLastMonth && isNotSavings;
+    })
+    .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+  return {
+    income: prevIncome,
+    expense: prevExpense,
+    balance: prevIncome - prevExpense
+  };
+}, [harcamalar, gelirler]);
 
   const spendingPercentage = totalIncome > 0 ? Math.min((totalExpense / totalIncome) * 100, 100) : 0;
   const remainingFuel = 100 - spendingPercentage;
