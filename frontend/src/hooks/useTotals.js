@@ -19,50 +19,42 @@ export const fetchTotalsFromAPI = async () => {
     const allGelirler = gelirRes.data || [];
     const allHarcamalar = harcamaRes.data || [];
 
-    // --- 1. KÜMÜLATİF HESAPLAMALAR ---
-    const cumulativeIncome = allGelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
-    
-    // Toplam Gider: Tasarruf kategorisi olanları hesaplamaya dahil etme
-    const cumulativeExpense = allHarcamalar
-      .filter(h => h.kategori?.toString().trim().toLowerCase() !== "tasarruf")
-      .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
-
-    // Banka Bakiyesi: Sadece 'gelir' kategorisi - Tasarruf olmayan harcamalar
-    const cumulativeBankIncome = allGelirler
-        .filter(i => i.kategori?.toString().trim().toLowerCase() === 'gelir')
-        .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
-        
-    const bankBalance = cumulativeBankIncome - cumulativeExpense;
-
-    // --- 2. AYLIK VE GÜNLÜK TOPLAMLAR ---
     const currentMonthPrefix = getCurrentMonthString();
     const todayStr = new Date().toISOString().split("T")[0];
 
-    // Aylık Harcama: Tasarruf hariç
+    // --- 1. KÜMÜLATİF HESAPLAMALAR ---
+    
+    // Banka Bakiyesi Hesaplama
+    const totalBankIncome = allGelirler
+        .filter(i => i.kategori?.toLowerCase() === 'gelir')
+        .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    
+    const totalBankExit = allHarcamalar
+        .reduce((sum, i) => sum + Number(i.miktar || 0), 0); // Tasarruflar dahil her şey bankadan çıkar
+
+    const bankBalance = totalBankIncome - totalBankExit;
+
+    // Portföy İçin Toplamlar
+    const cumulativeIncome = allGelirler.reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    const cumulativeExpense = allHarcamalar
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf")
+      .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+
+    // --- 2. AYLIK VE GÜNLÜK TOPLAMLAR ---
+
+    // Aylık Gider (Tasarruf kutuya yansımaz)
     const monthlyExpense = allHarcamalar
-      .filter(i => {
-        const isCurrentMonth = i.createdAt?.startsWith(currentMonthPrefix);
-        const isNotSavings = i.kategori?.toString().trim().toLowerCase() !== "tasarruf";
-        return isCurrentMonth && isNotSavings;
-      })
+      .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && i.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // AYLIK GELİR: Sadece 'tasarruf' olmayanlar (Sadece 'gelir' tipi)
+    // Aylık Gelir
     const monthlyIncome = allGelirler
-      .filter(i => {
-        const isCurrentMonth = i.createdAt?.startsWith(currentMonthPrefix);
-        const category = i.kategori?.toString().trim().toLowerCase();
-        return isCurrentMonth && category === "gelir";
-      })
+      .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && i.kategori?.toLowerCase() === "gelir")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // Günlük Harcama: Tasarruf hariç
+    // Günlük Harcama (Tasarruf kutuya yansımaz)
     const totalToday = allHarcamalar
-      .filter(i => {
-        const isToday = i.createdAt?.startsWith(todayStr);
-        const isNotSavings = i.kategori?.toString().trim().toLowerCase() !== "tasarruf";
-        return isToday && isNotSavings;
-      })
+      .filter(i => i.createdAt?.startsWith(todayStr) && i.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
     return { 

@@ -29,7 +29,7 @@ export const TotalsProvider = ({ children }) => {
     const now = dayjs();
     const startOfToday = now.startOf("day");
 
-    // 1. Bu Ayın Gelirleri (Tasarruf hariç)
+    // 1. Bu Ayın Gelirleri (Sadece 'gelir' kategorisi)
     const totalIncome = (totals.gelirler || [])
       .filter(g => {
         const d = dayjs(g.createdAt);
@@ -37,7 +37,7 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Tasarruf kategorisi HARİÇ)
+    // 2. Bu Ayın Giderleri (Tasarruf kategorisi HARİÇ - Gider kutusuna yansımaz)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -56,24 +56,31 @@ export const TotalsProvider = ({ children }) => {
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     // 4. Kümülatif Hesaplamalar
-    // Tüm zamanların gideri (Tasarruf HARİÇ)
+    
+    // Sadece gerçek harcamalar (Gider kutusu için)
     const cumulativeExpense = (totals.harcamalar || [])
       .filter(h => h.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Banka bakiyesi için sadece 'gelir' kategorisindekiler
+    // Bankadan çıkan her şey (Normal Harcamalar + Tasarruflar)
+    const totalExitFromBank = (totals.harcamalar || [])
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+    // Bankaya giren sadece gerçek gelirler (Tasarruflar gelir olarak eklenmişse onları burada saymıyoruz)
     const cumulativeOnlyIncome = (totals.gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "gelir")
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Tüm gelir türlerinin toplamı (Portföy için)
+    // Tüm zamanların tüm gelirleri (Portföy için: Gelir + Tasarruf Gelirleri)
     const cumulativeTotalIncome = (totals.gelirler || [])
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - Giderler (Tasarruflar burada gider olarak düşülmez)
-    const bankBalance = cumulativeOnlyIncome - cumulativeExpense;
+    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - (Harcamalar + Tasarruflar)
+    // Bu sayede tasarruf eklediğinde bankadaki paran azalır.
+    const bankBalance = cumulativeOnlyIncome - totalExitFromBank;
     
-    // Kümülatif Bakiye (Portföy): Tüm Gelirler - Giderler
+    // Kümülatif Bakiye (Portföy): Tüm Gelirler - Sadece Gerçek Giderler
+    // Tasarruflar "harcama" olmadığı için portföyü azaltmaz, sadece bankadan cüzdana/fona geçmiş olur.
     const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {
