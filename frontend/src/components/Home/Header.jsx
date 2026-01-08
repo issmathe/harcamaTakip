@@ -25,38 +25,29 @@ const Header = () => {
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
-// Header.jsx içindeki lastMonthData kısmını bu şekilde güncelle:
+  const lastMonthData = useMemo(() => {
+    const lastMonth = dayjs().subtract(1, "month");
+    
+    const prevIncome = (gelirler || [])
+      .filter(g => {
+        const d = dayjs(g.createdAt);
+        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year") && g.kategori?.toLowerCase() === "gelir";
+      })
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-const lastMonthData = useMemo(() => {
-  const now = dayjs();
-  const lastMonth = now.subtract(1, "month");
-  
-  // Geçen ayın toplam geliri (Sadece 'gelir' kategorisi)
-  const prevIncome = (gelirler || [])
-    .filter(g => {
-      const d = dayjs(g.createdAt);
-      const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
-      const isPureIncome = g.kategori?.toLowerCase() === "gelir"; // Sadece gerçek gelirler
-      return isLastMonth && isPureIncome;
-    })
-    .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+    const prevExpense = (harcamalar || [])
+      .filter(h => {
+        const d = dayjs(h.createdAt);
+        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year") && h.kategori?.toLowerCase() !== "tasarruf";
+      })
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-  // Geçen ayın toplam gideri (Tasarruf HARİÇ)
-  const prevExpense = (harcamalar || [])
-    .filter(h => {
-      const d = dayjs(h.createdAt);
-      const isLastMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
-      const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf"; // Tasarrufları giderden çıkar
-      return isLastMonth && isNotSavings;
-    })
-    .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-
-  return {
-    income: prevIncome,
-    expense: prevExpense,
-    balance: prevIncome - prevExpense
-  };
-}, [harcamalar, gelirler]);
+    return {
+      income: prevIncome,
+      expense: prevExpense,
+      balance: prevIncome - prevExpense
+    };
+  }, [harcamalar, gelirler]);
 
   const spendingPercentage = totalIncome > 0 ? Math.min((totalExpense / totalIncome) * 100, 100) : 0;
   const remainingFuel = 100 - spendingPercentage;
@@ -123,7 +114,14 @@ const lastMonthData = useMemo(() => {
                 %{remainingFuel.toFixed(0)} Kalan
               </span>
             </div>
-            <Progress percent={remainingFuel} showInfo={false} strokeColor={fuelColor} trailColor="rgba(255,255,255,0.1)" strokeWidth={10} />
+            {/* Hata buradaydı: strokeWidth={10} yerine size={{ strokeWidth: 10 }} kullanıldı */}
+            <Progress 
+              percent={remainingFuel} 
+              showInfo={false} 
+              strokeColor={fuelColor} 
+              trailColor="rgba(255,255,255,0.1)" 
+              size={{ strokeWidth: 10 }} 
+            />
           </div>
         </div>
       </div>
