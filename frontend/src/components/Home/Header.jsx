@@ -6,7 +6,8 @@ import {
   BankOutlined,
   ThunderboltOutlined,
   DashboardOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  CalendarOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
 import dayjs from "dayjs";
@@ -20,32 +21,33 @@ const Header = () => {
     harcamalar = [], gelirler = [] 
   } = useTotalsContext();
   
-  const [activePrevMonthBox, setActivePrevMonthBox] = useState(null);
+  // mode 1: Normal, mode 2: Gider için MTD / Diğerleri için Full, mode 3: Gider için Full
+  const [activeState, setActiveState] = useState({ id: null, mode: 1 });
 
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
   const monthlyBalance = (totalIncome || 0) - (totalExpense || 0);
   
   const lastMonthData = useMemo(() => {
     const lastMonth = dayjs().subtract(1, "month");
+    const todayNum = dayjs().date(); 
     
-    const prevIncome = (gelirler || [])
-      .filter(g => {
-        const d = dayjs(g.createdAt);
-        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year") && g.kategori?.toLowerCase() === "gelir";
-      })
-      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+    const filterByDate = (list, isExpense, untilToday = false) => {
+      return (list || []).filter(item => {
+        const d = dayjs(item.createdAt);
+        const isCorrectMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
+        const isNotTasarruf = isExpense ? item.kategori?.toLowerCase() !== "tasarruf" : true;
+        const isGelir = !isExpense ? item.kategori?.toLowerCase() === "gelir" : true;
+        const isWithinDay = untilToday ? d.date() <= todayNum : true;
 
-    const prevExpense = (harcamalar || [])
-      .filter(h => {
-        const d = dayjs(h.createdAt);
-        return d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year") && h.kategori?.toLowerCase() !== "tasarruf";
-      })
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+        return isCorrectMonth && isNotTasarruf && isGelir && isWithinDay;
+      }).reduce((sum, i) => sum + Number(i.miktar || 0), 0);
+    };
 
     return {
-      income: prevIncome,
-      expense: prevExpense,
-      balance: prevIncome - prevExpense
+      income: filterByDate(gelirler, false),
+      expense: filterByDate(harcamalar, true),
+      expenseMTD: filterByDate(harcamalar, true, true),
+      balance: filterByDate(gelirler, false) - filterByDate(harcamalar, true)
     };
   }, [harcamalar, gelirler]);
 
@@ -61,22 +63,54 @@ const Header = () => {
   };
 
   const handleBoxClick = (id) => {
-    setActivePrevMonthBox(prev => prev === id ? null : id);
+    setActiveState(prev => {
+      if (prev.id !== id) return { id, mode: 2 }; 
+      
+      if (id === "gider" && prev.mode === 2) {
+        return { id, mode: 3 }; 
+      }
+      return { id: null, mode: 1 };
+    });
   };
 
-  const StatBox = ({ id, label, currentVal, prevVal, colorClass, borderClass, icon: Icon }) => {
-    const isShowingPrev = activePrevMonthBox === id;
-    const displayVal = isShowingPrev ? prevVal : currentVal;
+  const StatBox = ({ id, label, currentVal, prevVal, mtdVal, colorClass, borderClass, icon: Icon }) => {
+    const isActive = activeState.id === id;
+    const mode = activeState.mode;
+    
+    let displayVal = currentVal;
+    let displayLabel = label;
+    let bgColor = colorClass + ' shadow-sm';
+
+    if (isActive) {
+      if (id === "gider") {
+        if (mode === 2) {
+          displayVal = mtdVal;
+          displayLabel = `1-${dayjs().format("DD")} ${dayjs().subtract(1, "month").format("MMM")}`;
+          bgColor = "bg-indigo-900 border-indigo-950 scale-95 shadow-inner text-white";
+        } else if (mode === 3) {
+          displayVal = prevVal;
+          displayLabel = "Geçen Ay (Tam)";
+          bgColor = "bg-gray-800 border-gray-900 scale-90 shadow-inner text-white";
+        }
+      } else {
+        displayVal = prevVal;
+        displayLabel = "Geçen Ay";
+        bgColor = "bg-gray-800 border-gray-900 scale-95 shadow-inner text-white";
+      }
+    }
 
     return (
       <div 
         onClick={() => handleBoxClick(id)}
-        className={`flex-1 ${isShowingPrev ? 'bg-gray-800 border-gray-900 scale-95 shadow-inner' : colorClass + ' shadow-sm'} border-l-4 ${borderClass} rounded-xl p-2 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none`}
+        className={`flex-1 ${bgColor} border-l-4 ${borderClass} rounded-xl p-2 flex flex-col justify-between transition-all duration-300 cursor-pointer select-none`}
       >
-        <Text className={`${isShowingPrev ? '!text-gray-400' : ''} text-[10px] font-bold uppercase`}>
-          {isShowingPrev ? "Geçen Ay" : label}
-        </Text>
-        <div className={`flex items-center ${isShowingPrev ? 'text-white' : ''}`}>
+        <div className="flex justify-between items-start">
+          <Text className={`${isActive ? '!text-gray-300' : ''} text-[10px] font-bold uppercase`}>
+            {displayLabel}
+          </Text>
+          {isActive && id === "gider" && mode === 2 && <CalendarOutlined className="text-[10px] text-indigo-300" />}
+        </div>
+        <div className={`flex items-center ${isActive ? 'text-white' : ''}`}>
           <Icon className="text-xs mr-1" />
           <span className="text-sm font-black italic">€{formatCurrency(displayVal)}</span>
         </div>
@@ -114,7 +148,6 @@ const Header = () => {
                 %{remainingFuel.toFixed(0)} Kalan
               </span>
             </div>
-            {/* Hata buradaydı: strokeWidth={10} yerine size={{ strokeWidth: 10 }} kullanıldı */}
             <Progress 
               percent={remainingFuel} 
               showInfo={false} 
@@ -136,6 +169,7 @@ const Header = () => {
         <StatBox 
           id="gider" label="Gider" icon={ArrowDownOutlined}
           currentVal={totalExpense} prevVal={lastMonthData.expense}
+          mtdVal={lastMonthData.expenseMTD}
           colorClass="bg-rose-50 text-rose-700" borderClass="border-rose-500"
         />
 
