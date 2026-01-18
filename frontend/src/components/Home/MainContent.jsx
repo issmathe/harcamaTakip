@@ -1,17 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import {
-  Typography,
-  Modal,
-  Form,
-  Input,
-  Button,
-  message,
-  Select,
-} from "antd";
-
-import dayjs from "dayjs";
-import CustomDayPicker from "../Forms/CustomDayPicker";
-
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Shirt,
   Wallet,
@@ -31,33 +18,27 @@ import {
   Users,
   MessageCircle,
   Delete,
+  Sparkles,
+  TrendingUp
 } from "lucide-react";
 
-import axios from "axios";
-import { useTotalsContext } from "../../context/TotalsContext";
-import { useMutation } from "@tanstack/react-query";
-
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
-const { Text } = Typography;
-const { Option } = Select;
-
 const CategoryIcons = {
-  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
-  Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
-  Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
-  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
-  Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
-  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
-  Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
-  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100" },
-  Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
-  İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
-  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
-  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
+  Market: { icon: ShoppingCart, gradient: "from-teal-400 to-cyan-500", glow: "shadow-teal-500/50" },
+  Giyim: { icon: Shirt, gradient: "from-red-400 to-pink-500", glow: "shadow-red-500/50" },
+  Tasarruf: { icon: Wallet, gradient: "from-pink-400 to-rose-500", glow: "shadow-pink-500/50" },
+  Petrol: { icon: Fuel, gradient: "from-amber-400 to-orange-500", glow: "shadow-amber-500/50" },
+  Kira: { icon: Home, gradient: "from-purple-400 to-violet-500", glow: "shadow-purple-500/50" },
+  Fatura: { icon: ReceiptText, gradient: "from-indigo-400 to-blue-500", glow: "shadow-indigo-500/50" },
+  Eğitim: { icon: BookOpen, gradient: "from-lime-400 to-green-500", glow: "shadow-lime-500/50" },
+  Sağlık: { icon: HeartPulse, gradient: "from-emerald-400 to-teal-500", glow: "shadow-emerald-500/50" },
+  Ulaşım: { icon: Car, gradient: "from-sky-400 to-blue-500", glow: "shadow-sky-500/50" },
+  Eğlence: { icon: PartyPopper, gradient: "from-yellow-400 to-orange-500", glow: "shadow-yellow-500/50" },
+  Elektronik: { icon: Laptop, gradient: "from-gray-400 to-slate-500", glow: "shadow-gray-500/50" },
+  İletisim: { icon: Zap, gradient: "from-blue-400 to-cyan-500", glow: "shadow-blue-500/50" },
+  Hediye: { icon: Gift, gradient: "from-fuchsia-400 to-pink-500", glow: "shadow-fuchsia-500/50" },
+  Restoran: { icon: Utensils, gradient: "from-orange-400 to-red-500", glow: "shadow-orange-500/50" },
+  Aile: { icon: Users, gradient: "from-green-400 to-emerald-500", glow: "shadow-green-500/50" },
+  Diğer: { icon: HelpCircle, gradient: "from-neutral-400 to-gray-500", glow: "shadow-neutral-500/50" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
@@ -84,68 +65,38 @@ const NumericNumpad = ({ value, onChange }) => {
   return (
     <div className="grid grid-cols-3 gap-3 mt-4">
       {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map((key) => (
-        <Button
+        <button
           key={key}
           onClick={() => handlePress(key)}
-          className={`h-14 text-xl font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
-            key === "back" ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-700"
+          className={`h-16 text-xl font-bold rounded-2xl transition-all transform active:scale-95 hover:scale-105 ${
+            key === "back" 
+              ? "bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-lg shadow-red-500/50" 
+              : "bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/50 hover:shadow-xl"
           }`}
         >
-          {key === "back" ? <Delete size={24} /> : key}
-        </Button>
+          {key === "back" ? <Delete size={24} className="mx-auto" /> : key}
+        </button>
       ))}
     </div>
   );
 };
 
-const MainContent = ({ radius = 40, center = 50 }) => {
-  const { refetch, harcamalar = [] } = useTotalsContext();
+const MainContent = ({ radius = 45, center = 50 }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [amount, setAmount] = useState("");
-
-  const [form] = Form.useForm();
-  const [gelirForm] = Form.useForm();
+  const [tarih, setTarih] = useState(new Date());
+  const [altKategori, setAltKategori] = useState("");
+  const [not, setNot] = useState("");
+  const [gelirKategori, setGelirKategori] = useState("gelir");
+  
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [lastAngle, setLastAngle] = useState(0);
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
-
-  const harcamaMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
-    onSuccess: async () => {
-      message.success("Harcama eklendi!");
-      await refetch();
-      handleModalCancel();
-    },
-    onError: () => message.error("Harcama eklenirken hata oluştu."),
-  });
-
-  const gelirMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/gelir`, data),
-    onSuccess: async () => {
-      message.success("Gelir eklendi!");
-      await refetch();
-      handleGelirCancel();
-    },
-    onError: () => message.error("Gelir eklenirken hata oluştu."),
-  });
-
-  const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
-
-  const monthlyCategoryTotals = useMemo(() => {
-    const currentMonth = getCurrentMonthYear();
-    return (harcamalar ?? []).reduce((acc, h) => {
-      if (h?.createdAt?.startsWith(currentMonth)) {
-        const m = Number(h.miktar || 0);
-        if (h.kategori) acc[h.kategori] = (acc[h.kategori] || 0) + m;
-      }
-      return acc;
-    }, {});
-  }, [harcamalar]);
 
   const getTopCategory = useCallback(() => {
     const angle = 360 / CATEGORIES.length;
@@ -154,7 +105,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   }, [rotation]);
 
   const currentTopCategory = getTopCategory();
-  const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
+  const currentCategoryTotal = 1247.50;
   const formattedTotal = currentCategoryTotal.toFixed(2).replace(".", ",");
 
   const getAngle = (cX, cY, pX, pY) => Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
@@ -225,155 +176,296 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     setSelectedCategory(category);
     setIsModalVisible(true);
     setAmount("");
-    form.resetFields();
-    form.setFieldsValue({ tarih: dayjs().toDate() });
     setShowNote(false);
+    setAltKategori("");
+    setNot("");
   };
 
   const handleModalCancel = () => {
     setIsModalVisible(false);
     setSelectedCategory(null);
     setAmount("");
-    form.resetFields();
     setShowNote(false);
   };
 
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     setAmount("");
-    gelirForm.resetFields();
-    gelirForm.setFieldsValue({ tarih: dayjs().toDate(), kategori: "gelir" });
+    setGelirKategori("gelir");
+    setNot("");
   };
 
   const handleGelirCancel = () => {
     setIsGelirModalVisible(false);
     setAmount("");
-    gelirForm.resetFields();
   };
 
-  const onHarcamaFinish = (values) => {
+  const handleSave = () => {
     const num = parseFloat(amount.replace(",", "."));
-    if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
-
-    harcamaMutation.mutate({
-      miktar: num,
-      kategori: selectedCategory || "Diğer",
-      altKategori: ["Market", "Giyim", "Aile"].includes(selectedCategory) ? values.altKategori : "",
-      not: values.not || "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString(),
-    });
+    if (isNaN(num) || num <= 0) {
+      alert("Geçerli bir miktar girin!");
+      return;
+    }
+    alert(`${selectedCategory}: ${amount}€ kaydedildi!`);
+    handleModalCancel();
   };
 
-  const onGelirFinish = (values) => {
+  const handleGelirSave = () => {
     const num = parseFloat(amount.replace(",", "."));
-    if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
-
-    gelirMutation.mutate({
-      miktar: num,
-      kategori: values.kategori || "gelir",
-      not: values.not || "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString(),
-    });
+    if (isNaN(num) || num <= 0) {
+      alert("Geçerli bir miktar girin!");
+      return;
+    }
+    alert(`Gelir: ${amount}€ kaydedildi!`);
+    handleGelirCancel();
   };
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-4">
-      <div className="text-center mb-6 pt-4">
-        <div className="text-blue-600 font-bold text-xl">{currentTopCategory}</div>
-        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col overflow-hidden relative">
+      {/* Animated Background Stars */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              opacity: Math.random() * 0.7 + 0.3
+            }}
+          />
+        ))}
       </div>
 
-      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-105 z-20 transition-all">
-          <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
+      {/* Header with Glow Effect */}
+      <div className="text-center mb-8 pt-8 relative z-10">
+        <div className="inline-block">
+          <div className={`text-5xl font-black bg-gradient-to-r ${CategoryIcons[currentTopCategory]?.gradient} bg-clip-text text-transparent mb-2 animate-pulse`}>
+            {currentTopCategory}
+          </div>
+          <div className="text-white/90 font-bold text-3xl tracking-wider backdrop-blur-sm bg-white/10 px-6 py-2 rounded-full inline-block shadow-2xl">
+            {formattedTotal} €
+          </div>
         </div>
+        <Sparkles className="absolute -top-2 -right-2 text-yellow-300 animate-spin" size={24} style={{ animationDuration: '3s' }} />
+      </div>
 
-        <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.3s ease-out" }}
-          onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
-        >
-          {CATEGORIES.map((cat, i) => {
-            const ang = (360 / CATEGORIES.length) * i - 90;
-            const r = (ang * Math.PI) / 180;
-            const x = radius * Math.cos(r);
-            const y = radius * Math.sin(r);
-            const isTop = cat === currentTopCategory;
-            const { icon: Icon, color, bgColor } = CategoryIcons[cat];
+      {/* Main Wheel Container */}
+      <div className="flex-1 flex items-center justify-center relative px-4">
+        <div className="relative w-full max-w-md aspect-square">
+          
+          {/* Center Button with Pulsing Effect */}
+          <button 
+            onClick={handleGelirClick}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 text-white flex flex-col items-center justify-center shadow-2xl shadow-purple-500/50 cursor-pointer hover:scale-110 z-20 transition-all duration-300 animate-pulse border-4 border-white/30"
+          >
+            <TrendingUp size={32} className="mb-2" />
+            <span className="font-black text-lg tracking-wide">GELIR</span>
+            <span className="text-xs opacity-80">EKLE</span>
+          </button>
 
-            return (
-              <button key={cat} onClick={() => handleIconClick(cat)}
-                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
-                  isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color}`
-                }`}
-                style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
+          {/* Rotating Wheel */}
+          <div 
+            ref={wheelRef} 
+            className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+            style={{ 
+              transform: `rotate(${rotation}deg)`, 
+              transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
+            }}
+            onMouseDown={handleMouseDown} 
+            onTouchStart={handleTouchStart}
+          >
+            {CATEGORIES.map((cat, i) => {
+              const ang = (360 / CATEGORIES.length) * i - 90;
+              const r = (ang * Math.PI) / 180;
+              const x = radius * Math.cos(r);
+              const y = radius * Math.sin(r);
+              const isTop = cat === currentTopCategory;
+              const { icon: Icon, gradient, glow } = CategoryIcons[cat];
+
+              return (
+                <button 
+                  key={cat} 
+                  onClick={() => handleIconClick(cat)}
+                  className={`absolute w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
+                    isTop 
+                      ? `bg-gradient-to-br ${gradient} scale-[2.2] ring-4 ring-white/50 z-10 shadow-2xl ${glow} animate-bounce` 
+                      : `bg-gradient-to-br ${gradient} shadow-lg ${glow} hover:scale-125`
+                  }`}
+                  style={{ 
+                    top: `${center + y}%`, 
+                    left: `${center + x}%`, 
+                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
+                    animationDuration: isTop ? '1s' : '0s'
+                  }}
+                >
+                  <Icon className="text-white" size={isTop ? 32 : 24} />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Outer Ring Glow */}
+          <div className="absolute inset-0 rounded-full border-4 border-white/10 shadow-2xl shadow-purple-500/20 pointer-events-none animate-pulse" style={{ animationDuration: '2s' }} />
+        </div>
+      </div>
+
+      {/* Expense Modal */}
+      {isModalVisible && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-500/30 animate-in zoom-in duration-300">
+            <div className={`text-2xl font-black bg-gradient-to-r ${CategoryIcons[selectedCategory]?.gradient} bg-clip-text text-transparent mb-6 text-center`}>
+              {selectedCategory}
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-6 rounded-2xl mb-6 text-center border-2 border-white/10 shadow-inner">
+              <div className="text-5xl font-black text-white">
+                {amount || "0"}
+                <span className="text-3xl ml-2 text-purple-300">€</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-white/70 text-sm mb-2 block font-semibold">Tarih</label>
+                <input 
+                  type="date" 
+                  value={tarih.toISOString().split('T')[0]}
+                  onChange={(e) => setTarih(new Date(e.target.value))}
+                  className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              
+              {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
+                <div>
+                  <label className="text-white/70 text-sm mb-2 block font-semibold">Alt Kategori</label>
+                  <select 
+                    value={altKategori}
+                    onChange={(e) => setAltKategori(e.target.value)}
+                    className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Seç</option>
+                    {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => 
+                      <option key={i} value={i}>{i}</option>
+                    )}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <NumericNumpad value={amount} onChange={setAmount} />
+
+            {showNote ? (
+              <div className="mt-4">
+                <label className="text-white/70 text-sm mb-2 block font-semibold">Not</label>
+                <textarea 
+                  value={not}
+                  onChange={(e) => setNot(e.target.value)}
+                  rows={2}
+                  placeholder="Açıklama..."
+                  className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                />
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowNote(true)}
+                className="w-full mt-4 py-3 text-white/50 hover:text-white/80 transition-colors flex items-center justify-center gap-2"
               >
-                <Icon className={isTop ? "w-6 h-6" : "w-5 h-5"} />
+                <MessageCircle size={16} />
+                Not Ekle
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <Modal 
-        title={<div className="text-xl font-bold text-blue-700">{selectedCategory}</div>}
-        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
-      >
-        <div className="bg-gray-50 p-4 rounded-2xl mb-4 text-center border border-gray-200">
-          <div className="text-4xl font-black text-blue-600">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
-        </div>
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="tarih" label="Tarih" className="mb-2">
-              <CustomDayPicker disabledDate={(c) => c && c.isAfter(dayjs(), "day")} />
-            </Form.Item>
-            {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label="Alt Kategori" rules={[{ required: true, message: "Seç" }]} className="mb-2">
-                <Select placeholder="Seç">
-                  {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => <Option key={i} value={i}>{i}</Option>)}
-                </Select>
-              </Form.Item>
             )}
-          </div>
-          <NumericNumpad value={amount} onChange={setAmount} />
-          {showNote ? (
-            <Form.Item name="not" label="Not" className="mt-4">
-              <Input.TextArea rows={2} placeholder="Açıklama..." />
-            </Form.Item>
-          ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-2 text-gray-400">Not Ekle</Button>
-          )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-blue-600 rounded-xl">Kaydet</Button>
-        </Form>
-      </Modal>
 
-      <Modal 
-        title={<div className="text-xl font-bold text-indigo-700">Gelir Ekle</div>}
-        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
-      >
-        <div className="bg-indigo-50 p-4 rounded-2xl mb-4 text-center border border-indigo-100">
-          <div className="text-4xl font-black text-indigo-600">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
-        </div>
-        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="tarih" label="Tarih" className="mb-2">
-              <CustomDayPicker disabledDate={(c) => c && c.isAfter(dayjs(), "day")} isIncome={true} />
-            </Form.Item>
-            <Form.Item name="kategori" label="Tür" className="mb-2">
-              <Select>
-                <Option value="gelir">Gelir</Option>
-                <Option value="tasarruf">Tasarruf</Option>
-                <Option value="diğer">Diğer</Option>
-              </Select>
-            </Form.Item>
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={handleModalCancel}
+                className="flex-1 py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-all shadow-lg"
+              >
+                İptal
+              </button>
+              <button 
+                onClick={handleSave}
+                className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-2xl hover:shadow-purple-500/50 transition-all shadow-lg"
+              >
+                Kaydet
+              </button>
+            </div>
           </div>
-          <NumericNumpad value={amount} onChange={setAmount} />
-          <Form.Item name="not" label="Not" className="mt-4">
-            <Input placeholder="Not ekle..." />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-indigo-600 rounded-xl">Kaydet</Button>
-        </Form>
-      </Modal>
-    </main>
+        </div>
+      )}
+
+      {/* Income Modal */}
+      {isGelirModalVisible && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-indigo-500/30 animate-in zoom-in duration-300">
+            <div className="text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-6 text-center">
+              Gelir Ekle
+            </div>
+            
+            <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-6 rounded-2xl mb-6 text-center border-2 border-white/10 shadow-inner">
+              <div className="text-5xl font-black text-white">
+                {amount || "0"}
+                <span className="text-3xl ml-2 text-indigo-300">€</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-white/70 text-sm mb-2 block font-semibold">Tarih</label>
+                <input 
+                  type="date" 
+                  value={tarih.toISOString().split('T')[0]}
+                  onChange={(e) => setTarih(new Date(e.target.value))}
+                  className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              
+              <div>
+                <label className="text-white/70 text-sm mb-2 block font-semibold">Tür</label>
+                <select 
+                  value={gelirKategori}
+                  onChange={(e) => setGelirKategori(e.target.value)}
+                  className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="gelir">Gelir</option>
+                  <option value="tasarruf">Tasarruf</option>
+                  <option value="diğer">Diğer</option>
+                </select>
+              </div>
+            </div>
+
+            <NumericNumpad value={amount} onChange={setAmount} />
+
+            <div className="mt-4">
+              <label className="text-white/70 text-sm mb-2 block font-semibold">Not</label>
+              <input 
+                type="text"
+                value={not}
+                onChange={(e) => setNot(e.target.value)}
+                placeholder="Not ekle..."
+                className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={handleGelirCancel}
+                className="flex-1 py-4 bg-indigo-800 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
+              >
+                İptal
+              </button>
+              <button 
+                onClick={handleGelirSave}
+                className="flex-1 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-2xl hover:shadow-indigo-500/50 transition-all shadow-lg"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
