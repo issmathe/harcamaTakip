@@ -18,7 +18,6 @@ import {
   Users,
   MessageCircle,
   Delete,
-  Sparkles,
   TrendingUp
 } from "lucide-react";
 
@@ -68,10 +67,10 @@ const NumericNumpad = ({ value, onChange }) => {
         <button
           key={key}
           onClick={() => handlePress(key)}
-          className={`h-16 text-xl font-bold rounded-2xl transition-all transform active:scale-95 hover:scale-105 ${
+          className={`h-14 text-xl font-semibold rounded-xl transition-all transform active:scale-95 ${
             key === "back" 
-              ? "bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-lg shadow-red-500/50" 
-              : "bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/50 hover:shadow-xl"
+              ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30" 
+              : "bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20"
           }`}
         >
           {key === "back" ? <Delete size={24} className="mx-auto" /> : key}
@@ -81,7 +80,7 @@ const NumericNumpad = ({ value, onChange }) => {
   );
 };
 
-const MainContent = ({ radius = 45, center = 50 }) => {
+const MainContent = ({ radius = 40, center = 50 }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
@@ -221,10 +220,11 @@ const MainContent = ({ radius = 45, center = 50 }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col overflow-hidden relative">
-      {/* Animated Background Stars */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(50)].map((_, i) => (
+    <main className="flex-1 px-4 pt-4 pb-4 relative overflow-hidden">
+      {/* Animated Space Background */}
+      <div className="fixed inset-0 bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 -z-10">
+        {/* Stars */}
+        {[...Array(100)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
@@ -232,118 +232,149 @@ const MainContent = ({ radius = 45, center = 50 }) => {
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 3}s`,
-              opacity: Math.random() * 0.7 + 0.3
+              opacity: Math.random() * 0.7 + 0.3,
+              animationDuration: `${Math.random() * 2 + 1}s`
             }}
           />
         ))}
+        
+        {/* Planet 1 - Large Purple */}
+        <div 
+          className="absolute w-64 h-64 rounded-full opacity-30 blur-2xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 30% 30%, #a855f7, #6366f1)',
+            top: '-10%',
+            right: '-10%',
+            animationDuration: '4s'
+          }}
+        />
+        
+        {/* Planet 2 - Small Blue */}
+        <div 
+          className="absolute w-32 h-32 rounded-full opacity-40 blur-xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 40% 40%, #60a5fa, #3b82f6)',
+            bottom: '20%',
+            left: '5%',
+            animationDuration: '3s',
+            animationDelay: '1s'
+          }}
+        />
+        
+        {/* Planet 3 - Medium Pink */}
+        <div 
+          className="absolute w-48 h-48 rounded-full opacity-25 blur-2xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 35% 35%, #ec4899, #f43f5e)',
+            bottom: '-5%',
+            right: '10%',
+            animationDuration: '5s',
+            animationDelay: '2s'
+          }}
+        />
+
+        {/* Shooting Stars */}
+        <div className="absolute top-1/4 left-1/4 w-1 h-20 bg-gradient-to-b from-white to-transparent opacity-60 animate-ping" 
+             style={{ animationDuration: '3s', transform: 'rotate(45deg)' }} />
+        <div className="absolute top-1/3 right-1/3 w-1 h-16 bg-gradient-to-b from-white to-transparent opacity-40 animate-ping" 
+             style={{ animationDuration: '4s', animationDelay: '1.5s', transform: 'rotate(30deg)' }} />
       </div>
 
-      {/* Header with Glow Effect */}
-      <div className="text-center mb-8 pt-8 relative z-10">
-        <div className="inline-block">
-          <div className={`text-5xl font-black bg-gradient-to-r ${CategoryIcons[currentTopCategory]?.gradient} bg-clip-text text-transparent mb-2 animate-pulse`}>
-            {currentTopCategory}
-          </div>
-          <div className="text-white/90 font-bold text-3xl tracking-wider backdrop-blur-sm bg-white/10 px-6 py-2 rounded-full inline-block shadow-2xl">
-            {formattedTotal} €
-          </div>
+      {/* Header */}
+      <div className="text-center mb-6 pt-4 relative z-10">
+        <div className={`text-white font-bold text-xl mb-1 drop-shadow-lg`}>
+          {currentTopCategory}
         </div>
-        <Sparkles className="absolute -top-2 -right-2 text-yellow-300 animate-spin" size={24} style={{ animationDuration: '3s' }} />
+        <div className="text-white/90 font-semibold text-base backdrop-blur-sm bg-white/10 px-4 py-1 rounded-full inline-block border border-white/20">
+          {formattedTotal} €
+        </div>
       </div>
 
-      {/* Main Wheel Container */}
-      <div className="flex-1 flex items-center justify-center relative px-4">
-        <div className="relative w-full max-w-md aspect-square">
-          
-          {/* Center Button with Pulsing Effect */}
-          <button 
-            onClick={handleGelirClick}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 text-white flex flex-col items-center justify-center shadow-2xl shadow-purple-500/50 cursor-pointer hover:scale-110 z-20 transition-all duration-300 animate-pulse border-4 border-white/30"
-          >
-            <TrendingUp size={32} className="mb-2" />
-            <span className="font-black text-lg tracking-wide">GELIR</span>
-            <span className="text-xs opacity-80">EKLE</span>
-          </button>
+      {/* Wheel Container */}
+      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
+        {/* Center Button */}
+        <div 
+          onClick={handleGelirClick}
+          className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 text-white flex flex-col items-center justify-center shadow-2xl shadow-purple-500/50 cursor-pointer hover:scale-105 z-20 transition-all border-2 border-white/30"
+        >
+          <TrendingUp className="mb-1" size={28} />
+          <span className="font-bold text-base">Gelir Ekle</span>
+        </div>
 
-          {/* Rotating Wheel */}
-          <div 
-            ref={wheelRef} 
-            className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-            style={{ 
-              transform: `rotate(${rotation}deg)`, 
-              transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" 
-            }}
-            onMouseDown={handleMouseDown} 
-            onTouchStart={handleTouchStart}
-          >
-            {CATEGORIES.map((cat, i) => {
-              const ang = (360 / CATEGORIES.length) * i - 90;
-              const r = (ang * Math.PI) / 180;
-              const x = radius * Math.cos(r);
-              const y = radius * Math.sin(r);
-              const isTop = cat === currentTopCategory;
-              const { icon: Icon, gradient, glow } = CategoryIcons[cat];
+        {/* Rotating Wheel */}
+        <div 
+          ref={wheelRef} 
+          className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+          style={{ 
+            transform: `rotate(${rotation}deg)`, 
+            transition: isDragging ? "none" : "transform 0.3s ease-out" 
+          }}
+          onMouseDown={handleMouseDown} 
+          onTouchStart={handleTouchStart}
+        >
+          {CATEGORIES.map((cat, i) => {
+            const ang = (360 / CATEGORIES.length) * i - 90;
+            const r = (ang * Math.PI) / 180;
+            const x = radius * Math.cos(r);
+            const y = radius * Math.sin(r);
+            const isTop = cat === currentTopCategory;
+            const { icon: Icon, gradient, glow } = CategoryIcons[cat];
 
-              return (
-                <button 
-                  key={cat} 
-                  onClick={() => handleIconClick(cat)}
-                  className={`absolute w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
-                    isTop 
-                      ? `bg-gradient-to-br ${gradient} scale-[2.2] ring-4 ring-white/50 z-10 shadow-2xl ${glow} animate-bounce` 
-                      : `bg-gradient-to-br ${gradient} shadow-lg ${glow} hover:scale-125`
-                  }`}
-                  style={{ 
-                    top: `${center + y}%`, 
-                    left: `${center + x}%`, 
-                    transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
-                    animationDuration: isTop ? '1s' : '0s'
-                  }}
-                >
-                  <Icon className="text-white" size={isTop ? 32 : 24} />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Outer Ring Glow */}
-          <div className="absolute inset-0 rounded-full border-4 border-white/10 shadow-2xl shadow-purple-500/20 pointer-events-none animate-pulse" style={{ animationDuration: '2s' }} />
+            return (
+              <button 
+                key={cat} 
+                onClick={() => handleIconClick(cat)}
+                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  isTop 
+                    ? `bg-gradient-to-br ${gradient} scale-150 ring-4 ring-white/50 z-10 shadow-2xl ${glow} border-2 border-white` 
+                    : `bg-gradient-to-br ${gradient} shadow-lg ${glow}`
+                }`}
+                style={{ 
+                  top: `${center + y}%`, 
+                  left: `${center + x}%`, 
+                  transform: `translate(-50%, -50%) rotate(${-rotation}deg)`
+                }}
+              >
+                <Icon className="text-white" size={isTop ? 24 : 20} />
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Expense Modal */}
       {isModalVisible && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-500/30 animate-in zoom-in duration-300">
-            <div className={`text-2xl font-black bg-gradient-to-r ${CategoryIcons[selectedCategory]?.gradient} bg-clip-text text-transparent mb-6 text-center`}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl border border-white/10">
+            <div className={`text-2xl font-bold bg-gradient-to-r ${CategoryIcons[selectedCategory]?.gradient} bg-clip-text text-transparent mb-4 text-center`}>
               {selectedCategory}
             </div>
             
-            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-6 rounded-2xl mb-6 text-center border-2 border-white/10 shadow-inner">
-              <div className="text-5xl font-black text-white">
+            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl mb-4 text-center border border-white/20">
+              <div className="text-4xl font-black text-white">
                 {amount || "0"}
-                <span className="text-3xl ml-2 text-purple-300">€</span>
+                <span className="text-2xl ml-1">€</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div>
-                <label className="text-white/70 text-sm mb-2 block font-semibold">Tarih</label>
+                <label className="text-white/70 text-sm mb-1 block">Tarih</label>
                 <input 
                   type="date" 
                   value={tarih.toISOString().split('T')[0]}
                   onChange={(e) => setTarih(new Date(e.target.value))}
-                  className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
               
               {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
                 <div>
-                  <label className="text-white/70 text-sm mb-2 block font-semibold">Alt Kategori</label>
+                  <label className="text-white/70 text-sm mb-1 block">Alt Kategori</label>
                   <select 
                     value={altKategori}
                     onChange={(e) => setAltKategori(e.target.value)}
-                    className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full bg-white/10 text-white rounded-xl px-3 py-2 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Seç</option>
                     {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => 
@@ -358,35 +389,35 @@ const MainContent = ({ radius = 45, center = 50 }) => {
 
             {showNote ? (
               <div className="mt-4">
-                <label className="text-white/70 text-sm mb-2 block font-semibold">Not</label>
+                <label className="text-white/70 text-sm mb-1 block">Not</label>
                 <textarea 
                   value={not}
                   onChange={(e) => setNot(e.target.value)}
                   rows={2}
                   placeholder="Açıklama..."
-                  className="w-full bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                 />
               </div>
             ) : (
               <button 
                 onClick={() => setShowNote(true)}
-                className="w-full mt-4 py-3 text-white/50 hover:text-white/80 transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2 text-white/50 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 <MessageCircle size={16} />
                 Not Ekle
               </button>
             )}
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 mt-4">
               <button 
                 onClick={handleModalCancel}
-                className="flex-1 py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-all shadow-lg"
+                className="flex-1 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all"
               >
                 İptal
               </button>
               <button 
                 onClick={handleSave}
-                className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-2xl hover:shadow-purple-500/50 transition-all shadow-lg"
+                className={`flex-1 py-3 bg-gradient-to-r ${CategoryIcons[selectedCategory]?.gradient} text-white rounded-xl font-semibold shadow-lg transition-all`}
               >
                 Kaydet
               </button>
@@ -397,36 +428,36 @@ const MainContent = ({ radius = 45, center = 50 }) => {
 
       {/* Income Modal */}
       {isGelirModalVisible && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border-2 border-indigo-500/30 animate-in zoom-in duration-300">
-            <div className="text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-6 text-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl p-6 w-full max-w-md shadow-2xl border border-indigo-500/30">
+            <div className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-4 text-center">
               Gelir Ekle
             </div>
             
-            <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-6 rounded-2xl mb-6 text-center border-2 border-white/10 shadow-inner">
-              <div className="text-5xl font-black text-white">
+            <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-2xl mb-4 text-center border border-white/20">
+              <div className="text-4xl font-black text-white">
                 {amount || "0"}
-                <span className="text-3xl ml-2 text-indigo-300">€</span>
+                <span className="text-2xl ml-1">€</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div>
-                <label className="text-white/70 text-sm mb-2 block font-semibold">Tarih</label>
+                <label className="text-white/70 text-sm mb-1 block">Tarih</label>
                 <input 
                   type="date" 
                   value={tarih.toISOString().split('T')[0]}
                   onChange={(e) => setTarih(new Date(e.target.value))}
-                  className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               
               <div>
-                <label className="text-white/70 text-sm mb-2 block font-semibold">Tür</label>
+                <label className="text-white/70 text-sm mb-1 block">Tür</label>
                 <select 
                   value={gelirKategori}
                   onChange={(e) => setGelirKategori(e.target.value)}
-                  className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="gelir">Gelir</option>
                   <option value="tasarruf">Tasarruf</option>
@@ -438,26 +469,26 @@ const MainContent = ({ radius = 45, center = 50 }) => {
             <NumericNumpad value={amount} onChange={setAmount} />
 
             <div className="mt-4">
-              <label className="text-white/70 text-sm mb-2 block font-semibold">Not</label>
+              <label className="text-white/70 text-sm mb-1 block">Not</label>
               <input 
                 type="text"
                 value={not}
                 onChange={(e) => setNot(e.target.value)}
                 placeholder="Not ekle..."
-                className="w-full bg-indigo-800/50 text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 mt-4">
               <button 
                 onClick={handleGelirCancel}
-                className="flex-1 py-4 bg-indigo-800 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
+                className="flex-1 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all"
               >
                 İptal
               </button>
               <button 
                 onClick={handleGelirSave}
-                className="flex-1 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-2xl hover:shadow-indigo-500/50 transition-all shadow-lg"
+                className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg transition-all"
               >
                 Kaydet
               </button>
@@ -465,7 +496,7 @@ const MainContent = ({ radius = 45, center = 50 }) => {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };
 
