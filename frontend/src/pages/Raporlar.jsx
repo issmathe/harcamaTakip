@@ -31,7 +31,6 @@ ChartJS.register(
 
 const { Title } = Typography;
 
-// --- SABİT SIRALAMA LİSTELERİ ---
 const ALL_CATEGORIES = [
   "Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim",
   "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
@@ -68,6 +67,28 @@ const RaporlarContent = () => {
     });
   }, [harcamalar, selectedMonth, selectedYear]);
 
+  // --- TÜM VERİLER İÇİNDEKİ EN YÜKSEK DEĞERİ BULMA ---
+  // Bu değer, ayları değiştirseniz bile çubukların ölçeğini sabit tutar.
+  const globalMax = useMemo(() => {
+    if (!harcamalar.length) return 1000;
+    // Kategori bazlı toplamları hesaplayıp en büyüğünü buluyoruz
+    const totalsPerMonth = {};
+    harcamalar.forEach(h => {
+      const monthKey = dayjs(h.createdAt).format("YYYY-MM");
+      if (!totalsPerMonth[monthKey]) totalsPerMonth[monthKey] = {};
+      const cat = h.kategori || "Diğer";
+      totalsPerMonth[monthKey][cat] = (totalsPerMonth[monthKey][cat] || 0) + Number(h.miktar || 0);
+    });
+    
+    let maxVal = 0;
+    Object.values(totalsPerMonth).forEach(monthObj => {
+      const monthMax = Math.max(...Object.values(monthObj));
+      if (monthMax > maxVal) maxVal = monthMax;
+    });
+    // Görsel olarak çubukların sona dayanmaması için %10 pay bırakıyoruz
+    return maxVal > 0 ? maxVal * 1.1 : 1000;
+  }, [harcamalar]);
+
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
@@ -79,7 +100,6 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  // --- KATEGORİ GRAFİĞİ (0'lar Dahil) ---
   const barData = useMemo(() => {
     const totals = {};
     filteredHarcamalar.forEach(h => {
@@ -87,13 +107,11 @@ const RaporlarContent = () => {
       if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
       totals[key] = (totals[key] || 0) + Number(h.miktar || 0);
     });
-
     const chartDataItems = ALL_CATEGORIES.map(cat => ({
       label: cat,
       data: totals[cat] || 0,
       color: categoryColors[cat] || "#AAAAAA"
     }));
-
     return {
       labels: chartDataItems.map(item => item.label),
       datasets: [{
@@ -105,41 +123,34 @@ const RaporlarContent = () => {
     };
   }, [filteredHarcamalar]);
 
-  // --- MARKET GRAFİĞİ (0'lar Dahil) ---
   const marketBarData = useMemo(() => {
     const marketTotals = {};
     filteredHarcamalar.filter(h => h.kategori === "Market").forEach(h => {
       const key = MARKETLER.includes(h.altKategori) ? h.altKategori : "Diğer";
       marketTotals[key] = (marketTotals[key] || 0) + Number(h.miktar || 0);
     });
-
     const items = MARKETLER.map((m, idx) => ({
       label: m,
       data: marketTotals[m] || 0,
       color: `hsl(${(idx * 360) / MARKETLER.length}, 70%, 60%)`
     }));
-
     return { labels: items.map(i => i.label), datasets: [{ label: "Market (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
-  // --- GİYİM GRAFİĞİ (0'lar Dahil) ---
   const giyimBarData = useMemo(() => {
     const giyimTotals = {};
     filteredHarcamalar.filter(h => h.kategori === "Giyim").forEach(h => {
       const key = GIYIM_KISILERI.includes(h.altKategori) ? h.altKategori : "Hediye";
       giyimTotals[key] = (giyimTotals[key] || 0) + Number(h.miktar || 0);
     });
-
     const items = GIYIM_KISILERI.map((kisi, idx) => ({
       label: kisi,
       data: giyimTotals[kisi] || 0,
       color: `hsl(${(idx * 60) + 200}, 70%, 50%)`
     }));
-
     return { labels: items.map(i => i.label), datasets: [{ label: "Giyim (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
-  // --- AİLE GRAFİĞİ (0'lar Dahil) ---
   const aileBarData = useMemo(() => {
     const aileTotals = {};
     filteredHarcamalar.filter(h => h.kategori === "Aile").forEach(h => {
@@ -147,21 +158,30 @@ const RaporlarContent = () => {
         aileTotals[h.altKategori] = (aileTotals[h.altKategori] || 0) + Number(h.miktar || 0);
       }
     });
-
     const items = AILE_UYELERI.map((uye, idx) => ({
       label: uye,
       data: aileTotals[uye] || 0,
       color: `hsl(${(idx * 40) + 20}, 80%, 60%)`
     }));
-
     return { labels: items.map(i => i.label), datasets: [{ label: "Aile (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
   }, [filteredHarcamalar]);
 
-  const barOptions = {
-    responsive: true, indexAxis: 'y', maintainAspectRatio: false,
+  // --- GÜNCELLENMİŞ SABİT ÖLÇEKLİ OPTIONS ---
+  const getBarOptions = (customMax) => ({
+    responsive: true, 
+    indexAxis: 'y', 
+    maintainAspectRatio: false,
     scales: { 
-      x: { beginAtZero: true, grid: { display: false } }, 
-      y: { grid: { display: false }, ticks: { autoSkip: false } } 
+      x: { 
+        beginAtZero: true, 
+        grid: { display: false },
+        max: customMax, // Çubuk boylarını sabitleyen kritik nokta
+        ticks: { display: true }
+      }, 
+      y: { 
+        grid: { display: false }, 
+        ticks: { autoSkip: false } 
+      } 
     },
     plugins: { 
       legend: { display: false }, 
@@ -172,7 +192,7 @@ const RaporlarContent = () => {
         font: { weight: 'bold', size: 10 } 
       } 
     }
-  };
+  });
 
   const hasData = filteredHarcamalar.length > 0;
 
@@ -197,24 +217,28 @@ const RaporlarContent = () => {
           <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
             <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Harcama Dağılımı</Title>
             <div className="p-2" style={{ height: `${(ALL_CATEGORIES.length * 35) + 100}px` }}>
-              <Bar data={barData} options={barOptions} />
+              <Bar data={barData} options={getBarOptions(globalMax)} />
             </div>
           </Card>
           
           <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
             <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Giyim Harcamaları 👕</Title>
-            <div className="p-2" style={{ height: '280px' }}><Bar data={giyimBarData} options={barOptions} /></div>
+            <div className="p-2" style={{ height: '280px' }}>
+                <Bar data={giyimBarData} options={getBarOptions(globalMax)} />
+            </div>
           </Card>
 
           <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
             <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Aile Harcamaları 👨‍👩‍👧‍👦</Title>
-            <div className="p-2" style={{ height: '220px' }}><Bar data={aileBarData} options={barOptions} /></div>
+            <div className="p-2" style={{ height: '220px' }}>
+                <Bar data={aileBarData} options={getBarOptions(globalMax)} />
+            </div>
           </Card>
 
           <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
             <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Market Detayı</Title>
             <div className="p-2" style={{ height: `${(MARKETLER.length * 32) + 100}px` }}>
-              <Bar data={marketBarData} options={barOptions} />
+              <Bar data={marketBarData} options={getBarOptions(globalMax)} />
             </div>
           </Card>
         </>
