@@ -42,22 +42,22 @@ const { Text } = Typography;
 const { Option } = Select;
 
 const CategoryIcons = {
-  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
-  Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
-  Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
-  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
-  Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
-  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
-  Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
-  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100" },
-  Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
-  İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
-  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
-  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
+  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100", gradient: "from-teal-400 to-cyan-500", glow: "shadow-teal-500/50" },
+  Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100", gradient: "from-red-400 to-pink-500", glow: "shadow-red-500/50" },
+  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100", gradient: "from-pink-400 to-rose-500", glow: "shadow-pink-500/50" },
+  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100", gradient: "from-amber-400 to-orange-500", glow: "shadow-amber-500/50" },
+  Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100", gradient: "from-purple-400 to-violet-500", glow: "shadow-purple-500/50" },
+  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100", gradient: "from-indigo-400 to-blue-500", glow: "shadow-indigo-500/50" },
+  Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100", gradient: "from-lime-400 to-green-500", glow: "shadow-lime-500/50" },
+  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100", gradient: "from-emerald-400 to-teal-500", glow: "shadow-emerald-500/50" },
+  Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100", gradient: "from-sky-400 to-blue-500", glow: "shadow-sky-500/50" },
+  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100", gradient: "from-yellow-400 to-orange-500", glow: "shadow-yellow-500/50" },
+  Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100", gradient: "from-gray-400 to-slate-500", glow: "shadow-gray-500/50" },
+  İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100", gradient: "from-blue-400 to-cyan-500", glow: "shadow-blue-500/50" },
+  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100", gradient: "from-fuchsia-400 to-pink-500", glow: "shadow-fuchsia-500/50" },
+  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100", gradient: "from-orange-400 to-red-500", glow: "shadow-orange-500/50" },
+  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100", gradient: "from-green-400 to-emerald-500", glow: "shadow-green-500/50" },
+  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100", gradient: "from-neutral-400 to-gray-500", glow: "shadow-neutral-500/50" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
@@ -277,14 +277,73 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-4">
-      <div className="text-center mb-6 pt-4">
-        <div className="text-blue-600 font-bold text-xl">{currentTopCategory}</div>
-        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
+    <main className="flex-1 px-4 pt-4 pb-4 relative overflow-hidden">
+      {/* Animated Space Background */}
+      <div className="fixed inset-0 bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 -z-10">
+        {/* Stars */}
+        {[...Array(100)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              opacity: Math.random() * 0.7 + 0.3,
+              animationDuration: `${Math.random() * 2 + 1}s`
+            }}
+          />
+        ))}
+        
+        {/* Planet 1 - Large Purple */}
+        <div 
+          className="absolute w-64 h-64 rounded-full opacity-30 blur-2xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 30% 30%, #a855f7, #6366f1)',
+            top: '-10%',
+            right: '-10%',
+            animationDuration: '4s'
+          }}
+        />
+        
+        {/* Planet 2 - Small Blue */}
+        <div 
+          className="absolute w-32 h-32 rounded-full opacity-40 blur-xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 40% 40%, #60a5fa, #3b82f6)',
+            bottom: '20%',
+            left: '5%',
+            animationDuration: '3s',
+            animationDelay: '1s'
+          }}
+        />
+        
+        {/* Planet 3 - Medium Pink */}
+        <div 
+          className="absolute w-48 h-48 rounded-full opacity-25 blur-2xl animate-pulse"
+          style={{
+            background: 'radial-gradient(circle at 35% 35%, #ec4899, #f43f5e)',
+            bottom: '-5%',
+            right: '10%',
+            animationDuration: '5s',
+            animationDelay: '2s'
+          }}
+        />
+
+        {/* Shooting Stars */}
+        <div className="absolute top-1/4 left-1/4 w-1 h-20 bg-gradient-to-b from-white to-transparent opacity-60 animate-ping" 
+             style={{ animationDuration: '3s', transform: 'rotate(45deg)' }} />
+        <div className="absolute top-1/3 right-1/3 w-1 h-16 bg-gradient-to-b from-white to-transparent opacity-40 animate-ping" 
+             style={{ animationDuration: '4s', animationDelay: '1.5s', transform: 'rotate(30deg)' }} />
+      </div>
+
+      <div className="text-center mb-6 pt-4 relative z-10">
+        <div className="text-white font-bold text-xl drop-shadow-lg">{currentTopCategory}</div>
+        <div className="text-white/90 font-semibold text-base mt-1 backdrop-blur-sm bg-white/10 px-4 py-1 rounded-full inline-block border border-white/20">{formattedTotal} €</div>
       </div>
 
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-105 z-20 transition-all">
+        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 text-white flex flex-col items-center justify-center shadow-2xl shadow-purple-500/50 cursor-pointer hover:scale-105 z-20 transition-all border-2 border-white/30">
           <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
         </div>
 
@@ -298,16 +357,16 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             const x = radius * Math.cos(r);
             const y = radius * Math.sin(r);
             const isTop = cat === currentTopCategory;
-            const { icon: Icon, color, bgColor } = CategoryIcons[cat];
+            const { icon: Icon, gradient, glow } = CategoryIcons[cat];
 
             return (
               <button key={cat} onClick={() => handleIconClick(cat)}
                 className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
-                  isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color}`
+                  isTop ? `bg-gradient-to-br ${gradient} scale-150 ring-4 ring-white/50 border-2 border-white z-10 shadow-2xl ${glow}` : `bg-gradient-to-br ${gradient} shadow-lg ${glow}`
                 }`}
                 style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
               >
-                <Icon className={isTop ? "w-6 h-6" : "w-5 h-5"} />
+                <Icon className={`text-white ${isTop ? "w-6 h-6" : "w-5 h-5"}`} />
               </button>
             );
           })}
@@ -324,7 +383,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
           <div className="grid grid-cols-2 gap-3">
             <Form.Item name="tarih" label="Tarih" className="mb-2">
-              <CustomDayPicker disabledDate={(c) => c && c.isAfter(dayjs(), "day")} />
+              <CustomDayPicker />
             </Form.Item>
             {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
               <Form.Item name="altKategori" label="Alt Kategori" rules={[{ required: true, message: "Seç" }]} className="mb-2">
@@ -356,7 +415,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
           <div className="grid grid-cols-2 gap-3">
             <Form.Item name="tarih" label="Tarih" className="mb-2">
-              <CustomDayPicker disabledDate={(c) => c && c.isAfter(dayjs(), "day")} isIncome={true} />
+              <CustomDayPicker isIncome={true} />
             </Form.Item>
             <Form.Item name="kategori" label="Tür" className="mb-2">
               <Select>

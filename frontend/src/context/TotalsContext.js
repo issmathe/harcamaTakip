@@ -29,20 +29,27 @@ export const TotalsProvider = ({ children }) => {
     const now = dayjs();
     const startOfToday = now.startOf("day");
 
-    // 1. Bu Ayın Gelirleri (Sadece 'gelir' kategorisi)
+    // Yardımcı fonksiyon: Gelecek tarihli işlemleri filtreler
+    const isPastOrPresent = (date) => !dayjs(date).isAfter(now);
+
+    // 1. Bu Ayın Gelirleri (Sadece 'gelir' kategorisi ve tarihi gelmiş olanlar)
     const totalIncome = (totals.gelirler || [])
       .filter(g => {
         const d = dayjs(g.createdAt);
-        return d.isSame(now, "month") && d.isSame(now, "year") && g.kategori?.toLowerCase() === "gelir";
+        return d.isSame(now, "month") && d.isSame(now, "year") && 
+               g.kategori?.toLowerCase() === "gelir" && 
+               isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Tasarruf kategorisi HARİÇ - Gider kutusuna yansımaz)
+    // 2. Bu Ayın Giderleri (Tasarruf HARİÇ ve tarihi gelmiş olanlar)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
         const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf";
-        return d.isSame(now, "month") && d.isSame(now, "year") && isNotSavings;
+        return d.isSame(now, "month") && d.isSame(now, "year") && 
+               isNotSavings && 
+               isPastOrPresent(h.createdAt);
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
@@ -56,31 +63,31 @@ export const TotalsProvider = ({ children }) => {
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     // 4. Kümülatif Hesaplamalar
-    
-    // Sadece gerçek harcamalar (Gider kutusu için)
+
+    // Sadece gerçek harcamalar (Gider kutusu için - Tarihi gelmiş olanlar)
     const cumulativeExpense = (totals.harcamalar || [])
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf")
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf" && isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankadan çıkan her şey (Normal Harcamalar + Tasarruflar)
+    // Bankadan çıkan her şey (Normal Harcamalar + Tasarruflar - Tarihi gelmiş olanlar)
     const totalExitFromBank = (totals.harcamalar || [])
+      .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankaya giren sadece gerçek gelirler (Tasarruflar gelir olarak eklenmişse onları burada saymıyoruz)
+    // Bankaya giren sadece gerçek gelirler (Tarihi gelmiş olanlar)
     const cumulativeOnlyIncome = (totals.gelirler || [])
-      .filter(g => g.kategori?.toLowerCase() === "gelir")
+      .filter(g => g.kategori?.toLowerCase() === "gelir" && isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Tüm zamanların tüm gelirleri (Portföy için: Gelir + Tasarruf Gelirleri)
+    // Tüm zamanların tüm gelirleri (Portföy için: Gelir + Tasarruf Gelirleri - Tarihi gelmiş olanlar)
     const cumulativeTotalIncome = (totals.gelirler || [])
+      .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Banka Bakiyesi: Sadece 'Gelir' kalemleri - (Harcamalar + Tasarruflar)
-    // Bu sayede tasarruf eklediğinde bankadaki paran azalır.
+    // Banka Bakiyesi: Sadece bugüne kadar gerçekleşmiş işlemler
     const bankBalance = cumulativeOnlyIncome - totalExitFromBank;
     
-    // Kümülatif Bakiye (Portföy): Tüm Gelirler - Sadece Gerçek Giderler
-    // Tasarruflar "harcama" olmadığı için portföyü azaltmaz, sadece bankadan cüzdana/fona geçmiş olur.
+    // Kümülatif Bakiye (Portföy): Gerçekleşmiş Tüm Gelirler - Gerçekleşmiş Giderler
     const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {
