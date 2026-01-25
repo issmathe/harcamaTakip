@@ -1,6 +1,14 @@
+// pages/Raporlar.jsx
 import React, { useMemo, useState, useCallback } from "react";
-import { Card, Typography, Empty, Button } from "antd";
-import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { Card, Typography, Empty, Button, Row, Col, Statistic, Divider } from "antd";
+import { 
+  ArrowLeftOutlined, 
+  ArrowRightOutlined, 
+  RiseOutlined, 
+  FallOutlined, 
+  WalletOutlined,
+  ShoppingOutlined
+} from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
 import { Bar } from "react-chartjs-2";
 
@@ -20,16 +28,9 @@ import AylikHarcamaTrendGrafigi from "../components/grafik/AylikHarcamaTrendGraf
 
 dayjs.locale(tr);
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-  ChartDataLabels
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const ALL_CATEGORIES = [
   "Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim",
@@ -67,11 +68,26 @@ const RaporlarContent = () => {
     });
   }, [harcamalar, selectedMonth, selectedYear]);
 
-  // --- TÜM VERİLER İÇİNDEKİ EN YÜKSEK DEĞERİ BULMA ---
-  // Bu değer, ayları değiştirseniz bile çubukların ölçeğini sabit tutar.
+  // --- İstatistikler ---
+  const stats = useMemo(() => {
+    const currentTotal = filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+    const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
+    const lastMonthTotal = harcamalar
+      .filter(h => dayjs(h.createdAt).month() === lastMonthDate.month() && dayjs(h.createdAt).year() === lastMonthDate.year())
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+    const catTotals = {};
+    filteredHarcamalar.forEach(h => {
+        const cat = h.kategori || "Diğer";
+        catTotals[cat] = (catTotals[cat] || 0) + Number(h.miktar);
+    });
+    const topCategory = Object.entries(catTotals).sort((a,b) => b[1] - a[1])[0] || ["-", 0];
+
+    return { currentTotal, lastMonthTotal, topCategory };
+  }, [filteredHarcamalar, harcamalar, selectedMonth, selectedYear]);
+
   const globalMax = useMemo(() => {
-    if (!harcamalar.length) return 1000;
-    // Kategori bazlı toplamları hesaplayıp en büyüğünü buluyoruz
+    if (!harcamalar.length) return 500;
     const totalsPerMonth = {};
     harcamalar.forEach(h => {
       const monthKey = dayjs(h.createdAt).format("YYYY-MM");
@@ -79,14 +95,12 @@ const RaporlarContent = () => {
       const cat = h.kategori || "Diğer";
       totalsPerMonth[monthKey][cat] = (totalsPerMonth[monthKey][cat] || 0) + Number(h.miktar || 0);
     });
-    
     let maxVal = 0;
     Object.values(totalsPerMonth).forEach(monthObj => {
       const monthMax = Math.max(...Object.values(monthObj));
       if (monthMax > maxVal) maxVal = monthMax;
     });
-    // Görsel olarak çubukların sona dayanmaması için %10 pay bırakıyoruz
-    return maxVal > 0 ? maxVal * 1.1 : 1000;
+    return maxVal > 0 ? maxVal * 1.1 : 500;
   }, [harcamalar]);
 
   const changeMonth = useCallback((direction) => {
@@ -100,155 +114,132 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  const barData = useMemo(() => {
-    const totals = {};
-    filteredHarcamalar.forEach(h => {
-      let key = h.kategori === "Restoran / Kafe" ? "Restoran" : h.kategori;
-      if (!ALL_CATEGORIES.includes(key)) key = "Diğer";
-      totals[key] = (totals[key] || 0) + Number(h.miktar || 0);
-    });
-    const chartDataItems = ALL_CATEGORIES.map(cat => ({
-      label: cat,
-      data: totals[cat] || 0,
-      color: categoryColors[cat] || "#AAAAAA"
-    }));
-    return {
-      labels: chartDataItems.map(item => item.label),
-      datasets: [{
-          label: "Toplam Harcama (€)",
-          data: chartDataItems.map(item => item.data),
-          backgroundColor: chartDataItems.map(item => item.color),
-          borderWidth: 1,
-      }]
-    };
-  }, [filteredHarcamalar]);
-
-  const marketBarData = useMemo(() => {
-    const marketTotals = {};
-    filteredHarcamalar.filter(h => h.kategori === "Market").forEach(h => {
-      const key = MARKETLER.includes(h.altKategori) ? h.altKategori : "Diğer";
-      marketTotals[key] = (marketTotals[key] || 0) + Number(h.miktar || 0);
-    });
-    const items = MARKETLER.map((m, idx) => ({
-      label: m,
-      data: marketTotals[m] || 0,
-      color: `hsl(${(idx * 360) / MARKETLER.length}, 70%, 60%)`
-    }));
-    return { labels: items.map(i => i.label), datasets: [{ label: "Market (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
-  }, [filteredHarcamalar]);
-
-  const giyimBarData = useMemo(() => {
-    const giyimTotals = {};
-    filteredHarcamalar.filter(h => h.kategori === "Giyim").forEach(h => {
-      const key = GIYIM_KISILERI.includes(h.altKategori) ? h.altKategori : "Hediye";
-      giyimTotals[key] = (giyimTotals[key] || 0) + Number(h.miktar || 0);
-    });
-    const items = GIYIM_KISILERI.map((kisi, idx) => ({
-      label: kisi,
-      data: giyimTotals[kisi] || 0,
-      color: `hsl(${(idx * 60) + 200}, 70%, 50%)`
-    }));
-    return { labels: items.map(i => i.label), datasets: [{ label: "Giyim (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
-  }, [filteredHarcamalar]);
-
-  const aileBarData = useMemo(() => {
-    const aileTotals = {};
-    filteredHarcamalar.filter(h => h.kategori === "Aile").forEach(h => {
-      if (AILE_UYELERI.includes(h.altKategori)) {
-        aileTotals[h.altKategori] = (aileTotals[h.altKategori] || 0) + Number(h.miktar || 0);
-      }
-    });
-    const items = AILE_UYELERI.map((uye, idx) => ({
-      label: uye,
-      data: aileTotals[uye] || 0,
-      color: `hsl(${(idx * 40) + 20}, 80%, 60%)`
-    }));
-    return { labels: items.map(i => i.label), datasets: [{ label: "Aile (€)", data: items.map(i => i.data), backgroundColor: items.map(i => i.color) }] };
-  }, [filteredHarcamalar]);
-
-  // --- GÜNCELLENMİŞ SABİT ÖLÇEKLİ OPTIONS ---
   const getBarOptions = (customMax) => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
     scales: { 
-      x: { 
-        beginAtZero: true, 
-        grid: { display: false },
-        max: customMax, // Çubuk boylarını sabitleyen kritik nokta
-        ticks: { display: true }
-      }, 
-      y: { 
-        grid: { display: false }, 
-        ticks: { autoSkip: false } 
-      } 
+      x: { beginAtZero: true, grid: { display: false }, max: customMax, ticks: { display: false } }, 
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } } 
     },
     plugins: { 
       legend: { display: false }, 
       datalabels: { 
-        anchor: 'end', 
-        align: 'end', 
-        formatter: (val) => val > 0 ? `${val.toFixed(2)}€` : '0€', 
+        anchor: 'end', align: 'end', 
+        formatter: (val) => val > 0 ? `${val.toFixed(0)}€` : '', 
         font: { weight: 'bold', size: 10 } 
       } 
     }
   });
 
+  // Veri Setleri
+  const barData = useMemo(() => ({
+    labels: ALL_CATEGORIES,
+    datasets: [{
+      data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]),
+      borderRadius: 4, barThickness: 12
+    }]
+  }), [filteredHarcamalar]);
+
+  const marketBarData = useMemo(() => ({
+    labels: MARKETLER,
+    datasets: [{
+      data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: "#338AFF", borderRadius: 4, barThickness: 10
+    }]
+  }), [filteredHarcamalar]);
+
+  const giyimBarData = useMemo(() => ({
+    labels: GIYIM_KISILERI,
+    datasets: [{
+      data: GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori === "Giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: "#FF6384", borderRadius: 4, barThickness: 15
+    }]
+  }), [filteredHarcamalar]);
+
+  const aileBarData = useMemo(() => ({
+    labels: AILE_UYELERI,
+    datasets: [{
+      data: AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori === "Aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 15
+    }]
+  }), [filteredHarcamalar]);
+
   const hasData = filteredHarcamalar.length > 0;
 
   return (
-    <div className="w-full">
-      <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} type="primary" shape="circle" size="large" />
-          <Title level={3} className="text-center text-gray-800 m-0 capitalize">{displayMonth}</Title>
-          <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} type="primary" shape="circle" size="large" />
-        </div>
-      </Card>
-
-      <AylikHarcamaTrendGrafigi />
-      
-      {!hasData ? (
-        <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4 p-8 text-center">
-          <Empty description={`${displayMonth} dönemi için harcama kaydı bulunamadı.`} />
+    <div className="max-w-4xl mx-auto pb-20">
+      {/* SABİT (STICKY) AY SEÇİCİ */}
+      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
+        <Card className="shadow-md border-none bg-blue-600 rounded-2xl mx-1">
+          <div className="flex justify-between items-center text-white">
+            <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" />
+            <div className="text-center">
+              <Title level={4} className="m-0 text-white capitalize" style={{ color: 'white' }}>{displayMonth}</Title>
+              <Text className="text-blue-100 text-[10px] uppercase tracking-widest">Finansal Rapor</Text>
+            </div>
+            <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} ghost shape="circle" />
+          </div>
         </Card>
-      ) : (
-        <>
-          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Harcama Dağılımı</Title>
-            <div className="p-2" style={{ height: `${(ALL_CATEGORIES.length * 35) + 100}px` }}>
-              <Bar data={barData} options={getBarOptions(globalMax)} />
-            </div>
-          </Card>
-          
-          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Giyim Harcamaları 👕</Title>
-            <div className="p-2" style={{ height: '280px' }}>
-                <Bar data={giyimBarData} options={getBarOptions(globalMax)} />
-            </div>
-          </Card>
+      </div>
 
-          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Aile Harcamaları 👨‍👩‍👧‍👦</Title>
-            <div className="p-2" style={{ height: '220px' }}>
-                <Bar data={aileBarData} options={getBarOptions(globalMax)} />
-            </div>
-          </Card>
+      <div className="px-1">
+        <Row gutter={[12, 12]} className="mb-4">
+          <Col span={12}>
+            <Card className="rounded-2xl shadow-sm border-none">
+              <Statistic title={<Text type="secondary" size="small">Toplam</Text>} value={stats.currentTotal} precision={2} suffix="€" prefix={<WalletOutlined className="text-blue-500" />} valueStyle={{fontSize: '18px', fontWeight: 'bold'}} />
+              <div className="mt-1">
+                {stats.currentTotal > stats.lastMonthTotal ? <Text type="danger" className="text-[10px]"><RiseOutlined /> Artış</Text> : <Text type="success" className="text-[10px]"><FallOutlined /> Azalış</Text>}
+              </div>
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card className="rounded-2xl shadow-sm border-none">
+              <Statistic title={<Text type="secondary" size="small">Zirve</Text>} value={stats.topCategory[0]} prefix={<ShoppingOutlined className="text-orange-500" />} valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
+              <Text type="secondary" className="text-[10px]">{stats.topCategory[1].toFixed(1)} €</Text>
+            </Card>
+          </Col>
+        </Row>
 
-          <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-            <Title level={4} className="text-center text-gray-700 mb-4 pt-4">Market Detayı</Title>
-            <div className="p-2" style={{ height: `${(MARKETLER.length * 32) + 100}px` }}>
-              <Bar data={marketBarData} options={getBarOptions(globalMax)} />
-            </div>
-          </Card>
-        </>
-      )}
+        <AylikHarcamaTrendGrafigi />
+        
+        {!hasData ? (
+          <Card className="rounded-2xl mt-4 shadow-sm p-10 text-center"><Empty description="Kayıt bulunamadı" /></Card>
+        ) : (
+          <div className="space-y-4 mt-4">
+            <Card title="Genel Dağılım" className="rounded-2xl shadow-sm border-none">
+              <div style={{ height: `${(ALL_CATEGORIES.length * 30) + 50}px` }}>
+                <Bar data={barData} options={getBarOptions(globalMax)} />
+              </div>
+            </Card>
+
+            <Row gutter={[12, 12]}>
+              <Col xs={24} md={12}>
+                <Card title="Giyim" className="rounded-2xl shadow-sm border-none">
+                  <div style={{ height: '180px' }}><Bar data={giyimBarData} options={getBarOptions(globalMax)} /></div>
+                  <Divider className="my-4" />
+                  <Title level={5} className="mb-4">Aile</Title>
+                  <div style={{ height: '150px' }}><Bar data={aileBarData} options={getBarOptions(globalMax)} /></div>
+                </Card>
+              </Col>
+              <Col xs={24} md={12}>
+                <Card title="Market Detayı" className="rounded-2xl shadow-sm border-none">
+                  <div style={{ height: `${(MARKETLER.length * 28) + 50}px` }}>
+                    <Bar data={marketBarData} options={getBarOptions(globalMax)} />
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 const Raporlar = () => (
-    <div className="p-4 pt-0"> 
+    <div className="bg-gray-50 min-h-screen"> 
         <RaporlarContent />
     </div>
 );

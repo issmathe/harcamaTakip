@@ -1,29 +1,48 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useRef, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { TotalsProvider } from "./context/TotalsContext";
-// Home.jsx'ten alınıp buraya taşınması gereken bileşenler
+
+// Mevcut Bileşenlerin
 import Header from "./components/Home/Header.jsx"; 
 import BottomNav from "./components/Home/BottomNav.jsx";
-
-// Sayfa Bileşenleri
 import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; 
 
+// --- Scroll SIFIRLAMA MANTIĞI BURADA ---
+const ScrollToTop = ({ containerRef }) => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo(0, 0);
+    }
+  }, [pathname, containerRef]);
+
+  return null;
+};
+// ---------------------------------------
+
 function App() {
+  const mainRef = useRef(null);
+
   return (
     <TotalsProvider>
       <Router>
+        {/* İçeride tanımladığımız için hata vermez */}
+        <ScrollToTop containerRef={mainRef} />
+        
         <div className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden touch-none select-none">
           
-          {/* Üst Sabit Header */}
           <div className="z-[999] flex-shrink-0"> 
             <Header />
           </div>
 
-          {/* Orta Alan */}
-          <main className="flex-1 overflow-y-auto relative z-[1]"> 
+          <main 
+            ref={mainRef} 
+            className="flex-1 overflow-y-auto relative z-[1]"
+          > 
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/gelirler" element={<Gelirler />} />
@@ -32,7 +51,6 @@ function App() {
             </Routes>
           </main>
           
-          {/* Alt Sabit Navigasyon */}
           <div className="z-[998] flex-shrink-0"> 
             <BottomNav />
           </div>

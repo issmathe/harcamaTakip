@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+// components/grafik/AylikHarcamaTrendGrafigi.jsx
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { Card, Typography, Empty } from "antd";
 import { Line } from "react-chartjs-2";
 import { useTotalsContext } from "../../context/TotalsContext";
@@ -16,25 +17,19 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-// ChartJS bileşenlerini kaydet
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ChartTitle,
-  Tooltip,
-  Legend,
-  Filler,
-  ChartDataLabels
+  CategoryScale, LinearScale, PointElement, LineElement,
+  ChartTitle, Tooltip, Legend, Filler, ChartDataLabels
 );
 
-const { Title } = Typography;
+const { Text } = Typography;
 
 const AylikHarcamaTrendGrafigi = () => {
   const { harcamalar = [] } = useTotalsContext();
+  const chartRef = useRef(null);
+  const [chartData, setChartData] = useState({ datasets: [] });
 
-  const trendData = useMemo(() => {
+  const trendCalculation = useMemo(() => {
     const last6Months = [];
     for (let i = 5; i >= 0; i--) {
       last6Months.push(dayjs().subtract(i, "month"));
@@ -48,92 +43,104 @@ const AylikHarcamaTrendGrafigi = () => {
           return t.month() === month.month() && t.year() === month.year();
         })
         .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-      return Number(monthTotal.toFixed(2));
+      return Number(monthTotal.toFixed(0));
     });
 
-    return {
-      labels,
+    return { labels, data };
+  }, [harcamalar]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    // Gradyan oluşturma
+    const ctx = chart.ctx;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, "rgba(59, 130, 246, 0.5)"); // Blue-500
+    gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
+
+    setChartData({
+      labels: trendCalculation.labels,
       datasets: [
         {
-          label: "Aylık Toplam Harcama",
-          data,
+          label: "Harcama",
+          data: trendCalculation.data,
           fill: true,
-          backgroundColor: "rgba(54, 162, 235, 0.2)",
-          borderColor: "rgba(54, 162, 235, 1)",
-          pointBackgroundColor: "rgba(54, 162, 235, 1)",
-          pointBorderColor: "#fff",
-          pointHoverBackgroundColor: "#fff",
-          pointHoverBorderColor: "rgba(54, 162, 235, 1)",
-          tension: 0.4,
-          pointRadius: 5,
+          backgroundColor: gradient,
+          borderColor: "#3b82f6",
+          borderWidth: 3,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#3b82f6",
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.4, // Kavisli hatlar
         },
       ],
-    };
-  }, [harcamalar]);
+    });
+  }, [trendCalculation]);
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
-      // Veri etiketleri (datalabels) ayarları
+      legend: { display: false },
       datalabels: {
-        display: true,
+        display: (context) => context.dataset.data[context.dataIndex] > 0,
         align: "top",
-        offset: 8,
-        formatter: (value) => {
-          return value > 0 ? `${value}€` : "";
-        },
-        font: {
-          weight: "bold",
-          size: 11,
-        },
-        color: "#444",
+        offset: 10,
+        formatter: (value) => `${value}€`,
+        font: { weight: "bold", size: 10, family: 'Inter' },
+        color: "#1e40af", // Blue-800
       },
       tooltip: {
+        backgroundColor: "#1e293b",
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: false,
         callbacks: {
-          label: (context) => `Toplam: ${context.parsed.y}€`,
+          label: (context) => ` Toplam: ${context.parsed.y} €`,
         },
       },
     },
     scales: {
       y: {
+        display: false, // Sayıları gizle, daha temiz dursun
         beginAtZero: true,
-        ticks: {
-          display: false, // Grafik üzerinde kalabalık yapmaması için y ekseni sayılarını gizledik
-        },
-        grid: {
-          display: false,
-        },
+        grid: { display: false },
       },
       x: {
-        grid: {
-          display: false,
-        },
+        grid: { display: false },
+        ticks: {
+          font: { size: 11, weight: '500' },
+          color: "#94a3b8"
+        }
       },
     },
-    layout: {
-      padding: {
-        top: 25, // Etiketlerin en üstte kesilmemesi için pay bıraktık
-      },
-    },
+    layout: { padding: { top: 30, left: 10, right: 10, bottom: 0 } },
   };
 
-  const hasData = trendData.datasets[0].data.some((val) => val > 0);
+  const hasData = trendCalculation.data.some((val) => val > 0);
 
   return (
-    <Card className="shadow-lg rounded-none sm:rounded-xl bg-white mb-4">
-      <Title level={4} className="text-center text-gray-700 mb-4">
-        Son 6 Aylık Harcama Trendi
-      </Title>
+    <Card className="rounded-2xl shadow-sm border-none bg-white overflow-hidden">
+      <div className="flex justify-between items-center mb-6">
+        <Text strong className="text-gray-500 text-xs uppercase tracking-wider">
+          6 Aylık Trend
+        </Text>
+        {hasData && (
+            <Text className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">
+                Canlı Veri
+            </Text>
+        )}
+      </div>
+
       {hasData ? (
-        <div style={{ height: "250px" }}>
-          <Line data={trendData} options={options} />
+        <div style={{ height: "180px" }}>
+          <Line ref={chartRef} data={chartData} options={options} />
         </div>
       ) : (
-        <Empty description="Trend verisi için yeterli harcama bulunamadı." />
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Veri henüz yok" />
       )}
     </Card>
   );
