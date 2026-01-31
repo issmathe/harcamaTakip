@@ -94,7 +94,7 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Kategoriler");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSearchVisible, setIsSearchVisible] = useState(false); // Arama görünürlüğü
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -163,8 +163,11 @@ const HarcamalarContent = () => {
   const filteredHarcamalar = useMemo(() => {
     return harcamalar
       .filter((h) => {
+        // createdAt yerine tarih bazlı filtreleme daha tutarlı olabilir ancak mevcut yapıyı koruyoruz
         const t = dayjs(h.createdAt);
         const isSearching = searchTerm.trim().length > 0;
+        
+        // Arama yapılıyorsa tarih filtresini devre dışı bırakıyoruz, yoksa seçili aya bakıyoruz
         const monthMatch = isSearching 
           ? true 
           : (t.month() === selectedMonth && t.year() === selectedYear);
@@ -197,11 +200,7 @@ const HarcamalarContent = () => {
     }, [selectedMonth, selectedYear]
   );
 
-  const isFutureMonth = useMemo(() => {
-    const current = dayjs().year(selectedYear).month(selectedMonth);
-    return current.isAfter(now, "month");
-  }, [selectedMonth, selectedYear, now]);
-
+  // İleriki ayları görmeni engelleyen kısıtlamayı kaldırdık (disabled={isFutureMonth} sildik)
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
 
   const openEditModal = (harcama) => {
@@ -260,7 +259,6 @@ const HarcamalarContent = () => {
 
   return (
     <div className="p-3 md:p-6 lg:p-8 max-w-4xl mx-auto">
-      {/* Kompakt Header Alanı */}
       <div className="sticky top-0 z-20 bg-gray-50 pb-2">
         <Card className="shadow-md rounded-xl" styles={{ body: { padding: "12px" } }}>
           <div className="flex items-center justify-between">
@@ -278,7 +276,6 @@ const HarcamalarContent = () => {
                 type="text" 
                 icon={<RightOutlined />} 
                 onClick={() => changeMonth("next")} 
-                disabled={isFutureMonth}
                 size="small"
               />
             </div>
@@ -303,7 +300,6 @@ const HarcamalarContent = () => {
             </div>
           </div>
 
-          {/* Expandable Search Input */}
           {isSearchVisible && (
             <div className="mt-3 transition-all">
               <Input
@@ -389,7 +385,11 @@ const HarcamalarContent = () => {
         centered
       >
         <div className="space-y-4 pt-2">
-          <CustomDayPicker value={formData.tarih} onChange={(date) => setFormData({ ...formData, tarih: date })} disabledDate={(current) => current && current.isAfter(dayjs(), "day")} isIncome={false} />
+          <CustomDayPicker 
+             value={formData.tarih} 
+             onChange={(date) => setFormData({ ...formData, tarih: date })} 
+             isIncome={false} 
+          />
           
           <Input 
             size="large" 
