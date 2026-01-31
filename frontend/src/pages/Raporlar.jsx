@@ -1,3 +1,4 @@
+// pages/Raporlar.jsx
 import React, { useMemo, useState, useCallback } from "react";
 import { Card, Typography, Empty, Button, Row, Col, Statistic, Divider } from "antd";
 import { 
@@ -60,71 +61,63 @@ const RaporlarContent = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
 
-  // OPTİMİZASYON: Tüm istatistikleri ve filtrelemeyi tek bir döngüde hallet
-  const memoizedData = useMemo(() => {
-    const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
-    const filtered = [];
-    let currentTotal = 0;
-    let lastMonthTotal = 0;
-    const catTotals = {};
-    const marketTotals = {};
-    const giyimTotals = {};
-    const aileTotals = {};
-
-    harcamalar.forEach(h => {
-      const t = dayjs(h.createdAt);
-      const m = t.month();
-      const y = t.year();
-      const miktar = Number(h.miktar || 0);
-
-      if (m === selectedMonth && y === selectedYear) {
-        filtered.push(h);
-        currentTotal += miktar;
-        
-        const cat = h.kategori || "Diğer";
-        catTotals[cat] = (catTotals[cat] || 0) + miktar;
-
-        if (cat === "Market") {
-          marketTotals[h.altKategori] = (marketTotals[h.altKategori] || 0) + miktar;
-        } else if (cat === "Giyim") {
-          giyimTotals[h.altKategori] = (giyimTotals[h.altKategori] || 0) + miktar;
-        } else if (cat === "Aile") {
-          aileTotals[h.altKategori] = (aileTotals[h.altKategori] || 0) + miktar;
-        }
-
-      } else if (m === lastMonthDate.month() && y === lastMonthDate.year()) {
-        lastMonthTotal += miktar;
-      }
+  const filteredHarcamalar = useMemo(() => {
+    return (harcamalar || []).filter((h) => {
+      const t = dayjs(h.createdAt); 
+      return t.month() === selectedMonth && t.year() === selectedYear;
     });
-
-    const topCategory = Object.entries(catTotals).sort((a,b) => b[1] - a[1])[0] || ["-", 0];
-
-    return { 
-      filtered, currentTotal, lastMonthTotal, topCategory, 
-      catTotals, marketTotals, giyimTotals, aileTotals 
-    };
   }, [harcamalar, selectedMonth, selectedYear]);
 
-  // Global Max hesaplaması grafikleri hizalamak içindir
+  // --- İstatistikler ---
+  const stats = useMemo(() => {
+    const currentTotal = filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+    const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
+    const lastMonthTotal = harcamalar
+      .filter(h => dayjs(h.createdAt).month() === lastMonthDate.month() && dayjs(h.createdAt).year() === lastMonthDate.year())
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+    const catTotals = {};
+    filteredHarcamalar.forEach(h => {
+        const cat = h.kategori || "Diğer";
+        catTotals[cat] = (catTotals[cat] || 0) + Number(h.miktar);
+    });
+    const topCategory = Object.entries(catTotals).sort((a,b) => b[1] - a[1])[0] || ["-", 0];
+
+    return { currentTotal, lastMonthTotal, topCategory };
+  }, [filteredHarcamalar, harcamalar, selectedMonth, selectedYear]);
+
   const globalMax = useMemo(() => {
     if (!harcamalar.length) return 500;
-    const values = Object.values(memoizedData.catTotals);
-    const max = values.length > 0 ? Math.max(...values) : 500;
-    return max * 1.2;
-  }, [memoizedData.catTotals, harcamalar.length]);
+    const totalsPerMonth = {};
+    harcamalar.forEach(h => {
+      const monthKey = dayjs(h.createdAt).format("YYYY-MM");
+      if (!totalsPerMonth[monthKey]) totalsPerMonth[monthKey] = {};
+      const cat = h.kategori || "Diğer";
+      totalsPerMonth[monthKey][cat] = (totalsPerMonth[monthKey][cat] || 0) + Number(h.miktar || 0);
+    });
+    let maxVal = 0;
+    Object.values(totalsPerMonth).forEach(monthObj => {
+      const monthMax = Math.max(...Object.values(monthObj));
+      if (monthMax > maxVal) maxVal = monthMax;
+    });
+    return maxVal > 0 ? maxVal * 1.1 : 500;
+  }, [harcamalar]);
 
   const changeMonth = useCallback((direction) => {
-    const current = dayjs().year(selectedYear).month(selectedMonth);
-    const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
-    setSelectedMonth(newDate.month());
-    setSelectedYear(newDate.year());
-  }, [selectedMonth, selectedYear]);
+      const current = dayjs().year(selectedYear).month(selectedMonth);
+      const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
+      setSelectedMonth(newDate.month());
+      setSelectedYear(newDate.year());
+    }, [selectedMonth, selectedYear]
+  );
 
-  const getBarOptions = useCallback((customMax) => ({
+  const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
+  const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
+
+  const getBarOptions = (customMax) => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
-    animation: { duration: 400 },
     scales: { 
       x: { beginAtZero: true, grid: { display: false }, max: customMax, ticks: { display: false } }, 
       y: { grid: { display: false }, ticks: { font: { size: 11 } } } 
@@ -137,47 +130,47 @@ const RaporlarContent = () => {
         font: { weight: 'bold', size: 10 } 
       } 
     }
-  }), []);
+  });
 
-  // Grafik Veri Setleri
+  // Veri Setleri
   const barData = useMemo(() => ({
     labels: ALL_CATEGORIES,
     datasets: [{
-      data: ALL_CATEGORIES.map(cat => memoizedData.catTotals[cat] || 0),
+      data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0)),
       backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]),
       borderRadius: 4, barThickness: 12
     }]
-  }), [memoizedData.catTotals]);
+  }), [filteredHarcamalar]);
 
   const marketBarData = useMemo(() => ({
     labels: MARKETLER,
     datasets: [{
-      data: MARKETLER.map(m => memoizedData.marketTotals[m] || 0),
+      data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)),
       backgroundColor: "#338AFF", borderRadius: 4, barThickness: 10
     }]
-  }), [memoizedData.marketTotals]);
+  }), [filteredHarcamalar]);
 
   const giyimBarData = useMemo(() => ({
     labels: GIYIM_KISILERI,
     datasets: [{
-      data: GIYIM_KISILERI.map(k => memoizedData.giyimTotals[k] || 0),
+      data: GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori === "Giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0)),
       backgroundColor: "#FF6384", borderRadius: 4, barThickness: 15
     }]
-  }), [memoizedData.giyimTotals]);
+  }), [filteredHarcamalar]);
 
   const aileBarData = useMemo(() => ({
     labels: AILE_UYELERI,
     datasets: [{
-      data: AILE_UYELERI.map(u => memoizedData.aileTotals[u] || 0),
+      data: AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori === "Aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0)),
       backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 15
     }]
-  }), [memoizedData.aileTotals]);
+  }), [filteredHarcamalar]);
 
-  const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
-  const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
+  const hasData = filteredHarcamalar.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
+      {/* SABİT (STICKY) AY SEÇİCİ */}
       <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
         <Card className="shadow-md border-none bg-blue-600 rounded-2xl mx-1">
           <div className="flex justify-between items-center text-white">
@@ -195,39 +188,24 @@ const RaporlarContent = () => {
         <Row gutter={[12, 12]} className="mb-4">
           <Col span={12}>
             <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic 
-                title={<Text type="secondary" className="text-xs">Toplam</Text>} 
-                value={memoizedData.currentTotal} 
-                precision={2} 
-                suffix="€" 
-                prefix={<WalletOutlined className="text-blue-500" />} 
-                valueStyle={{fontSize: '18px', fontWeight: 'bold'}} 
-              />
+              <Statistic title={<Text type="secondary" size="small">Toplam</Text>} value={stats.currentTotal} precision={2} suffix="€" prefix={<WalletOutlined className="text-blue-500" />} valueStyle={{fontSize: '18px', fontWeight: 'bold'}} />
               <div className="mt-1">
-                {memoizedData.currentTotal > memoizedData.lastMonthTotal ? 
-                  <Text type="danger" className="text-[10px]"><RiseOutlined /> Geçen aya göre artış</Text> : 
-                  <Text type="success" className="text-[10px]"><FallOutlined /> Geçen aya göre azalış</Text>
-                }
+                {stats.currentTotal > stats.lastMonthTotal ? <Text type="danger" className="text-[10px]"><RiseOutlined /> Artış</Text> : <Text type="success" className="text-[10px]"><FallOutlined /> Azalış</Text>}
               </div>
             </Card>
           </Col>
           <Col span={12}>
             <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic 
-                title={<Text type="secondary" className="text-xs">En Yüksek Harcama</Text>} 
-                value={memoizedData.topCategory[0]} 
-                prefix={<ShoppingOutlined className="text-orange-500" />} 
-                valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} 
-              />
-              <Text type="secondary" className="text-[10px]">{Number(memoizedData.topCategory[1]).toFixed(1)} €</Text>
+              <Statistic title={<Text type="secondary" size="small">Zirve</Text>} value={stats.topCategory[0]} prefix={<ShoppingOutlined className="text-orange-500" />} valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
+              <Text type="secondary" className="text-[10px]">{stats.topCategory[1].toFixed(1)} €</Text>
             </Card>
           </Col>
         </Row>
 
         <AylikHarcamaTrendGrafigi />
         
-        {memoizedData.filtered.length === 0 ? (
-          <Card className="rounded-2xl mt-4 shadow-sm p-10 text-center"><Empty description="Bu ay için kayıt bulunamadı" /></Card>
+        {!hasData ? (
+          <Card className="rounded-2xl mt-4 shadow-sm p-10 text-center"><Empty description="Kayıt bulunamadı" /></Card>
         ) : (
           <div className="space-y-4 mt-4">
             <Card title="Genel Dağılım" className="rounded-2xl shadow-sm border-none">
@@ -238,10 +216,10 @@ const RaporlarContent = () => {
 
             <Row gutter={[12, 12]}>
               <Col xs={24} md={12}>
-                <Card title="Giyim & Aile" className="rounded-2xl shadow-sm border-none">
+                <Card title="Giyim" className="rounded-2xl shadow-sm border-none">
                   <div style={{ height: '180px' }}><Bar data={giyimBarData} options={getBarOptions(globalMax)} /></div>
                   <Divider className="my-4" />
-                  <Title level={5} className="mb-4 text-sm px-2">Aile Üyeleri</Title>
+                  <Title level={5} className="mb-4">Aile</Title>
                   <div style={{ height: '150px' }}><Bar data={aileBarData} options={getBarOptions(globalMax)} /></div>
                 </Card>
               </Col>
