@@ -94,7 +94,7 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Kategoriler");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSearchVisible, setIsSearchVisible] = useState(false); // Arama görünürlüğü
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -144,6 +144,11 @@ const HarcamalarContent = () => {
   };
 
   const startDeleteProcess = (id) => {
+    // Haptic feedback (destekleniyorsa)
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
 
     const content = (
@@ -205,6 +210,11 @@ const HarcamalarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
 
   const openEditModal = (harcama) => {
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(30);
+    }
+
     const requiresSubCategory = ["Market", "Giyim", "Aile"].includes(harcama.kategori);
 
     setEditingHarcama(harcama);
@@ -332,7 +342,7 @@ const HarcamalarContent = () => {
             Bu dönemde kayıt bulunamadı.
           </Card>
         ) : (
-          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
+          <SwipeableList threshold={0.25} fullSwipe={false} listType={ListType.IOS}>
             {filteredHarcamalar.map((harcama) => {
               const { icon, color } = getCategoryDetails(harcama.kategori);
               const isToday = dayjs(harcama.createdAt).isSame(now, "day");
@@ -343,7 +353,7 @@ const HarcamalarContent = () => {
                   leadingActions={leadingActions(harcama)} 
                   trailingActions={trailingActions(harcama)}
                 >
-                  <div className={`flex items-center w-full p-4 mb-2 rounded-xl transition-all ${isToday ? "bg-white border-l-4 border-yellow-400 shadow-sm" : "bg-white border-b border-gray-100"}`}>
+                  <div className={`flex items-center w-full p-4 mb-3 rounded-xl transition-all active:scale-[0.98] ${isToday ? "bg-white border-l-4 border-yellow-400 shadow-sm" : "bg-white border-b border-gray-100"}`}>
                     <div className={`p-3 rounded-2xl mr-4 ${color} shadow-sm`}>{icon}</div>
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-start">
@@ -438,7 +448,7 @@ const HarcamalarContent = () => {
 
 const Harcamalar = () => (
   <div className="relative min-h-screen bg-gray-50">
-    <main className="pb-24"><HarcamalarContent /></main>
+    <main className="pb-24 safe-area-bottom"><HarcamalarContent /></main>
     <BottomNav />
   </div>
 );

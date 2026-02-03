@@ -1,5 +1,5 @@
 // pages/Raporlar.jsx
-import React, { useMemo, useState, useCallback, memo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { Card, Typography, Empty, Button, Row, Col, Statistic, Divider } from "antd";
 import { 
   ArrowLeftOutlined, 
@@ -54,12 +54,6 @@ const categoryColors = {
   "Hediye": "#FF3333", "Restoran": "#33FF8A", "Aile": "#AF52DE", "Diğer": "#AAAAAA"
 };
 
-const MemoizedBar = memo(({ data, options, height }) => (
-  <div style={{ height }} className="will-change-transform">
-    <Bar data={data} options={options} />
-  </div>
-));
-
 const RaporlarContent = () => {
   const { harcamalar = [] } = useTotalsContext();
   const now = dayjs();
@@ -74,6 +68,7 @@ const RaporlarContent = () => {
     });
   }, [harcamalar, selectedMonth, selectedYear]);
 
+  // --- İstatistikler ---
   const stats = useMemo(() => {
     const currentTotal = filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
     const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
@@ -119,11 +114,10 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  const getBarOptions = useCallback((customMax) => ({
+  const getBarOptions = (customMax) => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
-    animation: false,
     scales: { 
       x: { beginAtZero: true, grid: { display: false }, max: customMax, ticks: { display: false } }, 
       y: { grid: { display: false }, ticks: { font: { size: 11 } } } 
@@ -136,8 +130,9 @@ const RaporlarContent = () => {
         font: { weight: 'bold', size: 10 } 
       } 
     }
-  }), []);
+  });
 
+  // Veri Setleri
   const barData = useMemo(() => ({
     labels: ALL_CATEGORIES,
     datasets: [{
@@ -174,27 +169,26 @@ const RaporlarContent = () => {
   const hasData = filteredHarcamalar.length > 0;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 select-none touch-pan-y">
-      {/* Sticky Header - Fixed Height */}
-      <div className="flex-none p-4 pb-2 bg-gray-50 z-30">
-        <Card className="shadow-md border-none bg-blue-600 rounded-2xl" bodyStyle={{ padding: '24px 16px' }}>
+    <div className="max-w-4xl mx-auto pb-20">
+      {/* SABİT (STICKY) AY SEÇİCİ */}
+      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
+        <Card className="shadow-md border-none bg-blue-600 rounded-2xl mx-1">
           <div className="flex justify-between items-center text-white">
-            <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" size="small" />
+            <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" />
             <div className="text-center">
-              <Title level={5} className="m-0 text-white capitalize" style={{ color: 'white', fontSize: '16px' }}>{displayMonth}</Title>
-              <Text className="text-blue-100 text-[9px] uppercase tracking-widest block" style={{ lineHeight: '1' }}>Finansal Rapor</Text>
+              <Title level={4} className="m-0 text-white capitalize" style={{ color: 'white' }}>{displayMonth}</Title>
+              <Text className="text-blue-100 text-[10px] uppercase tracking-widest">Finansal Rapor</Text>
             </div>
-            <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} ghost shape="circle" size="small" />
+            <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} ghost shape="circle" />
           </div>
         </Card>
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
-        <Row gutter={[12, 12]}>
+      <div className="px-1">
+        <Row gutter={[12, 12]} className="mb-4">
           <Col span={12}>
             <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic title={<Text type="secondary" style={{fontSize: '11px'}}>Toplam</Text>} value={stats.currentTotal} precision={2} suffix="€" prefix={<WalletOutlined className="text-blue-500" />} valueStyle={{fontSize: '18px', fontWeight: 'bold'}} />
+              <Statistic title={<Text type="secondary" size="small">Toplam</Text>} value={stats.currentTotal} precision={2} suffix="€" prefix={<WalletOutlined className="text-blue-500" />} valueStyle={{fontSize: '18px', fontWeight: 'bold'}} />
               <div className="mt-1">
                 {stats.currentTotal > stats.lastMonthTotal ? <Text type="danger" className="text-[10px]"><RiseOutlined /> Artış</Text> : <Text type="success" className="text-[10px]"><FallOutlined /> Azalış</Text>}
               </div>
@@ -202,7 +196,7 @@ const RaporlarContent = () => {
           </Col>
           <Col span={12}>
             <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic title={<Text type="secondary" style={{fontSize: '11px'}}>Zirve</Text>} value={stats.topCategory[0]} prefix={<ShoppingOutlined className="text-orange-500" />} valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
+              <Statistic title={<Text type="secondary" size="small">Zirve</Text>} value={stats.topCategory[0]} prefix={<ShoppingOutlined className="text-orange-500" />} valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
               <Text type="secondary" className="text-[10px]">{stats.topCategory[1].toFixed(1)} €</Text>
             </Card>
           </Col>
@@ -211,23 +205,33 @@ const RaporlarContent = () => {
         <AylikHarcamaTrendGrafigi />
         
         {!hasData ? (
-          <Card className="rounded-2xl shadow-sm p-10 text-center"><Empty description="Kayıt bulunamadı" /></Card>
+          <Card className="rounded-2xl mt-4 shadow-sm p-10 text-center"><Empty description="Kayıt bulunamadı" /></Card>
         ) : (
-          <>
+          <div className="space-y-4 mt-4">
             <Card title="Genel Dağılım" className="rounded-2xl shadow-sm border-none">
-              <MemoizedBar data={barData} options={getBarOptions(globalMax)} height={`${(ALL_CATEGORIES.length * 30) + 50}px`} />
+              <div style={{ height: `${(ALL_CATEGORIES.length * 30) + 50}px` }}>
+                <Bar data={barData} options={getBarOptions(globalMax)} />
+              </div>
             </Card>
 
-            <Card title="Giyim & Aile" className="rounded-2xl shadow-sm border-none">
-              <MemoizedBar data={giyimBarData} options={getBarOptions(globalMax)} height="180px" />
-              <Divider className="my-4" />
-              <MemoizedBar data={aileBarData} options={getBarOptions(globalMax)} height="150px" />
-            </Card>
-
-            <Card title="Market Detayı" className="rounded-2xl shadow-sm border-none">
-              <MemoizedBar data={marketBarData} options={getBarOptions(globalMax)} height={`${(MARKETLER.length * 28) + 50}px`} />
-            </Card>
-          </>
+            <Row gutter={[12, 12]}>
+              <Col xs={24} md={12}>
+                <Card title="Giyim" className="rounded-2xl shadow-sm border-none">
+                  <div style={{ height: '180px' }}><Bar data={giyimBarData} options={getBarOptions(globalMax)} /></div>
+                  <Divider className="my-4" />
+                  <Title level={5} className="mb-4">Aile</Title>
+                  <div style={{ height: '150px' }}><Bar data={aileBarData} options={getBarOptions(globalMax)} /></div>
+                </Card>
+              </Col>
+              <Col xs={24} md={12}>
+                <Card title="Market Detayı" className="rounded-2xl shadow-sm border-none">
+                  <div style={{ height: `${(MARKETLER.length * 28) + 50}px` }}>
+                    <Bar data={marketBarData} options={getBarOptions(globalMax)} />
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+          </div>
         )}
       </div>
     </div>
@@ -235,7 +239,9 @@ const RaporlarContent = () => {
 };
 
 const Raporlar = () => (
-    <RaporlarContent />
+    <div className="bg-gray-50 min-h-screen"> 
+        <RaporlarContent />
+    </div>
 );
 
 export default Raporlar;
