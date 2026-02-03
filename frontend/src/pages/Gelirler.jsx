@@ -1,10 +1,9 @@
 // pages/Gelirler.jsx
-import React, { useState, useMemo, useCallback, useRef } from "react"; 
+import React, { useState, useMemo, useCallback, useRef, memo } from "react"; 
 import { Typography, Button, Modal, Input, Select, message, Card, Spin, Empty } from "antd";
 import { 
   EditOutlined, DeleteOutlined, CalendarOutlined, SolutionOutlined, 
-  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined,
-  SearchOutlined, CloseOutlined
+  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -40,14 +39,65 @@ const getCategoryDetails = (kategori) => {
   return { icon: <EuroCircleOutlined />, color: 'bg-gray-100 text-gray-600' };
 };
 
+const GelirItem = memo(({ gelir, onEdit, onDelete }) => {
+  const { icon, color } = getCategoryDetails(gelir.kategori);
+
+  const leadingActions = () => (
+    <LeadingActions>
+      <SwipeAction onClick={() => onEdit(gelir)}>
+        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-24">
+          <EditOutlined className="text-2xl" />
+        </div>
+      </SwipeAction>
+    </LeadingActions>
+  );
+
+  const trailingActions = () => (
+    <TrailingActions>
+      <SwipeAction destructive onClick={() => onDelete(gelir._id)}>
+        <div className="bg-red-600 text-white flex justify-center items-center h-full w-24">
+          <DeleteOutlined className="text-2xl" />
+        </div>
+      </SwipeAction>
+    </TrailingActions>
+  );
+
+  return (
+    <SwipeableListItem 
+      leadingActions={leadingActions()} 
+      trailingActions={trailingActions()}
+    >
+      <div className="flex items-center w-full p-4 mb-2 bg-white rounded-2xl shadow-sm border-none mx-1 transition-transform will-change-transform">
+        <div className={`p-3 rounded-xl mr-4 ${color}`}>{icon}</div>
+        <div className="flex-grow min-w-0">
+          <div className="flex justify-between items-start">
+            <Text strong className="text-sm uppercase tracking-tight text-gray-700">{gelir.kategori}</Text>
+            <Text className="text-lg font-black text-green-600">+{gelir.miktar} €</Text>
+          </div>
+          <div className="flex justify-between mt-1">
+            <Text className="text-[11px] text-gray-400">
+               <CalendarOutlined className="mr-1" />
+               {dayjs(gelir.createdAt).format('DD MMM, HH:mm')}
+            </Text>
+            {gelir.not && (
+               <Text className="text-[11px] text-gray-500 italic truncate max-w-[120px]">
+                   <SolutionOutlined className="mr-1" />
+                   {gelir.not}
+               </Text>
+            )}
+          </div>
+        </div>
+      </div>
+    </SwipeableListItem>
+  );
+});
+
 const GelirlerContent = () => {
   const { gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState({ 
     miktar: "", kategori: "", not: "", tarih: dayjs().toDate()
@@ -71,14 +121,10 @@ const GelirlerContent = () => {
     return (gelirler || [])
       .filter((g) => {
         const t = dayjs(g.createdAt);
-        const isSearching = searchTerm.trim().length > 0;
-        const monthMatch = isSearching ? true : (t.month() === selectedMonth && t.year() === selectedYear);
-        const searchMatch = g.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           g.not?.toLowerCase().includes(searchTerm.toLowerCase());
-        return monthMatch && searchMatch;
+        return t.month() === selectedMonth && t.year() === selectedYear;
       })
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
-  }, [gelirler, selectedMonth, selectedYear, searchTerm]); 
+  }, [gelirler, selectedMonth, selectedYear]); 
 
   const categoryTotals = useMemo(() => {
     const stats = { gelir: 0, tasarruf: 0, diger: 0 };
@@ -92,7 +138,7 @@ const GelirlerContent = () => {
     return stats;
   }, [filteredGelirler]);
 
-  const openEditModal = (gelir) => {
+  const openEditModal = useCallback((gelir) => {
     setEditingGelir(gelir);
     setFormData({
       miktar: gelir.miktar,
@@ -101,7 +147,28 @@ const GelirlerContent = () => {
       tarih: dayjs(gelir.createdAt).toDate(), 
     });
     setEditModalVisible(true);
-  };
+  }, []);
+
+  const startDeleteProcess = useCallback((id) => {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    message.success({ 
+      content: (
+        <span className="flex items-center space-x-2">
+          <Text strong>🗑️ Kayıt silindi</Text>
+          <Button type="link" size="small" onClick={() => { 
+              clearTimeout(deleteTimerRef.current); 
+              message.destroy(MESSAGE_KEY); 
+            }}>Geri Al</Button>
+        </span>
+      ), 
+      key: MESSAGE_KEY, 
+      duration: 3 
+    });
+    deleteTimerRef.current = setTimeout(async () => {
+      await axios.delete(`${API_URL}/gelir/${id}`);
+      refetch();
+    }, 3000);
+  }, [refetch]);
 
   const handleEditSave = async () => {
     if (!formData.miktar) return message.error("Miktar boş olamaz!");
@@ -121,135 +188,51 @@ const GelirlerContent = () => {
     }
   };
 
-  const startDeleteProcess = (id) => {
-    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-    message.success({ 
-      content: (
-        <span className="flex items-center space-x-2">
-          <Text strong>🗑️ Kayıt silindi</Text>
-          <Button type="link" size="small" onClick={() => { 
-              clearTimeout(deleteTimerRef.current); 
-              message.destroy(MESSAGE_KEY); 
-            }}>Geri Al</Button>
-        </span>
-      ), 
-      key: MESSAGE_KEY, 
-      duration: 3 
-    });
-    deleteTimerRef.current = setTimeout(async () => {
-      await axios.delete(`${API_URL}/gelir/${id}`);
-      refetch();
-    }, 3000);
-  };
-
-  const leadingActions = (gelir) => (
-    <LeadingActions>
-      <SwipeAction onClick={() => openEditModal(gelir)}>
-        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-24">
-          <EditOutlined className="text-2xl" />
-        </div>
-      </SwipeAction>
-    </LeadingActions>
-  );
-
-  const trailingActions = (gelir) => (
-    <TrailingActions>
-      <SwipeAction destructive onClick={() => startDeleteProcess(gelir._id)}>
-        <div className="bg-red-600 text-white flex justify-center items-center h-full w-24">
-          <DeleteOutlined className="text-2xl" />
-        </div>
-      </SwipeAction>
-    </TrailingActions>
-  );
-
   if (isContextLoading) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto min-h-screen">
-      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
-        <Card className="shadow-md border-none bg-green-600 rounded-2xl mx-1">
-          <div className="flex justify-between items-center text-white mb-4">
-            <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" />
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 select-none touch-pan-y">
+      {/* Sabit Başlık - Mavi ekranla aynı yükseklik (padding 24px-16px) */}
+      <div className="flex-none p-4 pb-2 bg-gray-50 z-30">
+        <Card className="shadow-md border-none bg-green-600 rounded-2xl" bodyStyle={{ padding: '24px 16px' }}>
+          <div className="flex justify-between items-center text-white mb-2">
+            <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" size="small" />
             <div className="text-center">
-              <Title level={4} className="m-0 text-white capitalize" style={{ color: 'white' }}>{displayMonth}</Title>
-              <Text className="text-green-100 text-[10px] uppercase tracking-widest">Gelir Tablosu</Text>
+              <Title level={5} className="m-0 text-white capitalize" style={{ color: 'white', fontSize: '16px' }}>{displayMonth}</Title>
+              <Text className="text-green-100 text-[9px] uppercase tracking-widest block" style={{ lineHeight: '1' }}>Gelir Tablosu</Text>
             </div>
-            <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth} ghost shape="circle" />
+            <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth} ghost shape="circle" size="small" />
           </div>
 
-          <div className="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+          <div className="flex justify-around items-center bg-white/10 rounded-xl p-2 backdrop-blur-sm">
             <div className="text-center flex-1">
-              <Text className="block text-[9px] text-green-100 font-bold uppercase">Gelir</Text>
-              <Text className="text-white font-black text-sm">{categoryTotals.gelir.toFixed(0)}€</Text>
+              <Text className="block text-[8px] text-green-100 font-bold uppercase">Gelir</Text>
+              <Text className="text-white font-black text-xs">{categoryTotals.gelir.toFixed(0)}€</Text>
             </div>
-            <div className="w-px h-8 bg-white/20"></div>
+            <div className="w-px h-6 bg-white/20"></div>
             <div className="text-center flex-1">
-              <Text className="block text-[9px] text-green-100 font-bold uppercase">Tasarruf</Text>
-              <Text className="text-white font-black text-sm">{categoryTotals.tasarruf.toFixed(0)}€</Text>
-            </div>
-            <div className="text-center flex-1 ml-2">
-                 <Button 
-                    icon={isSearchVisible ? <CloseOutlined /> : <SearchOutlined />} 
-                    size="small" 
-                    ghost 
-                    onClick={() => setIsSearchVisible(!isSearchVisible)} 
-                />
+              <Text className="block text-[8px] text-green-100 font-bold uppercase">Tasarruf</Text>
+              <Text className="text-white font-black text-xs">{categoryTotals.tasarruf.toFixed(0)}€</Text>
             </div>
           </div>
         </Card>
       </div>
 
-      <div className="px-1">
-        {isSearchVisible && (
-            <div className="px-2 mb-4">
-                <Input 
-                    placeholder="Gelir veya not ara..." 
-                    className="rounded-xl h-10 shadow-sm border-none"
-                    prefix={<SearchOutlined className="text-gray-400" />} 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    allowClear
-                />
-            </div>
-        )}
-
+      {/* Kaydırılabilir Liste Alanı */}
+      <div className="flex-1 overflow-y-auto px-1 pb-24">
         {filteredGelirler.length === 0 ? (
           <Empty description="Bu ay kayıt bulunamadı" className="mt-10" />
         ) : (
-          <div className="space-y-3 pb-24">
+          <div className="space-y-1">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
-              {filteredGelirler.map((gelir) => {
-                const { icon, color } = getCategoryDetails(gelir.kategori);
-                return (
-                  <SwipeableListItem 
-                    key={gelir._id} 
-                    leadingActions={leadingActions(gelir)} 
-                    trailingActions={trailingActions(gelir)}
-                  >
-                    <div className="flex items-center w-full p-4 mb-2 bg-white rounded-2xl shadow-sm border-none mx-1">
-                      <div className={`p-3 rounded-xl mr-4 ${color}`}>{icon}</div>
-                      <div className="flex-grow min-w-0">
-                        <div className="flex justify-between items-start">
-                          <Text strong className="text-sm uppercase tracking-tight text-gray-700">{gelir.kategori}</Text>
-                          <Text className="text-lg font-black text-green-600">+{gelir.miktar} €</Text>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <Text className="text-[11px] text-gray-400">
-                             <CalendarOutlined className="mr-1" />
-                             {dayjs(gelir.createdAt).format('DD MMM, HH:mm')}
-                          </Text>
-                          {gelir.not && (
-                             <Text className="text-[11px] text-gray-500 italic truncate max-w-[120px]">
-                                 <SolutionOutlined className="mr-1" />
-                                 {gelir.not}
-                             </Text>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </SwipeableListItem>
-                );
-              })}
+              {filteredGelirler.map((gelir) => (
+                <GelirItem 
+                  key={gelir._id} 
+                  gelir={gelir} 
+                  onEdit={openEditModal} 
+                  onDelete={startDeleteProcess} 
+                />
+              ))}
             </SwipeableList>
           </div>
         )}
@@ -289,8 +272,8 @@ const GelirlerContent = () => {
 };
 
 const Gelirler = () => (
-  <div className="relative min-h-screen bg-gray-50">
-    <main><GelirlerContent /></main>
+  <div className="h-screen overflow-hidden bg-gray-50">
+    <GelirlerContent />
     <BottomNav />
   </div>
 );
