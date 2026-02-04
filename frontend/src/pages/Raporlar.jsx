@@ -1,13 +1,14 @@
-// pages/Raporlar.jsx
 import React, { useMemo, useState, useCallback } from "react";
-import { Card, Typography, Empty, Button, Row, Col, Statistic, Divider } from "antd";
-import { 
+import { Card, Typography, Empty, Button, Row, Col, Segmented, ConfigProvider } from "antd";import { 
   ArrowLeftOutlined, 
   ArrowRightOutlined, 
   RiseOutlined, 
   FallOutlined, 
   WalletOutlined,
-  ShoppingOutlined
+  ShoppingOutlined,
+  BarChartOutlined,
+  ShopOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
 import { Bar } from "react-chartjs-2";
@@ -60,6 +61,7 @@ const RaporlarContent = () => {
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
+  const [activeTab, setActiveTab] = useState("Genel");
 
   const filteredHarcamalar = useMemo(() => {
     return (harcamalar || []).filter((h) => {
@@ -68,7 +70,6 @@ const RaporlarContent = () => {
     });
   }, [harcamalar, selectedMonth, selectedYear]);
 
-  // --- İstatistikler ---
   const stats = useMemo(() => {
     const currentTotal = filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
     const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
@@ -86,23 +87,6 @@ const RaporlarContent = () => {
     return { currentTotal, lastMonthTotal, topCategory };
   }, [filteredHarcamalar, harcamalar, selectedMonth, selectedYear]);
 
-  const globalMax = useMemo(() => {
-    if (!harcamalar.length) return 500;
-    const totalsPerMonth = {};
-    harcamalar.forEach(h => {
-      const monthKey = dayjs(h.createdAt).format("YYYY-MM");
-      if (!totalsPerMonth[monthKey]) totalsPerMonth[monthKey] = {};
-      const cat = h.kategori || "Diğer";
-      totalsPerMonth[monthKey][cat] = (totalsPerMonth[monthKey][cat] || 0) + Number(h.miktar || 0);
-    });
-    let maxVal = 0;
-    Object.values(totalsPerMonth).forEach(monthObj => {
-      const monthMax = Math.max(...Object.values(monthObj));
-      if (monthMax > maxVal) maxVal = monthMax;
-    });
-    return maxVal > 0 ? maxVal * 1.1 : 500;
-  }, [harcamalar]);
-
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
@@ -114,31 +98,31 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  const getBarOptions = (customMax) => ({
+  const getBarOptions = () => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
     scales: { 
-      x: { beginAtZero: true, grid: { display: false }, max: customMax, ticks: { display: false } }, 
-      y: { grid: { display: false }, ticks: { font: { size: 11 } } } 
+      x: { display: false }, 
+      y: { grid: { display: false }, ticks: { font: { size: 12, weight: '500' }, color: '#4b5563' } } 
     },
     plugins: { 
       legend: { display: false }, 
       datalabels: { 
         anchor: 'end', align: 'end', 
         formatter: (val) => val > 0 ? `${val.toFixed(0)}€` : '', 
-        font: { weight: 'bold', size: 10 } 
+        font: { weight: 'bold', size: 11 },
+        color: '#1f2937'
       } 
     }
   });
 
-  // Veri Setleri
   const barData = useMemo(() => ({
     labels: ALL_CATEGORIES,
     datasets: [{
       data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0)),
       backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]),
-      borderRadius: 4, barThickness: 12
+      borderRadius: 6, barThickness: 14
     }]
   }), [filteredHarcamalar]);
 
@@ -146,91 +130,108 @@ const RaporlarContent = () => {
     labels: MARKETLER,
     datasets: [{
       data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)),
-      backgroundColor: "#338AFF", borderRadius: 4, barThickness: 10
+      backgroundColor: "#3b82f6", borderRadius: 6, barThickness: 12
     }]
   }), [filteredHarcamalar]);
 
-  const giyimBarData = useMemo(() => ({
-    labels: GIYIM_KISILERI,
+  const customBarData = (labels, category) => ({
+    labels: labels,
     datasets: [{
-      data: GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori === "Giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0)),
-      backgroundColor: "#FF6384", borderRadius: 4, barThickness: 15
+      data: labels.map(l => filteredHarcamalar.filter(h => h.kategori === category && h.altKategori === l).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: categoryColors[category], borderRadius: 6, barThickness: 18
     }]
-  }), [filteredHarcamalar]);
-
-  const aileBarData = useMemo(() => ({
-    labels: AILE_UYELERI,
-    datasets: [{
-      data: AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori === "Aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0)),
-      backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 15
-    }]
-  }), [filteredHarcamalar]);
+  });
 
   const hasData = filteredHarcamalar.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      {/* SABİT (STICKY) AY SEÇİCİ */}
-      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
-        <Card className="shadow-md border-none bg-blue-600 rounded-2xl mx-1">
-          <div className="flex justify-between items-center text-white">
-            <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" />
-            <div className="text-center">
-              <Title level={4} className="m-0 text-white capitalize" style={{ color: 'white' }}>{displayMonth}</Title>
-              <Text className="text-blue-100 text-[10px] uppercase tracking-widest">Finansal Rapor</Text>
-            </div>
-            <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} ghost shape="circle" />
+    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
+      {/* APP HEADER */}
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3">
+        <div className="flex justify-between items-center">
+          <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} type="text" />
+          <div className="text-center">
+            <Text className="block text-[10px] uppercase tracking-tighter text-gray-400 font-bold">Rapor Dönemi</Text>
+            <Title level={5} className="m-0 capitalize" style={{ margin: 0 }}>{displayMonth}</Title>
           </div>
-        </Card>
+          <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} type="text" />
+        </div>
       </div>
 
-      <div className="px-1">
-        <Row gutter={[12, 12]} className="mb-4">
+      <div className="p-4 space-y-4">
+        {/* QUICK STATS */}
+        <Row gutter={12}>
           <Col span={12}>
-            <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic title={<Text type="secondary" size="small">Toplam</Text>} value={stats.currentTotal} precision={2} suffix="€" prefix={<WalletOutlined className="text-blue-500" />} valueStyle={{fontSize: '18px', fontWeight: 'bold'}} />
-              <div className="mt-1">
-                {stats.currentTotal > stats.lastMonthTotal ? <Text type="danger" className="text-[10px]"><RiseOutlined /> Artış</Text> : <Text type="success" className="text-[10px]"><FallOutlined /> Azalış</Text>}
+            <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-2 bg-blue-50 rounded-lg"><WalletOutlined className="text-blue-500" /></div>
+                <Text type="secondary" className="text-xs">Toplam</Text>
               </div>
-            </Card>
+              <Title level={4} className="m-0">{stats.currentTotal.toFixed(0)}€</Title>
+              {stats.currentTotal > stats.lastMonthTotal ? 
+                <Text type="danger" className="text-[10px] font-bold"><RiseOutlined /> %{(((stats.currentTotal-stats.lastMonthTotal)/stats.lastMonthTotal)*100 || 0).toFixed(0)}</Text> : 
+                <Text type="success" className="text-[10px] font-bold"><FallOutlined /> Azalış</Text>}
+            </div>
           </Col>
           <Col span={12}>
-            <Card className="rounded-2xl shadow-sm border-none">
-              <Statistic title={<Text type="secondary" size="small">Zirve</Text>} value={stats.topCategory[0]} prefix={<ShoppingOutlined className="text-orange-500" />} valueStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
-              <Text type="secondary" className="text-[10px]">{stats.topCategory[1].toFixed(1)} €</Text>
-            </Card>
+            <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-2 bg-orange-50 rounded-lg"><ShoppingOutlined className="text-orange-500" /></div>
+                <Text type="secondary" className="text-xs">Zirve</Text>
+              </div>
+              <Title level={4} className="m-0 truncate" style={{fontSize: '16px'}}>{stats.topCategory[0]}</Title>
+              <Text className="text-[10px] font-bold text-gray-400">{stats.topCategory[1].toFixed(0)}€ Harcandı</Text>
+            </div>
           </Col>
         </Row>
 
         <AylikHarcamaTrendGrafigi />
+
+        {/* NAVIGATION SEGMENTED */}
+        <div className="bg-gray-200/50 p-1 rounded-xl">
+            <Segmented
+            block
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+                { label: 'Genel', value: 'Genel', icon: <BarChartOutlined /> },
+                { label: 'Market', value: 'Market', icon: <ShopOutlined /> },
+                { label: 'Kişisel', value: 'Detay', icon: <UserOutlined /> },
+            ]}
+            className="custom-segmented"
+            />
+        </div>
         
         {!hasData ? (
-          <Card className="rounded-2xl mt-4 shadow-sm p-10 text-center"><Empty description="Kayıt bulunamadı" /></Card>
+          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Veri Yok" /></div>
         ) : (
-          <div className="space-y-4 mt-4">
-            <Card title="Genel Dağılım" className="rounded-2xl shadow-sm border-none">
-              <div style={{ height: `${(ALL_CATEGORIES.length * 30) + 50}px` }}>
-                <Bar data={barData} options={getBarOptions(globalMax)} />
-              </div>
-            </Card>
+          <div className="animate-in fade-in duration-500">
+            {activeTab === "Genel" && (
+              <Card className="rounded-3xl border-none shadow-sm overflow-hidden" bodyStyle={{ padding: '15px' }}>
+                <div style={{ height: '450px' }}>
+                  <Bar data={barData} options={getBarOptions()} />
+                </div>
+              </Card>
+            )}
 
-            <Row gutter={[12, 12]}>
-              <Col xs={24} md={12}>
-                <Card title="Giyim" className="rounded-2xl shadow-sm border-none">
-                  <div style={{ height: '180px' }}><Bar data={giyimBarData} options={getBarOptions(globalMax)} /></div>
-                  <Divider className="my-4" />
-                  <Title level={5} className="mb-4">Aile</Title>
-                  <div style={{ height: '150px' }}><Bar data={aileBarData} options={getBarOptions(globalMax)} /></div>
+            {activeTab === "Market" && (
+              <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '15px' }}>
+                <div style={{ height: '550px' }}>
+                  <Bar data={marketBarData} options={getBarOptions()} />
+                </div>
+              </Card>
+            )}
+
+            {activeTab === "Detay" && (
+              <div className="space-y-4">
+                <Card title="Giyim Dağılımı" className="rounded-3xl border-none shadow-sm">
+                  <div style={{ height: '200px' }}><Bar data={customBarData(GIYIM_KISILERI, "Giyim")} options={getBarOptions()} /></div>
                 </Card>
-              </Col>
-              <Col xs={24} md={12}>
-                <Card title="Market Detayı" className="rounded-2xl shadow-sm border-none">
-                  <div style={{ height: `${(MARKETLER.length * 28) + 50}px` }}>
-                    <Bar data={marketBarData} options={getBarOptions(globalMax)} />
-                  </div>
+                <Card title="Aile Üyeleri" className="rounded-3xl border-none shadow-sm">
+                  <div style={{ height: '150px' }}><Bar data={customBarData(AILE_UYELERI, "Aile")} options={getBarOptions()} /></div>
                 </Card>
-              </Col>
-            </Row>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -239,9 +240,9 @@ const RaporlarContent = () => {
 };
 
 const Raporlar = () => (
-    <div className="bg-gray-50 min-h-screen"> 
+    <ConfigProvider theme={{ token: { borderRadius: 16 } }}>
         <RaporlarContent />
-    </div>
+    </ConfigProvider>
 );
 
 export default Raporlar;
