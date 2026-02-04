@@ -1,10 +1,9 @@
-// pages/Gelirler.jsx
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
-import { Typography, Button, Modal, Input, Select, message, Card, Spin, Empty } from "antd";
+import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider, Row, Col } from "antd";
 import { 
-  EditOutlined, DeleteOutlined, CalendarOutlined, SolutionOutlined, 
+  EditOutlined, DeleteOutlined, 
   LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined,
-  SearchOutlined, CloseOutlined
+  SearchOutlined
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -35,9 +34,9 @@ const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"];
 
 const getCategoryDetails = (kategori) => {
   const cat = kategori?.toLowerCase();
-  if (cat === 'gelir') return { icon: <BankOutlined />, color: 'bg-green-100 text-green-600' };
-  if (cat === 'tasarruf') return { icon: <SaveOutlined />, color: 'bg-blue-100 text-blue-600' };
-  return { icon: <EuroCircleOutlined />, color: 'bg-gray-100 text-gray-600' };
+  if (cat === 'gelir') return { icon: <BankOutlined />, color: 'bg-emerald-50 text-emerald-500' };
+  if (cat === 'tasarruf') return { icon: <SaveOutlined />, color: 'bg-blue-50 text-blue-500' };
+  return { icon: <EuroCircleOutlined />, color: 'bg-gray-50 text-gray-500' };
 };
 
 const GelirlerContent = () => {
@@ -46,7 +45,6 @@ const GelirlerContent = () => {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState({ 
@@ -145,8 +143,8 @@ const GelirlerContent = () => {
   const leadingActions = (gelir) => (
     <LeadingActions>
       <SwipeAction onClick={() => openEditModal(gelir)}>
-        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-24">
-          <EditOutlined className="text-2xl" />
+        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-20 rounded-l-3xl">
+          <EditOutlined className="text-xl" />
         </div>
       </SwipeAction>
     </LeadingActions>
@@ -155,68 +153,70 @@ const GelirlerContent = () => {
   const trailingActions = (gelir) => (
     <TrailingActions>
       <SwipeAction destructive onClick={() => startDeleteProcess(gelir._id)}>
-        <div className="bg-red-600 text-white flex justify-center items-center h-full w-24">
-          <DeleteOutlined className="text-2xl" />
+        <div className="bg-red-500 text-white flex justify-center items-center h-full w-20 rounded-r-3xl">
+          <DeleteOutlined className="text-xl" />
         </div>
       </SwipeAction>
     </TrailingActions>
   );
 
-  if (isContextLoading) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
+  if (isContextLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto min-h-screen">
-      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-4">
-        <Card className="shadow-md border-none bg-green-600 rounded-2xl mx-1">
-          <div className="flex justify-between items-center text-white mb-4">
-            <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")} ghost shape="circle" />
-            <div className="text-center">
-              <Title level={4} className="m-0 text-white capitalize" style={{ color: 'white' }}>{displayMonth}</Title>
-              <Text className="text-green-100 text-[10px] uppercase tracking-widest">Gelir Tablosu</Text>
-            </div>
-            <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth} ghost shape="circle" />
+    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
+      {/* HEADER */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+        <div className="flex justify-between items-center">
+          <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")} type="text" />
+          <div className="text-center">
+            <Text className="block text-[10px] uppercase tracking-tighter text-gray-400 font-bold">Gelirler</Text>
+            <Title level={5} className="m-0 capitalize" style={{ margin: 0 }}>{displayMonth}</Title>
           </div>
-
-          <div className="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <div className="text-center flex-1">
-              <Text className="block text-[9px] text-green-100 font-bold uppercase">Gelir</Text>
-              <Text className="text-white font-black text-sm">{categoryTotals.gelir.toFixed(0)}€</Text>
-            </div>
-            <div className="w-px h-8 bg-white/20"></div>
-            <div className="text-center flex-1">
-              <Text className="block text-[9px] text-green-100 font-bold uppercase">Tasarruf</Text>
-              <Text className="text-white font-black text-sm">{categoryTotals.tasarruf.toFixed(0)}€</Text>
-            </div>
-            <div className="text-center flex-1 ml-2">
-                 <Button 
-                    icon={isSearchVisible ? <CloseOutlined /> : <SearchOutlined />} 
-                    size="small" 
-                    ghost 
-                    onClick={() => setIsSearchVisible(!isSearchVisible)} 
-                />
-            </div>
-          </div>
-        </Card>
+          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isFutureMonth} type="text" />
+        </div>
       </div>
 
-      <div className="px-1">
-        {isSearchVisible && (
-            <div className="px-2 mb-4">
-                <Input 
-                    placeholder="Gelir veya not ara..." 
-                    className="rounded-xl h-10 shadow-sm border-none"
-                    prefix={<SearchOutlined className="text-gray-400" />} 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    allowClear
-                />
+      <div className="p-4 space-y-4">
+        {/* STATS */}
+        <Row gutter={12}>
+          <Col span={12}>
+            <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-2 bg-emerald-50 rounded-lg"><BankOutlined className="text-emerald-500 text-xs" /></div>
+                <Text type="secondary" className="text-[10px] font-bold uppercase">Net Gelir</Text>
+              </div>
+              <Title level={4} className="m-0 text-emerald-600">+{categoryTotals.gelir.toFixed(0)}€</Title>
             </div>
-        )}
+          </Col>
+          <Col span={12}>
+            <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="p-2 bg-blue-50 rounded-lg"><SaveOutlined className="text-blue-500 text-xs" /></div>
+                <Text type="secondary" className="text-[10px] font-bold uppercase">Tasarruf</Text>
+              </div>
+              <Title level={4} className="m-0 text-blue-600">+{categoryTotals.tasarruf.toFixed(0)}€</Title>
+            </div>
+          </Col>
+        </Row>
 
+        {/* SEARCH */}
+        <Input 
+          placeholder="İşlem veya not ara..." 
+          variant="filled"
+          className="rounded-2xl h-12 border-none bg-white shadow-sm"
+          prefix={<SearchOutlined className="text-gray-400" />} 
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          allowClear
+        />
+
+        {/* LIST */}
         {filteredGelirler.length === 0 ? (
-          <Empty description="Bu ay kayıt bulunamadı" className="mt-10" />
+          <div className="bg-white rounded-3xl p-12 text-center shadow-sm">
+            <Empty description="Kayıt bulunamadı" />
+          </div>
         ) : (
-          <div className="space-y-3 pb-24">
+          <div className="space-y-3 transition-all">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {filteredGelirler.map((gelir) => {
                 const { icon, color } = getCategoryDetails(gelir.kategori);
@@ -226,24 +226,29 @@ const GelirlerContent = () => {
                     leadingActions={leadingActions(gelir)} 
                     trailingActions={trailingActions(gelir)}
                   >
-                    <div className="flex items-center w-full p-4 mb-2 bg-white rounded-2xl shadow-sm border-none mx-1">
-                      <div className={`p-3 rounded-xl mr-4 ${color}`}>{icon}</div>
+                    <div className="flex items-center w-full p-4 mb-3 bg-white rounded-3xl shadow-sm border border-gray-50 active:scale-[0.98] transition-transform">
+                      <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>
+                        {icon}
+                      </div>
                       <div className="flex-grow min-w-0">
-                        <div className="flex justify-between items-start">
-                          <Text strong className="text-sm uppercase tracking-tight text-gray-700">{gelir.kategori}</Text>
-                          <Text className="text-lg font-black text-green-600">+{gelir.miktar} €</Text>
+                        <div className="flex justify-between items-center">
+                          <Text strong className="text-xs uppercase tracking-wide text-gray-500">{gelir.kategori}</Text>
+                          <Text className="text-base font-black text-emerald-600">+{gelir.miktar}€</Text>
                         </div>
-                        <div className="flex justify-between mt-1">
-                          <Text className="text-[11px] text-gray-400">
-                             <CalendarOutlined className="mr-1" />
-                             {dayjs(gelir.createdAt).format('DD MMM, HH:mm')}
-                          </Text>
-                          {gelir.not && (
-                             <Text className="text-[11px] text-gray-500 italic truncate max-w-[120px]">
-                                 <SolutionOutlined className="mr-1" />
-                                 {gelir.not}
-                             </Text>
-                          )}
+                        <div className="flex justify-between items-end mt-1">
+                          <div className="flex flex-col">
+                            <Text className="text-[10px] text-gray-400 font-medium">
+                                {dayjs(gelir.createdAt).format('DD MMMM, HH:mm')}
+                            </Text>
+                            {gelir.not && (
+                                <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">
+                                    {gelir.not}
+                                </Text>
+                            )}
+                          </div>
+                          <div className="bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                             <Text className="text-[9px] text-gray-400 uppercase font-bold">İşlem</Text>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -256,31 +261,35 @@ const GelirlerContent = () => {
       </div>
 
       <Modal
-        title={<Title level={4} className="text-center text-green-600 m-0">Kaydı Güncelle</Title>}
+        title={<Title level={5} className="text-center m-0">Düzenle</Title>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSave}
         okText="Güncelle"
         centered
+        closeIcon={null}
+        width={320}
+        okButtonProps={{ className: "bg-emerald-600 rounded-xl w-full h-10 shadow-none border-none" }}
+        cancelButtonProps={{ className: "hidden" }}
       >
         <div className="space-y-4 pt-4">
-          <div>
-            <Text strong className="text-[10px] text-gray-400 uppercase ml-1">İşlem Tarihi</Text>
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
             <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} isIncome={true} />
           </div>
-          <div>
-            <Text strong className="text-[10px] text-gray-400 uppercase ml-1">Tutar (€)</Text>
-            <Input size="large" type="number" inputMode="decimal" className="rounded-xl h-12 text-lg font-bold" value={formData.miktar} onChange={e => setFormData({...formData, miktar: e.target.value})} />
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tutar (€)</Text>
+            <Input variant="borderless" type="number" inputMode="decimal" className="p-0 text-xl font-black text-emerald-600" value={formData.miktar} onChange={e => setFormData({...formData, miktar: e.target.value})} />
           </div>
-          <div>
-            <Text strong className="text-[10px] text-gray-400 uppercase ml-1">Kategori</Text>
-            <Select size="large" className="w-full h-12 rounded-xl" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v})}>
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
+            <Select variant="borderless" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v})}>
               {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>)}
             </Select>
           </div>
-          <div>
-            <Text strong className="text-[10px] text-gray-400 uppercase ml-1">Not</Text>
-            <Input.TextArea rows={3} className="rounded-xl" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Açıklama ekleyin..." />
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Not</Text>
+            <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Açıklama..." />
           </div>
         </div>
       </Modal>
@@ -289,10 +298,12 @@ const GelirlerContent = () => {
 };
 
 const Gelirler = () => (
-  <div className="relative min-h-screen bg-gray-50">
-    <main><GelirlerContent /></main>
-    <BottomNav />
-  </div>
+    <ConfigProvider theme={{ token: { borderRadius: 16, colorPrimary: '#10b981' } }}>
+        <div className="relative min-h-screen bg-gray-50">
+            <main><GelirlerContent /></main>
+            <BottomNav />
+        </div>
+    </ConfigProvider>
 );
 
 export default Gelirler;
