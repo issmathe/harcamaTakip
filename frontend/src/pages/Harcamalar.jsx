@@ -200,8 +200,9 @@ const HarcamalarContent = () => {
           <div className="flex justify-between items-start mb-4">
             <div>
               <Text type="secondary" className="text-[10px] font-bold uppercase block mb-1">Dönem Toplamı</Text>
-              <Title level={3} className="m-0 text-red-500">-{kategoriToplam.toFixed(0)}€</Title>
-            </div>
+<Title level={3} className="m-0 text-red-500">
+  -{kategoriToplam.toFixed(2).replace('.', ',')}€
+</Title>            </div>
             <div className="flex gap-2">
               <Button 
                 icon={<SearchOutlined />} 
