@@ -49,6 +49,21 @@ const RaporlarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [activeTab, setActiveTab] = useState("Genel");
 
+  // Tüm datadaki en yüksek tekil kategori harcamasını bul (Ölçeklendirme için)
+  const globalMax = useMemo(() => {
+    if (harcamalar.length === 0) return 0;
+    
+    // Her ayın kendi içindeki kategori toplamlarını hesapla ve en büyüğünü bul
+    const monthlyTotals = harcamalar.reduce((acc, h) => {
+      const key = `${dayjs(h.createdAt).format('YYYY-MM')}-${h.kategori}`;
+      acc[key] = (acc[key] || 0) + Number(h.miktar);
+      return acc;
+    }, {});
+    
+    const max = Math.max(...Object.values(monthlyTotals), 0);
+    return max * 1.15; // Üstten %15 pay bırak ki sayılar sığsın
+  }, [harcamalar]);
+
   const filteredHarcamalar = useMemo(() => {
     return harcamalar.filter((h) => {
       const t = dayjs(h.createdAt); 
@@ -67,13 +82,17 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  const getBarOptions = useCallback(() => ({
+  // Dinamik Max Değerli Options
+  const getBarOptions = useCallback((customMax) => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
     animation: { duration: 400 },
     scales: { 
-      x: { display: false }, 
+      x: { 
+        display: false,
+        max: customMax || globalMax // Eğer özel bir max verilmediyse global max kullan
+      }, 
       y: { grid: { display: false }, ticks: { font: { size: 12 }, color: '#4b5563' } } 
     },
     plugins: { 
@@ -84,7 +103,7 @@ const RaporlarContent = () => {
         font: { weight: 'bold', size: 10 } 
       } 
     }
-  }), []);
+  }), [globalMax]);
 
   const barData = useMemo(() => ({
     labels: ALL_CATEGORIES,
@@ -111,14 +130,19 @@ const RaporlarContent = () => {
     switch(activeTab) {
       case "Genel":
         return (
-          <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '15px' }}>
-            <div style={{ height: '450px' }}><Bar data={barData} options={getBarOptions()} /></div>
-          </Card>
+          <>
+            <AylikHarcamaTrendGrafigi />
+            <Card className="rounded-3xl border-none shadow-sm mt-4" bodyStyle={{ padding: '15px' }}>
+              <div style={{ height: '450px' }}><Bar data={barData} options={getBarOptions()} /></div>
+            </Card>
+          </>
         );
       case "Market":
+        // Marketler için kendi içinde tutarlı bir max bulalım
+        const currentMarketMax = Math.max(...marketBarData.datasets[0].data, 10) * 1.2;
         return (
           <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '15px' }}>
-            <div style={{ height: '520px' }}><Bar data={marketBarData} options={getBarOptions()} /></div>
+            <div style={{ height: '520px' }}><Bar data={marketBarData} options={getBarOptions(currentMarketMax)} /></div>
           </Card>
         );
       case "Detay":
@@ -160,8 +184,6 @@ const RaporlarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        <AylikHarcamaTrendGrafigi />
-
         <div className="bg-gray-200/50 p-1 rounded-xl">
             <Segmented
               block

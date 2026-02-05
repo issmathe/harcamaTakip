@@ -195,26 +195,29 @@ const HarcamalarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* TOPLAM KARTI & ARAMA BUTONU */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <Text type="secondary" className="text-[10px] font-bold uppercase block mb-1">Dönem Toplamı</Text>
-<Title level={3} className="m-0 text-red-500">
-  -{kategoriToplam.toFixed(2).replace('.', ',')}€
-</Title>            </div>
+        {/* TOPLAM KARTI */}
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <Text className="text-[11px] font-bold uppercase text-gray-400">Dönem Toplamı:</Text>
+              <Text className="text-base font-black text-red-500">
+                -{kategoriToplam.toFixed(2).replace('.', ',')}€
+              </Text>
+            </div>
             <div className="flex gap-2">
               <Button 
                 icon={<SearchOutlined />} 
-                className={`rounded-xl border-none ${isSearchVisible ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-400'}`}
+                size="small"
+                className={`rounded-lg border-none ${isSearchVisible ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-400'}`}
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
               />
               <Select 
                 value={selectedCategory} 
                 onChange={setSelectedCategory} 
+                size="small"
                 variant="filled"
-                className="w-28"
-                style={{ borderRadius: '12px' }}
+                className="w-24"
+                style={{ borderRadius: '8px' }}
               >
                 <Option value="Tümü">Tümü</Option>
                 {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
@@ -226,7 +229,7 @@ const HarcamalarContent = () => {
             <Input 
               placeholder="Ara..." 
               variant="filled"
-              className="rounded-2xl h-10 border-none bg-gray-50"
+              className="rounded-2xl h-9 border-none bg-gray-50"
               prefix={<SearchOutlined className="text-gray-300" />} 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -293,16 +296,28 @@ const HarcamalarContent = () => {
             <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
             <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
           </div>
+
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
             <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Miktar (€)</Text>
-            <Input variant="borderless" type="number" className="p-0 text-xl font-black text-red-500" value={formData.miktar} onChange={e => setFormData({...formData, miktar: e.target.value})} />
+            <Input 
+              variant="borderless" 
+              type="number" 
+              inputMode="decimal" // Sayısal klavye (nokta/virgül dahil) açar
+              pattern="[0-9]*"
+              className="p-0 text-xl font-black text-red-500" 
+              value={formData.miktar} 
+              onFocus={(e) => e.target.select()} // Tıklayınca tümünü seçer
+              onChange={e => setFormData({...formData, miktar: e.target.value})} 
+            />
           </div>
+
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
             <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
             <Select variant="borderless" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
           </div>
+
           {["Market", "Giyim", "Aile"].includes(formData.kategori) && (
              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Alt Seçim</Text>
@@ -313,6 +328,7 @@ const HarcamalarContent = () => {
                 </Select>
              </div>
           )}
+
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
             <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Not</Text>
             <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Not..." />

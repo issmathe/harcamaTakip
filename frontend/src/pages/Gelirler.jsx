@@ -195,9 +195,6 @@ const GelirlerContent = () => {
                                 </Text>
                             )}
                           </div>
-                          <div className="bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-                             <Text className="text-[9px] text-gray-400 uppercase font-bold">İşlem</Text>
-                          </div>
                         </div>
                       </div>
                     </div>
