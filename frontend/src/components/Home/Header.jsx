@@ -21,7 +21,7 @@ const Header = () => {
     harcamalar = [], gelirler = [] 
   } = useTotalsContext();
   
-  // mode 1: Normal, mode 2: Gider için MTD / Diğerleri için Full, mode 3: Gider için Full
+  // mode 1: Normal, mode 2: Geçen Ay (Gider için MTD, Diğerleri için Full)
   const [activeState, setActiveState] = useState({ id: null, mode: 1 });
 
   const cumulativeBalance = (cumulativeIncome || 0) - (cumulativeExpense || 0);
@@ -45,7 +45,6 @@ const Header = () => {
 
     return {
       income: filterByDate(gelirler, false),
-      expense: filterByDate(harcamalar, true),
       expenseMTD: filterByDate(harcamalar, true, true),
       balance: filterByDate(gelirler, false) - filterByDate(harcamalar, true)
     };
@@ -65,17 +64,12 @@ const Header = () => {
   const handleBoxClick = (id) => {
     setActiveState(prev => {
       if (prev.id !== id) return { id, mode: 2 }; 
-      
-      if (id === "gider" && prev.mode === 2) {
-        return { id, mode: 3 }; 
-      }
       return { id: null, mode: 1 };
     });
   };
 
   const StatBox = ({ id, label, currentVal, prevVal, mtdVal, colorClass, borderClass, icon: Icon }) => {
     const isActive = activeState.id === id;
-    const mode = activeState.mode;
     
     let displayVal = currentVal;
     let displayLabel = label;
@@ -83,15 +77,9 @@ const Header = () => {
 
     if (isActive) {
       if (id === "gider") {
-        if (mode === 2) {
-          displayVal = mtdVal;
-          displayLabel = `1-${dayjs().format("DD")} ${dayjs().subtract(1, "month").format("MMM")}`;
-          bgColor = "bg-indigo-900 border-indigo-950 scale-95 shadow-inner text-white";
-        } else if (mode === 3) {
-          displayVal = prevVal;
-          displayLabel = "Geçen Ay (Tam)";
-          bgColor = "bg-gray-800 border-gray-900 scale-90 shadow-inner text-white";
-        }
+        displayVal = mtdVal;
+        displayLabel = `1-${dayjs().format("DD")} ${dayjs().subtract(1, "month").format("MMM")}`;
+        bgColor = "bg-indigo-900 border-indigo-950 scale-95 shadow-inner text-white";
       } else {
         displayVal = prevVal;
         displayLabel = "Geçen Ay";
@@ -108,7 +96,7 @@ const Header = () => {
           <Text className={`${isActive ? '!text-gray-300' : ''} text-[10px] font-bold uppercase`}>
             {displayLabel}
           </Text>
-          {isActive && id === "gider" && mode === 2 && <CalendarOutlined className="text-[10px] text-indigo-300" />}
+          {isActive && id === "gider" && <CalendarOutlined className="text-[10px] text-indigo-300" />}
         </div>
         <div className={`flex items-center ${isActive ? 'text-white' : ''}`}>
           <Icon className="text-xs mr-1" />
@@ -168,8 +156,7 @@ const Header = () => {
 
         <StatBox 
           id="gider" label="Gider" icon={ArrowDownOutlined}
-          currentVal={totalExpense} prevVal={lastMonthData.expense}
-          mtdVal={lastMonthData.expenseMTD}
+          currentVal={totalExpense} mtdVal={lastMonthData.expenseMTD}
           colorClass="bg-rose-50 text-rose-700" borderClass="border-rose-500"
         />
 
