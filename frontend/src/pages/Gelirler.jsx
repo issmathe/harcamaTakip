@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef } from "react"; 
-import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider, Row, Col } from "antd";
+import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider } from "antd";
 import { 
   EditOutlined, DeleteOutlined, 
-  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined,
-  SearchOutlined
+  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -45,7 +44,6 @@ const GelirlerContent = () => {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState({ 
     miktar: "", kategori: "", not: "", tarih: dayjs().toDate()
@@ -69,26 +67,10 @@ const GelirlerContent = () => {
     return (gelirler || [])
       .filter((g) => {
         const t = dayjs(g.createdAt);
-        const isSearching = searchTerm.trim().length > 0;
-        const monthMatch = isSearching ? true : (t.month() === selectedMonth && t.year() === selectedYear);
-        const searchMatch = g.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           g.not?.toLowerCase().includes(searchTerm.toLowerCase());
-        return monthMatch && searchMatch;
+        return t.month() === selectedMonth && t.year() === selectedYear;
       })
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
-  }, [gelirler, selectedMonth, selectedYear, searchTerm]); 
-
-  const categoryTotals = useMemo(() => {
-    const stats = { gelir: 0, tasarruf: 0, diger: 0 };
-    filteredGelirler.forEach(item => {
-      const m = Number(item.miktar || 0);
-      const cat = item.kategori?.toLowerCase();
-      if (cat === 'gelir') stats.gelir += m;
-      else if (cat === 'tasarruf') stats.tasarruf += m;
-      else stats.diger += m;
-    });
-    return stats;
-  }, [filteredGelirler]);
+  }, [gelirler, selectedMonth, selectedYear]); 
 
   const openEditModal = (gelir) => {
     setEditingGelir(gelir);
@@ -177,39 +159,6 @@ const GelirlerContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* STATS */}
-        <Row gutter={12}>
-          <Col span={12}>
-            <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="p-2 bg-emerald-50 rounded-lg"><BankOutlined className="text-emerald-500 text-xs" /></div>
-                <Text type="secondary" className="text-[10px] font-bold uppercase">Net Gelir</Text>
-              </div>
-              <Title level={4} className="m-0 text-emerald-600">+{categoryTotals.gelir.toFixed(0)}€</Title>
-            </div>
-          </Col>
-          <Col span={12}>
-            <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="p-2 bg-blue-50 rounded-lg"><SaveOutlined className="text-blue-500 text-xs" /></div>
-                <Text type="secondary" className="text-[10px] font-bold uppercase">Tasarruf</Text>
-              </div>
-              <Title level={4} className="m-0 text-blue-600">+{categoryTotals.tasarruf.toFixed(0)}€</Title>
-            </div>
-          </Col>
-        </Row>
-
-        {/* SEARCH */}
-        <Input 
-          placeholder="İşlem veya not ara..." 
-          variant="filled"
-          className="rounded-2xl h-12 border-none bg-white shadow-sm"
-          prefix={<SearchOutlined className="text-gray-400" />} 
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          allowClear
-        />
-
         {/* LIST */}
         {filteredGelirler.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm">

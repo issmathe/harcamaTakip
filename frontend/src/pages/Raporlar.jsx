@@ -1,12 +1,8 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { Card, Typography, Empty, Button, Row, Col, Segmented, ConfigProvider } from "antd";
+import { Card, Typography, Empty, Button, Segmented, ConfigProvider } from "antd";
 import { 
   ArrowLeftOutlined, 
   ArrowRightOutlined, 
-  RiseOutlined, 
-  FallOutlined, 
-  WalletOutlined,
-  ShoppingOutlined,
   BarChartOutlined,
   ShopOutlined,
   UserOutlined
@@ -33,7 +29,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartD
 
 const { Title, Text } = Typography;
 
-// Sabitleri dışarıda tutmak render maliyetini düşürür
 const ALL_CATEGORIES = ["Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Diğer"];
 const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
@@ -54,30 +49,12 @@ const RaporlarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [activeTab, setActiveTab] = useState("Genel");
 
-  // Tek seferde filtreleme yapıp cache'liyoruz
   const filteredHarcamalar = useMemo(() => {
     return harcamalar.filter((h) => {
       const t = dayjs(h.createdAt); 
       return t.month() === selectedMonth && t.year() === selectedYear;
     });
   }, [harcamalar, selectedMonth, selectedYear]);
-
-  const stats = useMemo(() => {
-    const currentTotal = filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-    const lastMonthDate = dayjs().year(selectedYear).month(selectedMonth).subtract(1, 'month');
-    const lastMonthTotal = harcamalar
-      .filter(h => dayjs(h.createdAt).month() === lastMonthDate.month() && dayjs(h.createdAt).year() === lastMonthDate.year())
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-
-    const catTotals = {};
-    filteredHarcamalar.forEach(h => {
-        const cat = h.kategori || "Diğer";
-        catTotals[cat] = (catTotals[cat] || 0) + Number(h.miktar);
-    });
-    const topCategory = Object.entries(catTotals).sort((a,b) => b[1] - a[1])[0] || ["-", 0];
-
-    return { currentTotal, lastMonthTotal, topCategory };
-  }, [filteredHarcamalar, harcamalar, selectedMonth, selectedYear]);
 
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
@@ -94,7 +71,7 @@ const RaporlarContent = () => {
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
-    animation: { duration: 400 }, // Animasyon süresini kısalttık (hızlandık)
+    animation: { duration: 400 },
     scales: { 
       x: { display: false }, 
       y: { grid: { display: false }, ticks: { font: { size: 12 }, color: '#4b5563' } } 
@@ -126,7 +103,8 @@ const RaporlarContent = () => {
     }]
   }), [filteredHarcamalar]);
 
-  // Tab içeriğini fonksiyonla yönetmek gereksiz render'ı önler
+  const hasData = filteredHarcamalar.length > 0;
+
   const renderTabContent = () => {
     if (!hasData) return <div className="bg-white rounded-3xl p-12 text-center"><Empty description="Veri Yok" /></div>;
 
@@ -168,11 +146,8 @@ const RaporlarContent = () => {
     }
   };
 
-  const hasData = filteredHarcamalar.length > 0;
-
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
-      {/* HEADER: Blur yerine katı renk kullanımı performansı artırır */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
         <div className="flex justify-between items-center">
           <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} type="text" />
@@ -185,32 +160,6 @@ const RaporlarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        <Row gutter={12}>
-          <Col span={12}>
-            <div className="bg-white p-4 rounded-3xl border border-gray-100">
-              <div className="flex items-center gap-2 mb-1">
-                <WalletOutlined className="text-blue-500" />
-                <Text type="secondary" className="text-xs">Toplam</Text>
-              </div>
-              <Title level={4} className="m-0">{stats.currentTotal.toFixed(0)}€</Title>
-              <Text type={stats.currentTotal > stats.lastMonthTotal ? "danger" : "success"} className="text-[10px] font-bold">
-                {stats.currentTotal > stats.lastMonthTotal ? <RiseOutlined /> : <FallOutlined />} 
-                {stats.lastMonthTotal > 0 ? ` %${Math.abs(((stats.currentTotal-stats.lastMonthTotal)/stats.lastMonthTotal)*100).toFixed(0)}` : ' -'}
-              </Text>
-            </div>
-          </Col>
-          <Col span={12}>
-            <div className="bg-white p-4 rounded-3xl border border-gray-100">
-              <div className="flex items-center gap-2 mb-1">
-                <ShoppingOutlined className="text-orange-500" />
-                <Text type="secondary" className="text-xs">Zirve</Text>
-              </div>
-              <Title level={4} className="m-0 truncate" style={{fontSize: '15px'}}>{stats.topCategory[0]}</Title>
-              <Text className="text-[10px] text-gray-400 font-bold">{stats.topCategory[1].toFixed(0)}€</Text>
-            </div>
-          </Col>
-        </Row>
-
         <AylikHarcamaTrendGrafigi />
 
         <div className="bg-gray-200/50 p-1 rounded-xl">
