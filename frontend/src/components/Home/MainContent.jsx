@@ -1,40 +1,66 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Modal, Form, Input, Button, message, Select } from "antd";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
-  ShoppingCart, Shirt, Wallet, Fuel, Home, ReceiptText,
-  BookOpen, HeartPulse, Car, PartyPopper,
-  Laptop, Zap, Gift, Utensils, Users, HelpCircle, Sun, Delete, MessageCircle
-} from "lucide-react";
+  Typography,
+  Modal,
+  Form,
+  Input,
+  Button,
+  message,
+  Select,
+} from "antd";
+
 import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter"; // Plugin ekleyelim
+import CustomDayPicker from "../Forms/CustomDayPicker";
+
+import {
+  Shirt,
+  Wallet,
+  Fuel,
+  Home,
+  ReceiptText,
+  BookOpen,
+  HeartPulse,
+  Car,
+  Gift,
+  Laptop,
+  Zap,
+  ShoppingCart,
+  PartyPopper,
+  Utensils,
+  HelpCircle,
+  Users,
+  MessageCircle,
+  Delete,
+} from "lucide-react";
+
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
-import CustomDayPicker from "../Forms/CustomDayPicker";
 
 dayjs.extend(isSameOrAfter);
 
-/* ================= CONFIG ================= */
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const { Text } = Typography;
 const { Option } = Select;
 
 const CategoryIcons = {
-  Market: { icon: ShoppingCart, color: "from-teal-600 to-teal-900", dist: 110 },
-  Giyim: { icon: Shirt, color: "from-red-600 to-red-900", dist: 160 },
-  Tasarruf: { icon: Wallet, color: "from-pink-600 to-pink-900", dist: 130 },
-  Petrol: { icon: Fuel, color: "from-amber-600 to-amber-900", dist: 180 },
-  Kira: { icon: Home, color: "from-purple-600 to-purple-900", dist: 145 },
-  Fatura: { icon: ReceiptText, color: "from-indigo-600 to-indigo-900", dist: 120 },
-  Eğitim: { icon: BookOpen, color: "from-lime-600 to-lime-900", dist: 170 },
-  Sağlık: { icon: HeartPulse, color: "from-emerald-600 to-emerald-900", dist: 140 },
-  Ulaşım: { icon: Car, color: "from-sky-600 to-sky-900", dist: 195 },
-  Eğlence: { icon: PartyPopper, color: "from-yellow-600 to-yellow-900", dist: 155 },
-  Elektronik: { icon: Laptop, color: "from-gray-600 to-gray-900", dist: 125 },
-  İletisim: { icon: Zap, color: "from-blue-600 to-blue-900", dist: 185 },
-  Hediye: { icon: Gift, color: "from-cyan-600 to-cyan-900", dist: 135 },
-  Restoran: { icon: Utensils, color: "from-orange-600 to-orange-900", dist: 165 },
-  Aile: { icon: Users, color: "from-green-600 to-green-900", dist: 115 },
-  Diğer: { icon: HelpCircle, color: "from-neutral-600 to-neutral-900", dist: 175 },
+  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
+  Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
+  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" },
+  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
+  Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
+  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
+  Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
+  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
+  Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
+  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100" },
+  Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
+  İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
+  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100" },
+  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
+  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
+  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
@@ -42,167 +68,318 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
-/* ================= NUMPAD ================= */
 const NumericNumpad = ({ value, onChange }) => {
   const handlePress = (val) => {
     let newValue = value.toString();
-    if (val === "back") newValue = newValue.slice(0, -1);
-    else if (val === ",") newValue = newValue.includes(",") ? newValue : (newValue === "" ? "0," : newValue + ",");
-    else newValue = newValue === "0" ? val : newValue + val;
+    if (val === "back") {
+      newValue = newValue.slice(0, -1);
+    } else if (val === ",") {
+      if (!newValue.includes(",")) {
+        newValue = newValue === "" ? "0," : newValue + ",";
+      }
+    } else {
+      if (newValue === "0") newValue = val;
+      else newValue += val;
+    }
     onChange(newValue);
   };
+
   return (
-    <div className="grid grid-cols-3 gap-2 mt-4">
-      {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map((k) => (
-        <Button key={k} onClick={() => handlePress(k)} className={`h-12 text-lg font-bold rounded-xl border-none shadow-md transition-all active:scale-75 ${k === "back" ? "bg-red-500/20 text-red-400" : "bg-white/10 text-white backdrop-blur-md"}`}>
-          {k === "back" ? <Delete size={20} /> : k}
+    <div className="grid grid-cols-3 gap-3 mt-4">
+      {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map((key) => (
+        <Button
+          key={key}
+          onClick={() => handlePress(key)}
+          className={`h-14 text-xl font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
+            key === "back" ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-700"
+          }`}
+        >
+          {key === "back" ? <Delete size={24} /> : key}
         </Button>
       ))}
     </div>
   );
 };
 
-/* ================= MAIN ================= */
-export default function MainContent() {
+const MainContent = ({ radius = 40, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
-  const [rotation, setRotation] = useState(0);
-  const [velocity, setVelocity] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const lastX = useRef(0);
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
-  const [amount, setAmount] = useState("");
   const [showNote, setShowNote] = useState(false);
+  const [amount, setAmount] = useState("");
+
   const [form] = Form.useForm();
   const [gelirForm] = Form.useForm();
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastAngle, setLastAngle] = useState(0);
+  const wheelRef = useRef(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
-  const monthlyTotals = useMemo(() => {
-    const start = dayjs().startOf("month");
-    return harcamalar.reduce((acc, h) => {
-      if (dayjs(h.createdAt).isSameOrAfter(start, 'month')) {
-        acc[h.kategori] = (acc[h.kategori] || 0) + Number(h.miktar || 0);
+  const harcamaMutation = useMutation({
+    mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
+    onSuccess: async () => {
+      message.success("Harcama eklendi!");
+      await refetch();
+      handleModalCancel();
+    },
+    onError: () => message.error("Harcama eklenirken hata oluştu."),
+  });
+
+  const gelirMutation = useMutation({
+    mutationFn: (data) => axios.post(`${API_URL}/gelir`, data),
+    onSuccess: async () => {
+      message.success("Gelir eklendi!");
+      await refetch();
+      handleGelirCancel();
+    },
+    onError: () => message.error("Gelir eklenirken hata oluştu."),
+  });
+
+  const monthlyCategoryTotals = useMemo(() => {
+    // Yerel zamana göre şu anki ay başlangıcı
+    const startOfMonth = dayjs().startOf('month');
+    
+    return (harcamalar ?? []).reduce((acc, h) => {
+      const harcamaDate = dayjs(h.createdAt);
+      // Verinin tarihi şu anki ayın başlangıcıyla aynı veya sonraysa hesaba kat
+      if (harcamaDate.isSameOrAfter(startOfMonth, 'month')) {
+        const m = Number(h.miktar || 0);
+        if (h.kategori) acc[h.kategori] = (acc[h.kategori] || 0) + m;
       }
       return acc;
     }, {});
   }, [harcamalar]);
 
-  const maxValue = useMemo(() => Math.max(...Object.values(monthlyTotals), 1), [monthlyTotals]);
+  const getTopCategory = useCallback(() => {
+    const angle = 360 / CATEGORIES.length;
+    const normalized = ((rotation % 360) + 360) % 360;
+    return CATEGORIES[(Math.round(-normalized / angle) + CATEGORIES.length) % CATEGORIES.length];
+  }, [rotation]);
 
-  useEffect(() => {
-    let frame;
-    if (!isDragging) {
-      const animate = () => {
-        setRotation(r => r + velocity);
-        setVelocity(v => v * 0.96);
-        if (Math.abs(velocity) > 0.01) frame = requestAnimationFrame(animate);
-      };
-      frame = requestAnimationFrame(animate);
-    }
-    return () => cancelAnimationFrame(frame);
-  }, [velocity, isDragging]);
+  const currentTopCategory = getTopCategory();
+  const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
+  const formattedTotal = currentCategoryTotal.toFixed(2).replace(".", ",");
 
-  const handleTouchMove = (e) => {
-    const delta = e.touches[0].clientX - lastX.current;
-    setRotation(r => r + delta * 0.45);
-    setVelocity(delta * 0.2);
-    lastX.current = e.touches[0].clientX;
+  const getAngle = (cX, cY, pX, pY) => Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const rect = wheelRef.current.getBoundingClientRect();
+    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY));
   };
 
-  const harcamaMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
-    onSuccess: async () => {
-      message.success("Kaydedildi");
-      await refetch();
-      setIsModalVisible(false);
-      setAmount("");
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    const rect = wheelRef.current.getBoundingClientRect();
+    const angle = getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY);
+    let delta = angle - lastAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    setRotation((p) => p + delta);
+    setLastAngle(angle);
+  }, [isDragging, lastAngle]);
+
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+  const handleTouchStart = (e) => {
+    const t = e.touches[0];
+    const rect = wheelRef.current.getBoundingClientRect();
+    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, t.clientX, t.clientY));
+    touchStartPos.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleTouchMove = useCallback((e) => {
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartPos.current.x;
+    const dy = t.clientY - touchStartPos.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
+      if (e.cancelable) e.preventDefault();
+      if (!isDragging) setIsDragging(true);
+      const rect = wheelRef.current.getBoundingClientRect();
+      const angle = getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, t.clientX, t.clientY);
+      let delta = angle - lastAngle;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      setRotation((p) => p + delta);
+      setLastAngle(angle);
     }
-  });
+  }, [isDragging, lastAngle]);
+
+  const handleTouchEnd = useCallback(() => setIsDragging(false), []);
+
+  useEffect(() => {
+    const wheel = wheelRef.current;
+    if (!wheel) return;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    wheel.addEventListener("touchmove", handleTouchMove, { passive: false });
+    wheel.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      wheel.removeEventListener("touchmove", handleTouchMove);
+      wheel.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  const handleIconClick = (category) => {
+    if (isDragging) return;
+    setSelectedCategory(category);
+    setIsModalVisible(true);
+    setAmount("");
+    form.resetFields();
+    form.setFieldsValue({ tarih: dayjs().toDate() });
+    setShowNote(false);
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    setSelectedCategory(null);
+    setAmount("");
+    form.resetFields();
+    setShowNote(false);
+  };
+
+  const handleGelirClick = () => {
+    setIsGelirModalVisible(true);
+    setAmount("");
+    gelirForm.resetFields();
+    gelirForm.setFieldsValue({ tarih: dayjs().toDate(), kategori: "gelir" });
+  };
+
+  const handleGelirCancel = () => {
+    setIsGelirModalVisible(false);
+    setAmount("");
+    gelirForm.resetFields();
+  };
+
+  const onHarcamaFinish = (values) => {
+    const num = parseFloat(amount.replace(",", "."));
+    if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
+
+    harcamaMutation.mutate({
+      miktar: num,
+      kategori: selectedCategory || "Diğer",
+      altKategori: ["Market", "Giyim", "Aile"].includes(selectedCategory) ? values.altKategori : "",
+      not: values.not || "",
+      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
+    });
+  };
+
+  const onGelirFinish = (values) => {
+    const num = parseFloat(amount.replace(",", "."));
+    if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
+
+    gelirMutation.mutate({
+      miktar: num,
+      kategori: values.kategori || "gelir",
+      not: values.not || "",
+      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
+    });
+  };
 
   return (
-    <main className="h-screen bg-[#020617] overflow-hidden relative text-white">
-      <div className="absolute inset-0 opacity-20"><div id="stars" /></div>
-
-      <div className="absolute inset-0 flex items-center justify-center touch-none"
-        onTouchStart={(e) => { setIsDragging(true); lastX.current = e.touches[0].clientX; }}
-        onTouchMove={handleTouchMove} onTouchEnd={() => setIsDragging(false)}
-      >
-        {/* GÜNEŞ (GELİR) */}
-        <div onClick={() => { setAmount(""); setIsGelirModalVisible(true); }}
-          className="relative w-28 h-28 rounded-full flex items-center justify-center z-50 cursor-pointer active:scale-90 transition-transform shadow-[0_0_80px_rgba(255,100,0,0.7)]"
-          style={{ background: "radial-gradient(circle at 30% 30%, #fdbb2d, #ff4500)" }}
-        >
-          <Sun className="text-white animate-spin-slow" size={36} />
-        </div>
-
-        {/* DAĞINIK GEZEGENLER */}
-        {CATEGORIES.map((cat, i) => {
-          const { icon: Icon, color, dist } = CategoryIcons[cat];
-          const total = monthlyTotals[cat] || 0;
-          const intensity = total / maxValue;
-          
-          // Her gezegen için sabit ama dağınık bir başlangıç açısı
-          const startAngle = i * (360 / CATEGORIES.length) + (i * 15); 
-          const x = Math.cos((startAngle + rotation) * Math.PI / 180) * dist;
-          const y = Math.sin((startAngle + rotation) * Math.PI / 180) * dist;
-
-          return (
-            <div key={cat} onClick={() => { setSelectedCategory(cat); setAmount(""); setShowNote(false); form.resetFields(); form.setFieldsValue({ tarih: dayjs() }); setIsModalVisible(true); }}
-              className={`absolute rounded-full flex items-center justify-center border border-white/10 bg-gradient-to-br ${color} transition-all duration-300 shadow-xl active:scale-75`}
-              style={{
-                width: 46 + intensity * 30, height: 46 + intensity * 30,
-                transform: `translate(${x}px, ${y}px) rotate(${-rotation}deg)`,
-                boxShadow: intensity > 0.5 ? "0 0 20px rgba(255,255,255,0.2)" : "none"
-              }}
-            >
-              <Icon size={18 + intensity * 8} className="text-white" />
-            </div>
-          );
-        })}
+    <main className="flex-1 px-4 pt-4 pb-4">
+      <div className="text-center mb-6 pt-4">
+        <div className="text-blue-600 font-bold text-xl">{currentTopCategory}</div>
+        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
       </div>
 
-      {/* HARCAMA MODAL */}
-      <Modal open={isModalVisible} onCancel={() => setIsModalVisible(false)} footer={null} centered width="92%" styles={{ content: { background: '#0f172a', borderRadius: '24px' } }}>
-        <h3 className="text-center text-blue-400 font-bold uppercase tracking-widest text-xs mb-3">{selectedCategory}</h3>
-        <div className="bg-white/5 rounded-2xl p-4 mb-4 text-center border border-white/10 text-4xl font-black">{amount || "0"}<span className="text-lg ml-1 opacity-40 font-normal">€</span></div>
-        <Form form={form} layout="vertical" onFinish={(v) => harcamaMutation.mutate({ miktar: parseFloat(amount.replace(",", ".")), kategori: selectedCategory, altKategori: v.altKategori, not: v.not, createdAt: v.tarih.toISOString() })}>
-          <div className="flex gap-2 mb-2">
-            <Form.Item name="tarih" className="flex-1 mb-0"><CustomDayPicker /></Form.Item>
+      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
+        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-105 z-20 transition-all">
+          <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
+        </div>
+
+        <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.3s ease-out" }}
+          onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
+        >
+          {CATEGORIES.map((cat, i) => {
+            const ang = (360 / CATEGORIES.length) * i - 90;
+            const r = (ang * Math.PI) / 180;
+            const x = radius * Math.cos(r);
+            const y = radius * Math.sin(r);
+            const isTop = cat === currentTopCategory;
+            const { icon: Icon, color, bgColor } = CategoryIcons[cat];
+
+            return (
+              <button key={cat} onClick={() => handleIconClick(cat)}
+                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
+                  isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color}`
+                }`}
+                style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
+              >
+                <Icon className={isTop ? "w-6 h-6" : "w-5 h-5"} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Modal 
+        title={<div className="text-xl font-bold text-blue-700">{selectedCategory}</div>}
+        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
+      >
+        <div className="bg-gray-50 p-4 rounded-2xl mb-4 text-center border border-gray-200">
+          <div className="text-4xl font-black text-blue-600">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
+        </div>
+        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
+          <div className="grid grid-cols-2 gap-3">
+            <Form.Item name="tarih" label="Tarih" className="mb-2">
+              <CustomDayPicker />
+            </Form.Item>
             {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" className="flex-1 mb-0" rules={[{ required: true, message: 'Seç' }]}>
-                <Select placeholder="Seç" className="mobile-select">
+              <Form.Item name="altKategori" label="Alt Kategori" rules={[{ required: true, message: "Seç" }]} className="mb-2">
+                <Select placeholder="Seç">
                   {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
             )}
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
-          {showNote ? <Form.Item name="not" className="mt-3"><Input placeholder="Açıklama..." className="bg-white/5 border-white/10 text-white" /></Form.Item> : 
-          <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-2 text-white/30">Not Ekle</Button>}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-14 font-bold bg-blue-600 border-none rounded-xl">KAYDET</Button>
+          {showNote ? (
+            <Form.Item name="not" label="Not" className="mt-4">
+              <Input.TextArea rows={2} placeholder="Açıklama..." />
+            </Form.Item>
+          ) : (
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-2 text-gray-400">Not Ekle</Button>
+          )}
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-blue-600 rounded-xl">Kaydet</Button>
         </Form>
       </Modal>
 
-      {/* GELİR MODAL */}
-      <Modal open={isGelirModalVisible} onCancel={() => setIsGelirModalVisible(false)} footer={null} centered width="92%" styles={{ content: { background: '#020617', borderRadius: '24px' } }}>
-        <div className="bg-orange-500/10 rounded-2xl p-4 mb-4 text-center border border-orange-500/20 text-4xl font-black text-orange-500">{amount || "0"}€</div>
-        <Form form={gelirForm} layout="vertical" onFinish={(v) => axios.post(`${API_URL}/gelir`, { miktar: parseFloat(amount.replace(",", ".")), kategori: v.kategori, not: v.not, createdAt: v.tarih.toISOString() }).then(() => { message.success("Eklendi"); refetch(); setIsGelirModalVisible(false); })}>
-          <div className="flex gap-2 mb-2">
-            <Form.Item name="tarih" className="flex-1 mb-0" initialValue={dayjs()}><CustomDayPicker isIncome={true} /></Form.Item>
-            <Form.Item name="kategori" className="flex-1 mb-0" initialValue="gelir"><Select className="mobile-select"><Option value="gelir">Maaş</Option><Option value="tasarruf">Birikim</Option></Select></Form.Item>
+      <Modal 
+        title={<div className="text-xl font-bold text-indigo-700">Gelir Ekle</div>}
+        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
+      >
+        <div className="bg-indigo-50 p-4 rounded-2xl mb-4 text-center border border-indigo-100">
+          <div className="text-4xl font-black text-indigo-600">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
+        </div>
+        <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
+          <div className="grid grid-cols-2 gap-3">
+            <Form.Item name="tarih" label="Tarih" className="mb-2">
+              <CustomDayPicker isIncome={true} />
+            </Form.Item>
+            <Form.Item name="kategori" label="Tür" className="mb-2">
+              <Select>
+                <Option value="gelir">Gelir</Option>
+                <Option value="tasarruf">Tasarruf</Option>
+                <Option value="diğer">Diğer</Option>
+              </Select>
+            </Form.Item>
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
-          <Button type="primary" htmlType="submit" block className="mt-4 h-14 font-bold bg-orange-600 border-none rounded-xl">GELİR EKLE</Button>
+          <Form.Item name="not" label="Not" className="mt-4">
+            <Input placeholder="Not ekle..." />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-indigo-600 rounded-xl">Kaydet</Button>
         </Form>
       </Modal>
-
-      <style>{`
-        #stars { width: 1px; height: 1px; background: white; box-shadow: ${Array.from({length:100}).map(()=>`${Math.random()*100}vw ${Math.random()*100}vh white`).join(',')}; }
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
-        .mobile-select .ant-select-selector { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: white !important; height: 45px !important; border-radius: 10px !important; display: flex; align-items: center; }
-        .ant-modal-mask { backdrop-filter: blur(8px); }
-      `}</style>
     </main>
   );
-}
+};
+
+export default MainContent;
