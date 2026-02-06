@@ -27,49 +27,104 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
 /**
- * Gezegen Efektleri: Saf CSS ile 3D Görünüm
+ * Gelişmiş Gezegen Tasarımları
  */
 const PlanetStyle = ({ type, isTop }) => {
   const configs = {
-    Market: { bg: "bg-emerald-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(16,185,129,0.4)]", ring: false },
-    Giyim: { bg: "bg-rose-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(244,63,94,0.4)]", ring: false },
-    Tasarruf: { bg: "bg-amber-400", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(251,191,36,0.4)]", ring: true }, // Satürn stili
-    Petrol: { bg: "bg-orange-700", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.7),0_0_15px_rgba(194,65,12,0.4)]", ring: false },
-    Kira: { bg: "bg-indigo-600", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(79,70,229,0.4)]", ring: false },
-    Fatura: { bg: "bg-cyan-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(6,182,212,0.4)]", ring: false },
-    Eğitim: { bg: "bg-blue-400", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(96,165,250,0.4)]", ring: false },
-    Sağlık: { bg: "bg-red-600", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.6),0_0_15px_rgba(220,38,38,0.4)]", ring: false },
-    Ulaşım: { bg: "bg-slate-400", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(148,163,184,0.4)]", ring: false },
-    Eğlence: { bg: "bg-purple-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(168,85,247,0.4)]", ring: false },
-    Elektronik: { bg: "bg-zinc-700", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.8),0_0_15px_rgba(63,63,70,0.4)]", ring: true },
-    İletisim: { bg: "bg-yellow-300", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.3),0_0_15px_rgba(253,224,71,0.4)]", ring: false },
-    Hediye: { bg: "bg-pink-400", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(244,114,182,0.4)]", ring: false },
-    Restoran: { bg: "bg-orange-400", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(251,146,60,0.4)]", ring: false },
-    Aile: { bg: "bg-lime-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(132,204,22,0.4)]", ring: false },
-    Diğer: { bg: "bg-neutral-500", shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.5),0_0_15px_rgba(115,115,115,0.4)]", ring: false },
+    Market: { 
+      name: "Dünya",
+      bg: "bg-blue-500", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6),0_0_15px_rgba(59,130,246,0.4)]",
+      extra: <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_30%,#4ade80_0%,transparent_50%),radial-gradient(circle_at_70%_60%,#4ade80_0%,transparent_40%)] rounded-full animate-pulse" /> // Kıtalar
+    },
+    Giyim: { 
+      name: "Mars",
+      bg: "bg-red-700", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.7),0_0_10px_rgba(185,28,28,0.4)]",
+      extra: <div className="absolute top-2 left-4 w-1 h-1 bg-black/20 rounded-full shadow-[4px_10px_0_rgba(0,0,0,0.2),12px_2px_0_rgba(0,0,0,0.1)]" /> // Kraterler
+    },
+    Tasarruf: { 
+      name: "Venüs",
+      bg: "bg-yellow-200", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.3),0_0_20px_rgba(253,224,71,0.3)]",
+      extra: <div className="absolute inset-0 opacity-30 bg-gradient-to-t from-orange-400 to-transparent rounded-full" />
+    },
+    Petrol: { 
+      name: "Jüpiter",
+      bg: "bg-orange-800", 
+      shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.8)]",
+      extra: (
+        <div className="absolute inset-0 flex flex-col justify-around py-1 opacity-50">
+          <div className="h-[2px] bg-orange-200/40 w-full" />
+          <div className="h-[3px] bg-red-900/60 w-full" />
+          <div className="h-[1px] bg-orange-100/30 w-full" />
+          <div className="absolute top-1/2 right-2 w-2 h-1 bg-red-600 rounded-full blur-[1px]" /> {/* Büyük Kırmızı Leke */}
+        </div>
+      )
+    },
+    Kira: { 
+      name: "Neptün",
+      bg: "bg-indigo-700", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6)]",
+      extra: <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full" />
+    },
+    Fatura: { 
+      name: "Uranüs",
+      bg: "bg-cyan-300", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.2)]",
+      ring: true,
+      ringColor: "border-cyan-100/30"
+    },
+    Eğitim: { 
+      name: "Merkür",
+      bg: "bg-gray-400", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.5)]",
+      extra: <div className="absolute inset-0 grid grid-cols-2 gap-1 p-2 opacity-20"><div className="bg-black rounded-full" /><div className="bg-black rounded-full" /></div>
+    },
+    Sağlık: { 
+      name: "Ay",
+      bg: "bg-slate-200", 
+      shadow: "shadow-[inset_-5px_-5px_10px_rgba(0,0,0,0.3)]",
+      extra: <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/pollen.png')] rounded-full" />
+    },
+    Ulaşım: { 
+      name: "Satürn",
+      bg: "bg-amber-600", 
+      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6)]",
+      ring: true,
+      ringColor: "border-amber-200/40"
+    },
+    Eğlence: { name: "Plüton", bg: "bg-purple-400", shadow: "shadow-inner", extra: <div className="absolute bottom-1 right-2 w-4 h-4 bg-white/20 rounded-full blur-sm" /> },
+    Elektronik: { name: "Titan", bg: "bg-zinc-600", shadow: "shadow-2xl" },
+    İletisim: { name: "Io", bg: "bg-yellow-500", extra: <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#71710a_0%,transparent_20%)] opacity-40" /> },
+    Hediye: { name: "Europa", bg: "bg-blue-100", extra: <div className="absolute inset-0 opacity-30 border-t border-blue-900/20 rotate-45" /> },
+    Restoran: { name: "Callisto", bg: "bg-stone-700", shadow: "shadow-inner" },
+    Aile: { name: "Güneş-2", bg: "bg-lime-500", extra: <div className="absolute inset-0 animate-pulse bg-white/10 rounded-full" /> },
+    Diğer: { name: "Asteroid", bg: "bg-neutral-500", shadow: "shadow-none" },
   };
 
   const current = configs[type] || configs.Diğer;
 
   return (
-    <div className={`relative w-full h-full rounded-full ${current.bg} ${current.shadow} transition-transform duration-500 overflow-visible`}>
-      {/* Atmosferik Işıma */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/10 to-white/30" />
+    <div className={`relative w-full h-full rounded-full ${current.bg} ${current.shadow} transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
+      {/* Gezegen Yüzeyi */}
+      {current.extra}
       
-      {/* Halkalı Gezegenler (Örn: Satürn/Uranüs tipi) */}
+      {/* Halkalar */}
       {current.ring && (
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[20%] border-2 border-white/20 rounded-[100%] rotate-[25deg] shadow-[0_0_10px_rgba(255,255,255,0.2)]`} />
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[25%] border-[3px] ${current.ringColor} rounded-[100%] rotate-[20deg] pointer-events-none`} />
       )}
-      
-      {/* Yüzey Detayı (Krater/Leke efekti) */}
-      <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-black/10 blur-[1px]" />
-      <div className="absolute bottom-1/3 right-1/4 w-4 h-3 rounded-full bg-black/5 blur-[2px]" />
-      
-      {/* Kategori İsmi (Sadece aktifse) */}
+
+      {/* KRİTİK ÇÖZÜM: Kategori Etiketi */}
+      <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
+         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap border border-white/20 tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
+            {type}
+         </span>
+      </div>
+
+      {/* Seçili Işıma */}
       {isTop && (
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold tracking-widest uppercase text-white drop-shadow-lg">
-          {type}
-        </div>
+        <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/20 pointer-events-none" />
       )}
     </div>
   );
@@ -167,7 +222,7 @@ const NumericNumpad = ({ value, onChange }) => {
   );
 };
 
-const MainContent = ({ radius = 40, center = 50 }) => {
+const MainContent = ({ radius = 42, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -348,41 +403,36 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
       <SpaceBackground />
       
-      {/* Üst Bilgi Paneli */}
+      {/* Üst Odak Paneli */}
       <div className="text-center mb-6 pt-4 relative z-10">
-        <div className="text-blue-300 font-bold text-2xl drop-shadow-[0_0_10px_rgba(59,130,246,0.8)] tracking-widest">{currentTopCategory}</div>
-        <div className="text-white font-medium text-lg mt-1 opacity-90">{formattedTotal} €</div>
+        <div className="text-blue-300 font-bold text-2xl drop-shadow-[0_0_15px_rgba(59,130,246,0.6)] tracking-[0.2em] transition-all uppercase">
+          {currentTopCategory}
+        </div>
+        <div className="text-white font-mono text-xl mt-1 opacity-80">{formattedTotal} €</div>
       </div>
 
-      <div className="relative flex items-center justify-center h-[400px] w-full mx-auto my-6 z-10">
+      <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
         {/* MERKEZ: GÜNEŞ (GELİR) */}
         <div 
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
-          <div className="absolute w-[180px] h-[180px] bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
-          <svg width="150" height="150" viewBox="0 0 100 100" className="drop-shadow-[0_0_30px_rgba(251,146,60,0.9)]">
+          <div className="absolute w-[160px] h-[160px] bg-orange-600/30 rounded-full blur-[40px] animate-pulse" />
+          <svg width="130" height="130" viewBox="0 0 100 100">
             <defs>
-              <filter id="sunNoise">
-                <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="4" seed="5" result="noise">
-                  <animate attributeName="seed" from="1" to="1000" dur="20s" repeatCount="indefinite" />
-                </feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" />
-              </filter>
-              <radialGradient id="sunInner">
+              <radialGradient id="sunGlow">
                 <stop offset="0%" stopColor="#fff7ed" />
-                <stop offset="40%" stopColor="#fbbf24" />
+                <stop offset="40%" stopColor="#fdba74" />
                 <stop offset="100%" stopColor="#ea580c" />
               </radialGradient>
             </defs>
-            <circle cx="50" cy="50" r="42" fill="url(#sunInner)" filter="url(#sunNoise)" opacity="0.9" />
-            <circle cx="50" cy="50" r="35" fill="url(#sunInner)" />
+            <circle cx="50" cy="50" r="45" fill="url(#sunGlow)" className="drop-shadow-[0_0_20px_rgba(234,88,12,0.8)]" />
           </svg>
         </div>
 
-        {/* GEZEGENLER HALKASI */}
+        {/* GEZEGENLER ÇARKI */}
         <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.4s cubic-bezier(0.2, 0, 0.2, 1)" }}
+          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.15, 0, 0.15, 1)" }}
           onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((cat, i) => {
@@ -399,14 +449,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                   top: `${center + y}%`, 
                   left: `${center + x}%`, 
                   transform: `translate(-50%, -50%)`,
-                  width: isTop ? '80px' : '50px',
-                  height: isTop ? '80px' : '50px',
-                  transition: 'width 0.3s, height 0.3s'
+                  width: isTop ? '75px' : '45px',
+                  height: isTop ? '75px' : '45px',
+                  zIndex: isTop ? 50 : 10
                 }}
               >
                 <button 
                   onClick={() => handleIconClick(cat)}
-                  className="w-full h-full p-0 border-none bg-transparent outline-none active:scale-90 transition-transform"
+                  className="w-full h-full p-0 border-none bg-transparent outline-none"
                   style={{ transform: `rotate(${-rotation}deg)` }}
                 >
                   <PlanetStyle type={cat} isTop={isTop} />
@@ -419,22 +469,23 @@ const MainContent = ({ radius = 40, center = 50 }) => {
 
       {/* Harcama Modalı */}
       <Modal 
-        title={<div className="text-xl font-bold text-blue-700">{selectedCategory} Harcaması</div>}
+        title={<div className="text-xl font-bold text-blue-400 font-mono tracking-widest">{selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
+        className="space-modal"
       >
-        <div className="bg-slate-900 p-6 rounded-3xl mb-4 text-center border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-          <div className="text-5xl font-black text-blue-400 tracking-tighter">
-            {amount || "0"}<span className="text-2xl ml-1 font-light text-blue-200/50">€</span>
+        <div className="bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-blue-500/20 shadow-2xl">
+          <div className="text-5xl font-black text-white tracking-tight">
+            {amount || "0"}<span className="text-2xl ml-2 text-blue-500/50">€</span>
           </div>
         </div>
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="tarih" label="Tarih" className="mb-2">
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="tarih" label="Görev Tarihi" className="mb-2">
               <CustomDayPicker />
             </Form.Item>
             {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label="Alt Kategori" rules={[{ required: true, message: "Seç" }]} className="mb-2">
-                <Select placeholder="Seç">
+              <Form.Item name="altKategori" label="Alt Bölge" rules={[{ required: true, message: "Seç" }]} className="mb-2">
+                <Select placeholder="Hedef Seç">
                   {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
@@ -442,44 +493,44 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
-            <Form.Item name="not" label="Not" className="mt-4">
-              <Input.TextArea rows={2} placeholder="Kısa bir not..." className="rounded-xl" />
+            <Form.Item name="not" label="Kaptan Notu" className="mt-4">
+              <Input.TextArea rows={2} className="bg-slate-800 border-slate-700 text-white rounded-xl" />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-2 text-slate-400">Not Ekle</Button>
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-4 text-slate-500">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 border-none rounded-2xl shadow-xl hover:shadow-blue-500/20">Sisteme İşle</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)]">KAYDET</Button>
         </Form>
       </Modal>
 
       {/* Gelir Modalı */}
       <Modal 
-        title={<div className="text-xl font-bold text-orange-600 font-mono">Enerji Girişi (Gelir)</div>}
+        title={<div className="text-xl font-bold text-orange-400 font-mono">Enerji Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
       >
-        <div className="bg-orange-950 p-6 rounded-3xl mb-4 text-center border border-orange-500/30">
-          <div className="text-5xl font-black text-orange-400 tracking-tighter">
-            {amount || "0"}<span className="text-2xl ml-1 font-light opacity-50">€</span>
+        <div className="bg-orange-950/50 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-orange-500/20">
+          <div className="text-5xl font-black text-white tracking-tight">
+            {amount || "0"}<span className="text-2xl ml-2 text-orange-500/50">€</span>
           </div>
         </div>
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="tarih" label="Zaman Hattı" className="mb-2">
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="tarih" label="İşlem Zamanı" className="mb-2">
               <CustomDayPicker isIncome={true} />
             </Form.Item>
-            <Form.Item name="kategori" label="Kaynak" className="mb-2">
+            <Form.Item name="kategori" label="Tür" className="mb-2">
               <Select>
-                <Option value="gelir">Maaş/Gelir</Option>
+                <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ek Kaynak</Option>
+                <Option value="diğer">Ekstra</Option>
               </Select>
             </Form.Item>
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
-          <Form.Item name="not" label="Detay" className="mt-4">
-            <Input placeholder="Nereden geldi?" className="rounded-xl h-12" />
+          <Form.Item name="not" label="Not" className="mt-4">
+            <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-600 border-none rounded-2xl shadow-xl">Kaydı Tamamla</Button>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.4)]">ENERJİYİ EKLE</Button>
         </Form>
       </Modal>
     </main>
