@@ -1,63 +1,40 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import {
-  Typography,
-  Modal,
-  Form,
-  Input,
-  Button,
-  message,
-  Select,
-} from "antd";
-
+import { Typography, Modal, Form, Input, Button, message, Select } from "antd";
 import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import CustomDayPicker from "../Forms/CustomDayPicker";
-
 import {
-  Shirt,
-  Wallet,
-  Fuel,
-  Home,
-  ReceiptText,
-  BookOpen,
-  HeartPulse,
-  Car,
-  Gift,
-  Laptop,
-  Zap,
-  ShoppingCart,
-  PartyPopper,
-  Utensils,
-  HelpCircle,
-  Users,
-  MessageCircle,
-  Delete,
+  Shirt, Wallet, Fuel, Home, ReceiptText, BookOpen, HeartPulse,
+  Car, Gift, Laptop, Zap, ShoppingCart, PartyPopper, Utensils,
+  HelpCircle, Users, MessageCircle, Delete, Sun
 } from "lucide-react";
-
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
+
+dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Text } = Typography;
 const { Option } = Select;
 
 const CategoryIcons = {
-  Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
-  Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
-  Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
-  Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
-  Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
-  Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
-  Sağlık: { icon: HeartPulse, color: "text-emerald-500", bgColor: "bg-emerald-100" },
-  Ulaşım: { icon: Car, color: "text-sky-500", bgColor: "bg-sky-100" },
-  Eğlence: { icon: PartyPopper, color: "text-yellow-500", bgColor: "bg-yellow-100" },
-  Elektronik: { icon: Laptop, color: "text-gray-500", bgColor: "bg-gray-100" },
-  İletisim: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-100" },
-  Hediye: { icon: Gift, color: "text-cyan-500", bgColor: "bg-cyan-100" },
-  Restoran: { icon: Utensils, color: "text-orange-500", bgColor: "bg-orange-100" },
-  Aile: { icon: Users, color: "text-green-600", bgColor: "bg-green-100" },
-  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "bg-neutral-100" },
+  Market: { icon: ShoppingCart, color: "text-teal-400", bgColor: "from-teal-900 to-teal-600" },
+  Giyim: { icon: Shirt, color: "text-red-400", bgColor: "from-red-900 to-red-600" },
+  Tasarruf: { icon: Wallet, color: "text-pink-400", bgColor: "from-pink-900 to-pink-600" },
+  Petrol: { icon: Fuel, color: "text-amber-400", bgColor: "from-amber-900 to-amber-600" },
+  Kira: { icon: Home, color: "text-purple-400", bgColor: "from-purple-900 to-purple-600" },
+  Fatura: { icon: ReceiptText, color: "text-indigo-400", bgColor: "from-indigo-900 to-indigo-600" },
+  Eğitim: { icon: BookOpen, color: "text-lime-400", bgColor: "from-lime-900 to-lime-600" },
+  Sağlık: { icon: HeartPulse, color: "text-emerald-400", bgColor: "from-emerald-900 to-emerald-600" },
+  Ulaşım: { icon: Car, color: "text-sky-400", bgColor: "from-sky-900 to-sky-600" },
+  Eğlence: { icon: PartyPopper, color: "text-yellow-400", bgColor: "from-yellow-900 to-yellow-600" },
+  Elektronik: { icon: Laptop, color: "text-gray-400", bgColor: "from-gray-900 to-gray-600" },
+  İletisim: { icon: Zap, color: "text-blue-400", bgColor: "from-blue-900 to-blue-600" },
+  Hediye: { icon: Gift, color: "text-cyan-400", bgColor: "from-cyan-900 to-cyan-600" },
+  Restoran: { icon: Utensils, color: "text-orange-400", bgColor: "from-orange-900 to-orange-600" },
+  Aile: { icon: Users, color: "text-green-400", bgColor: "from-green-900 to-green-600" },
+  Diğer: { icon: HelpCircle, color: "text-neutral-400", bgColor: "from-neutral-900 to-neutral-600" },
 };
 
 const CATEGORIES = Object.keys(CategoryIcons);
@@ -98,7 +75,7 @@ const NumericNumpad = ({ value, onChange }) => {
   );
 };
 
-const MainContent = ({ radius = 40, center = 50 }) => {
+const MainContent = ({ radius = 42, center = 50 }) => {
   const { refetch, harcamalar = [] } = useTotalsContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -134,18 +111,22 @@ const MainContent = ({ radius = 40, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  const getCurrentMonthYear = () => new Date().toISOString().slice(0, 7);
-
   const monthlyCategoryTotals = useMemo(() => {
-    const currentMonth = getCurrentMonthYear();
+    const startOfMonth = dayjs().startOf('month');
     return (harcamalar ?? []).reduce((acc, h) => {
-      if (h?.createdAt?.startsWith(currentMonth)) {
+      const harcamaDate = dayjs(h.createdAt);
+      if (harcamaDate.isSameOrAfter(startOfMonth, 'month')) {
         const m = Number(h.miktar || 0);
         if (h.kategori) acc[h.kategori] = (acc[h.kategori] || 0) + m;
       }
       return acc;
     }, {});
   }, [harcamalar]);
+
+  const maxHarcama = useMemo(() => {
+    const values = Object.values(monthlyCategoryTotals);
+    return values.length > 0 ? Math.max(...values) : 1;
+  }, [monthlyCategoryTotals]);
 
   const getTopCategory = useCallback(() => {
     const angle = 360 / CATEGORIES.length;
@@ -254,42 +235,62 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   const onHarcamaFinish = (values) => {
     const num = parseFloat(amount.replace(",", "."));
     if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
-
     harcamaMutation.mutate({
       miktar: num,
       kategori: selectedCategory || "Diğer",
       altKategori: ["Market", "Giyim", "Aile"].includes(selectedCategory) ? values.altKategori : "",
       not: values.not || "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString(),
+      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
   };
 
   const onGelirFinish = (values) => {
     const num = parseFloat(amount.replace(",", "."));
     if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
-
     gelirMutation.mutate({
       miktar: num,
       kategori: values.kategori || "gelir",
       not: values.not || "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : new Date().toISOString(),
+      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
   };
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-4">
-      <div className="text-center mb-6 pt-4">
-        <div className="text-blue-600 font-bold text-xl">{currentTopCategory}</div>
-        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
+    <main className="flex-1 px-4 pt-4 pb-4 bg-[#020617] min-h-screen overflow-hidden relative">
+      
+      {/* CSS YILDIZLAR ARKA PLANI */}
+      <div className="stars-container absolute inset-0 pointer-events-none">
+        <div id="stars" />
+        <div id="stars2" />
+        <div id="stars3" />
       </div>
 
-      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-105 z-20 transition-all">
-          <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
+      <div className="text-center mb-6 pt-4 relative z-30">
+        <div className="text-yellow-400 font-bold text-2xl tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
+          {currentTopCategory}
+        </div>
+        <div className="text-blue-300 font-medium text-lg mt-1 opacity-80">{formattedTotal} €</div>
+      </div>
+
+      <div className="relative flex items-center justify-center h-[450px] w-[450px] mx-auto my-6">
+        
+        {/* Yörünge Çizgisi */}
+        <div className="absolute border border-blue-500/10 rounded-full" 
+             style={{ width: `${radius * 2}%`, height: `${radius * 2}%`, top: `${center - radius}%`, left: `${center - radius}%` }} />
+
+        {/* GÜNEŞ (GELİR) */}
+        <div 
+          onClick={handleGelirClick} 
+          className="group relative w-36 h-36 rounded-full bg-gradient-to-br from-yellow-200 via-orange-500 to-red-600 flex flex-col items-center justify-center shadow-[0_0_80px_rgba(234,179,8,0.3)] cursor-pointer hover:scale-105 z-20 transition-all duration-500 border border-yellow-200/20"
+        >
+          <div className="absolute inset-0 rounded-full bg-yellow-400 blur-xl opacity-30 group-hover:opacity-60 animate-pulse" />
+          <Sun className="text-white mb-1 relative z-10 animate-spin-slow" size={36} />
+          <Text className="!text-white font-black text-xs tracking-widest relative z-10">MERKEZ BANKASI</Text>
         </div>
 
+        {/* GEZEGENLER ÇARKI */}
         <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.3s ease-out" }}
+          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.6s cubic-bezier(0.15, 0.85, 0.35, 1)" }}
           onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((cat, i) => {
@@ -299,15 +300,23 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             const y = radius * Math.sin(r);
             const isTop = cat === currentTopCategory;
             const { icon: Icon, color, bgColor } = CategoryIcons[cat];
+            
+            const catTotal = monthlyCategoryTotals[cat] || 0;
+            const sizeMultiplier = 0.85 + (catTotal / (maxHarcama || 1)) * 0.75;
 
             return (
               <button key={cat} onClick={() => handleIconClick(cat)}
-                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
-                  isTop ? "bg-blue-600 text-white scale-150 ring-4 ring-blue-300 border-2 border-white z-10" : `${bgColor} ${color}`
+                className={`absolute w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl bg-gradient-to-b ${bgColor} border border-white/20 ${
+                  isTop ? "z-30" : "z-10 opacity-70"
                 }`}
-                style={{ top: `${center + y}%`, left: `${center + x}%`, transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }}
+                style={{ 
+                    top: `${center + y}%`, 
+                    left: `${center + x}%`, 
+                    transform: `translate(-50%, -50%) rotate(${-rotation}deg) scale(${isTop ? sizeMultiplier * 1.35 : sizeMultiplier})`,
+                    boxShadow: isTop ? `0 0 30px rgba(255,255,255,0.2), inset 0 0 10px rgba(255,255,255,0.2)` : 'none'
+                }}
               >
-                <Icon className={isTop ? "w-6 h-6" : "w-5 h-5"} />
+                <Icon className={`${isTop ? "text-white" : color} w-6 h-6 transition-transform`} />
               </button>
             );
           })}
@@ -342,12 +351,12 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-2 text-gray-400">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-blue-600 rounded-xl">Kaydet</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-blue-600 rounded-xl border-none">Kaydet</Button>
         </Form>
       </Modal>
 
       <Modal 
-        title={<div className="text-xl font-bold text-indigo-700">Gelir Ekle</div>}
+        title={<div className="text-xl font-bold text-indigo-700">Gelir Kaydı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
       >
         <div className="bg-indigo-50 p-4 rounded-2xl mb-4 text-center border border-indigo-100">
@@ -360,19 +369,61 @@ const MainContent = ({ radius = 40, center = 50 }) => {
             </Form.Item>
             <Form.Item name="kategori" label="Tür" className="mb-2">
               <Select>
-                <Option value="gelir">Gelir</Option>
-                <Option value="tasarruf">Tasarruf</Option>
+                <Option value="gelir">Normal Gelir</Option>
+                <Option value="tasarruf">Birikim</Option>
                 <Option value="diğer">Diğer</Option>
               </Select>
             </Form.Item>
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
           <Form.Item name="not" label="Not" className="mt-4">
-            <Input placeholder="Not ekle..." />
+            <Input placeholder="Not..." />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-indigo-600 rounded-xl">Kaydet</Button>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-indigo-600 rounded-xl border-none">Kaydet</Button>
         </Form>
       </Modal>
+      
+      <style jsx>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
+        }
+
+        /* YILDIZ EFEKTLERİ */
+        #stars, #stars2, #stars3 {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: transparent;
+        }
+
+        #stars {
+          width: 1px; height: 1px;
+          box-shadow: ${Array.from({length: 100}).map(() => `${Math.random()*2000}px ${Math.random()*2000}px #FFF`).join(',')};
+          animation: animStar 50s linear infinite;
+        }
+
+        #stars2 {
+          width: 2px; height: 2px;
+          box-shadow: ${Array.from({length: 50}).map(() => `${Math.random()*2000}px ${Math.random()*2000}px #FFF`).join(',')};
+          animation: animStar 100s linear infinite;
+          opacity: 0.5;
+        }
+
+        #stars3 {
+          width: 3px; height: 3px;
+          box-shadow: ${Array.from({length: 20}).map(() => `${Math.random()*2000}px ${Math.random()*2000}px #FFF`).join(',')};
+          animation: animStar 150s linear infinite;
+          opacity: 0.3;
+        }
+
+        @keyframes animStar {
+          from { transform: translateY(0px); }
+          to { transform: translateY(-2000px); }
+        }
+      `}</style>
     </main>
   );
 };
