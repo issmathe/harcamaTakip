@@ -66,6 +66,60 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
+const SpaceBackground = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let animationFrameId;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    const stars = Array.from({ length: 150 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      z: Math.random() * canvas.width,
+      o: Math.random(),
+    }));
+
+    const draw = () => {
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      stars.forEach((star) => {
+        star.z -= 0.5;
+        if (star.z <= 0) star.z = canvas.width;
+
+        const x = (star.x - canvas.width / 2) * (canvas.width / star.z) + canvas.width / 2;
+        const y = (star.y - canvas.height / 2) * (canvas.width / star.z) + canvas.height / 2;
+        const s = (1 - star.z / canvas.width) * 3;
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.o})`;
+        ctx.arc(x, y, s, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 -z-10" />;
+};
+
 const NumericNumpad = ({ value, onChange }) => {
   const handlePress = (val) => {
     let newValue = value.toString();
@@ -277,14 +331,14 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   };
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-4">
-      <div className="text-center mb-6 pt-4">
-        <div className="text-blue-600 font-bold text-xl">{currentTopCategory}</div>
-        <div className="text-gray-700 font-semibold text-base mt-1">{formattedTotal} €</div>
+    <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
+      <SpaceBackground />
+      <div className="text-center mb-6 pt-4 relative z-10">
+        <div className="text-blue-400 font-bold text-xl drop-shadow-md">{currentTopCategory}</div>
+        <div className="text-white font-semibold text-base mt-1 drop-shadow-md">{formattedTotal} €</div>
       </div>
 
-      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        {/* Organik ve Tırtıklı Güneş Efekti */}
+      <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6 z-10">
         <div 
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-90 transition-transform duration-200"
@@ -303,14 +357,8 @@ const MainContent = ({ radius = 40, center = 50 }) => {
                 <stop offset="100%" stopColor="#ea580c" />
               </radialGradient>
             </defs>
-            
-            {/* Tırtıklı Dış Katman */}
             <circle cx="50" cy="50" r="38" fill="url(#sunGrad)" filter="url(#turb)" opacity="0.8" />
-            
-            {/* Parlak İç Çekirdek */}
             <circle cx="50" cy="50" r="32" fill="url(#sunGrad)" className="animate-pulse" />
-            
-            {/* Mercek Parlaması */}
             <circle cx="40" cy="40" r="10" fill="white" opacity="0.2" />
           </svg>
         </div>
