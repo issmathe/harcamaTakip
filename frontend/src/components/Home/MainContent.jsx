@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
-  Typography,
   Modal,
   Form,
   Input,
@@ -10,7 +9,7 @@ import {
 } from "antd";
 
 import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter"; // Plugin ekleyelim
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import CustomDayPicker from "../Forms/CustomDayPicker";
 
 import {
@@ -41,7 +40,6 @@ import { useMutation } from "@tanstack/react-query";
 dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
-const { Text } = Typography;
 const { Option } = Select;
 
 const CategoryIcons = {
@@ -138,12 +136,9 @@ const MainContent = ({ radius = 40, center = 50 }) => {
   });
 
   const monthlyCategoryTotals = useMemo(() => {
-    // Yerel zamana göre şu anki ay başlangıcı
     const startOfMonth = dayjs().startOf('month');
-    
     return (harcamalar ?? []).reduce((acc, h) => {
       const harcamaDate = dayjs(h.createdAt);
-      // Verinin tarihi şu anki ayın başlangıcıyla aynı veya sonraysa hesaba kat
       if (harcamaDate.isSameOrAfter(startOfMonth, 'month')) {
         const m = Number(h.miktar || 0);
         if (h.kategori) acc[h.kategori] = (acc[h.kategori] || 0) + m;
@@ -289,8 +284,35 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       </div>
 
       <div className="relative flex items-center justify-center h-80 w-80 mx-auto my-6">
-        <div onClick={handleGelirClick} className="w-32 h-32 rounded-full bg-indigo-600 text-white flex flex-col items-center justify-center shadow-lg cursor-pointer hover:scale-105 z-20 transition-all">
-          <Text className="!text-white font-bold text-lg">Gelir Ekle</Text>
+        {/* Organik ve Tırtıklı Güneş Efekti */}
+        <div 
+          onClick={handleGelirClick} 
+          className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-90 transition-transform duration-200"
+        >
+          <svg width="140" height="140" viewBox="0 0 100 100" className="drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]">
+            <defs>
+              <filter id="turb">
+                <feTurbulence type="fractalNoise" baseFrequency="0.15" numOctaves="3" seed="1" result="noise">
+                  <animate attributeName="seed" from="1" to="100" dur="10s" repeatCount="indefinite" />
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" />
+              </filter>
+              <radialGradient id="sunGrad">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="70%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#ea580c" />
+              </radialGradient>
+            </defs>
+            
+            {/* Tırtıklı Dış Katman */}
+            <circle cx="50" cy="50" r="38" fill="url(#sunGrad)" filter="url(#turb)" opacity="0.8" />
+            
+            {/* Parlak İç Çekirdek */}
+            <circle cx="50" cy="50" r="32" fill="url(#sunGrad)" className="animate-pulse" />
+            
+            {/* Mercek Parlaması */}
+            <circle cx="40" cy="40" r="10" fill="white" opacity="0.2" />
+          </svg>
         </div>
 
         <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
@@ -352,11 +374,11 @@ const MainContent = ({ radius = 40, center = 50 }) => {
       </Modal>
 
       <Modal 
-        title={<div className="text-xl font-bold text-indigo-700">Gelir Ekle</div>}
+        title={<div className="text-xl font-bold text-orange-600">Gelir Ekle</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
       >
-        <div className="bg-indigo-50 p-4 rounded-2xl mb-4 text-center border border-indigo-100">
-          <div className="text-4xl font-black text-indigo-600">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
+        <div className="bg-orange-50 p-4 rounded-2xl mb-4 text-center border border-orange-100">
+          <div className="text-4xl font-black text-orange-500">{amount || "0"}<span className="text-2xl ml-1">€</span></div>
         </div>
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
           <div className="grid grid-cols-2 gap-3">
@@ -375,7 +397,7 @@ const MainContent = ({ radius = 40, center = 50 }) => {
           <Form.Item name="not" label="Not" className="mt-4">
             <Input placeholder="Not ekle..." />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-indigo-600 rounded-xl">Kaydet</Button>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-14 text-lg font-bold bg-orange-500 border-none rounded-xl shadow-lg">Kaydet</Button>
         </Form>
       </Modal>
     </main>
