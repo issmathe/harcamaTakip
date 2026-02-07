@@ -21,8 +21,9 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
-// Video importu
+// Video importları
 import dunyaVideo from "./dunya.mp4";
+import gunesVideo from "./gunes.mp4";
 
 dayjs.extend(isSameOrAfter);
 
@@ -36,8 +37,8 @@ const PlanetStyle = ({ type, isTop }) => {
   const configs = {
     Market: { 
       name: "Dünya",
-      bg: "bg-transparent", // Video tam kaplayacağı için arka planı temizledik
-      shadow: "shadow-[0_0_15px_rgba(59,130,246,0.4)]",
+      bg: "bg-transparent", 
+      shadow: "", 
       extra: (
         <video
           src={dunyaVideo}
@@ -45,7 +46,10 @@ const PlanetStyle = ({ type, isTop }) => {
           loop
           muted
           playsInline
+          webkit-playsinline="true"
+          preload="auto"
           className="absolute inset-0 w-full h-full object-cover rounded-full overflow-hidden"
+          style={{ borderRadius: '50%', pointerEvents: 'none' }}
         />
       )
     },
@@ -53,7 +57,7 @@ const PlanetStyle = ({ type, isTop }) => {
       name: "Mars",
       bg: "bg-red-700", 
       shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.7),0_0_10px_rgba(185,28,28,0.4)]",
-      extra: <div className="absolute top-2 left-4 w-1 h-1 bg-black/20 rounded-full shadow-[4px_10px_0_rgba(0,0,0,0.2),12px_2px_0_rgba(0,0,0,0.1)]" /> // Kraterler
+      extra: <div className="absolute top-2 left-4 w-1 h-1 bg-black/20 rounded-full shadow-[4px_10px_0_rgba(0,0,0,0.2),12px_2px_0_rgba(0,0,0,0.1)]" /> 
     },
     Tasarruf: { 
       name: "Venüs",
@@ -70,7 +74,7 @@ const PlanetStyle = ({ type, isTop }) => {
           <div className="h-[2px] bg-orange-200/40 w-full" />
           <div className="h-[3px] bg-red-900/60 w-full" />
           <div className="h-[1px] bg-orange-100/30 w-full" />
-          <div className="absolute top-1/2 right-2 w-2 h-1 bg-red-600 rounded-full blur-[1px]" /> {/* Büyük Kırmızı Leke */}
+          <div className="absolute top-1/2 right-2 w-2 h-1 bg-red-600 rounded-full blur-[1px]" />
         </div>
       )
     },
@@ -119,22 +123,18 @@ const PlanetStyle = ({ type, isTop }) => {
 
   return (
     <div className={`relative w-full h-full rounded-full ${current.bg} ${current.shadow} transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
-      {/* Gezegen Yüzeyi */}
       {current.extra}
       
-      {/* Halkalar */}
       {current.ring && (
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[25%] border-[3px] ${current.ringColor} rounded-[100%] rotate-[20deg] pointer-events-none`} />
       )}
 
-      {/* KRİTİK ÇÖZÜM: Kategori Etiketi */}
       <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
-         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap border border-white/20 tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
+         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
             {type}
          </span>
       </div>
 
-      {/* Seçili Işıma */}
       {isTop && (
         <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/20 pointer-events-none" />
       )}
@@ -415,7 +415,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
       <SpaceBackground />
       
-      {/* Üst Odak Paneli */}
       <div className="text-center mb-6 pt-4 relative z-10">
         <div className="text-blue-300 font-bold text-2xl drop-shadow-[0_0_15px_rgba(59,130,246,0.6)] tracking-[0.2em] transition-all uppercase">
           {currentTopCategory}
@@ -424,22 +423,28 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       </div>
 
       <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
-        {/* MERKEZ: GÜNEŞ (GELİR) */}
+        
+        {/* MERKEZ: GÜNEŞ VİDEOSU */}
         <div 
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
-          <div className="absolute w-[160px] h-[160px] bg-orange-600/30 rounded-full blur-[40px] animate-pulse" />
-          <svg width="130" height="130" viewBox="0 0 100 100">
-            <defs>
-              <radialGradient id="sunGlow">
-                <stop offset="0%" stopColor="#fff7ed" />
-                <stop offset="40%" stopColor="#fdba74" />
-                <stop offset="100%" stopColor="#ea580c" />
-              </radialGradient>
-            </defs>
-            <circle cx="50" cy="50" r="45" fill="url(#sunGlow)" className="drop-shadow-[0_0_20px_rgba(234,88,12,0.8)]" />
-          </svg>
+          {/* Arka Plan Parlama Efekti */}
+          <div className="absolute w-[180px] h-[180px] bg-orange-600/20 rounded-full blur-[50px] animate-pulse" />
+          
+          <div className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)]">
+            <video
+              src={gunesVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              webkit-playsinline="true"
+              preload="auto"
+              className="w-full h-full object-cover pointer-events-none"
+              style={{ borderRadius: '50%' }}
+            />
+          </div>
         </div>
 
         {/* GEZEGENLER ÇARKI */}
@@ -479,7 +484,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      {/* Harcama Modalı */}
       <Modal 
         title={<div className="text-xl font-bold text-blue-400 font-mono tracking-widest">{selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
@@ -515,7 +519,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* Gelir Modalı */}
       <Modal 
         title={<div className="text-xl font-bold text-orange-400 font-mono">Enerji Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
