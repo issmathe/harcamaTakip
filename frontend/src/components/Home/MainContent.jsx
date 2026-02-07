@@ -534,7 +534,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <Select>
                 <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ekstra Gelir</Option>
+                <Option value="diğer">Ekstra</Option>
               </Select>
             </Form.Item>
           </div>
