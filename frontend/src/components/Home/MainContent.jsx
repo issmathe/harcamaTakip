@@ -21,6 +21,9 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
+// Video importu
+import dunyaVideo from "./dunya.mp4";
+
 dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
@@ -33,9 +36,18 @@ const PlanetStyle = ({ type, isTop }) => {
   const configs = {
     Market: { 
       name: "Dünya",
-      bg: "bg-blue-500", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6),0_0_15px_rgba(59,130,246,0.4)]",
-      extra: <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_30%,#4ade80_0%,transparent_50%),radial-gradient(circle_at_70%_60%,#4ade80_0%,transparent_40%)] rounded-full animate-pulse" /> // Kıtalar
+      bg: "bg-transparent", // Video tam kaplayacağı için arka planı temizledik
+      shadow: "shadow-[0_0_15px_rgba(59,130,246,0.4)]",
+      extra: (
+        <video
+          src={dunyaVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover rounded-full overflow-hidden"
+        />
+      )
     },
     Giyim: { 
       name: "Mars",
