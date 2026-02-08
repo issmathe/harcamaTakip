@@ -22,8 +22,8 @@ import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
 // Video importları
-import dunyaVideo from "./dunya.mp4";
-import gunesVideo from "./gunes.mp4";
+import dunyaVideo from "./gezegenler/dunya.mp4";
+import gunesVideo from "./gezegenler/gunes.mp4";
 
 dayjs.extend(isSameOrAfter);
 
