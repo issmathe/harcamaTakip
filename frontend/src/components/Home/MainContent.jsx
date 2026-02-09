@@ -21,9 +21,10 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
-// Video importları
+// Video ve Görsel importları
 import dunyaVideo from "./gezegenler/dunya.mp4";
 import gunesVideo from "./gezegenler/gunes.mp4";
+import gunesPoster from "./gezegenler/gunes.jpg"; // İndirdiğin görseli buraya ekledik
 
 dayjs.extend(isSameOrAfter);
 
@@ -432,9 +433,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           {/* Arka Plan Parlama Efekti */}
           <div className="absolute w-[180px] h-[180px] bg-orange-600/20 rounded-full blur-[50px] animate-pulse" />
           
-          <div className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)]">
+          <div 
+            className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)] bg-cover bg-center"
+            style={{ backgroundImage: `url(${gunesPoster})` }} // Video yüklenene kadar statik görsel
+          >
             <video
               src={gunesVideo}
+              poster={gunesPoster} // Tarayıcı desteği için poster niteliği
               autoPlay
               loop
               muted
