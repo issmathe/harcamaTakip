@@ -24,7 +24,7 @@ import { useMutation } from "@tanstack/react-query";
 // Video ve Görsel importları
 import dunyaVideo from "./gezegenler/dunya.mp4";
 import gunesVideo from "./gezegenler/gunes.mp4";
-import gunesPoster from "./gezegenler/gunes.jpg"; // İndirdiğin görseli buraya ekledik
+import gunesPoster from "./gezegenler/gunes.jpg";
 
 dayjs.extend(isSameOrAfter);
 
@@ -430,16 +430,15 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
-          {/* Arka Plan Parlama Efekti */}
           <div className="absolute w-[180px] h-[180px] bg-orange-600/20 rounded-full blur-[50px] animate-pulse" />
           
           <div 
             className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)] bg-cover bg-center"
-            style={{ backgroundImage: `url(${gunesPoster})` }} // Video yüklenene kadar statik görsel
+            style={{ backgroundImage: `url(${gunesPoster})` }}
           >
             <video
               src={gunesVideo}
-              poster={gunesPoster} // Tarayıcı desteği için poster niteliği
+              poster={gunesPoster}
               autoPlay
               loop
               muted
@@ -524,11 +523,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </Form>
       </Modal>
 
+      {/* ENERJİ KAYNAĞI MODALI (DAİRELERLE AYNI BOYUT VE STİLE GETİRİLDİ) */}
       <Modal 
-        title={<div className="text-xl font-bold text-orange-400 font-mono">Enerji Kaynağı</div>}
+        title={<div className="text-xl font-bold text-orange-400 font-mono tracking-widest">Enerji Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
+        className="space-modal"
       >
-        <div className="bg-orange-950/50 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-orange-500/20">
+        <div className="bg-orange-950/40 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-orange-500/20 shadow-2xl">
           <div className="text-5xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-2xl ml-2 text-orange-500/50">€</span>
           </div>
@@ -548,7 +549,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
           <Form.Item name="not" label="Not" className="mt-4">
-            <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" />
+            <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" placeholder="Not ekleyin..." />
           </Form.Item>
           <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.4)]">ENERJİYİ EKLE</Button>
         </Form>
