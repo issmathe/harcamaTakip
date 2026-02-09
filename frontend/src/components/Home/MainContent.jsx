@@ -21,11 +21,11 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
-// Video ve Görsel importları
-import dunyaVideo from "./gezegenler/dunya.mp4";
-import dunyaPoster from "./gezegenler/dunya.jpg";
-import gunesVideo from "./gezegenler/gunes.mp4";
-import gunesPoster from "./gezegenler/gunes.jpg";
+// ARTIK IMPORT ETMİYORUZ, PUBLIC KLASÖRÜNDEKİ YOLLARI KULLANIYORUZ
+const dunyaVideo = "/gezegenler/dunya.mp4";
+const dunyaPoster = "/gezegenler/dunya.jpg";
+const gunesVideo = "/gezegenler/gunes.mp4";
+const gunesPoster = "/gezegenler/gunes.jpg";
 
 dayjs.extend(isSameOrAfter);
 
@@ -490,7 +490,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      {/* HARCAMA MODALI */}
       <Modal 
         title={<div className="text-lg font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
@@ -523,11 +522,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 placeholder="Kaptan Notu..."
                 autoFocus
                 className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
-                style={{ 
-                   color: '#ffffff', 
-                   backgroundColor: '#1e293b', 
-                   WebkitTextFillColor: '#ffffff'
-                }}
+                style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
               />
             </Form.Item>
           ) : (
@@ -537,7 +532,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* GELİR MODALI */}
       <Modal 
         title={<div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={380}
@@ -569,11 +563,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 placeholder="Not ekleyin..." 
                 autoFocus
                 className="bg-slate-800 border-slate-700 text-white rounded-xl h-10 placeholder:text-slate-500"
-                style={{ 
-                   color: '#ffffff', 
-                   backgroundColor: '#1e293b', 
-                   WebkitTextFillColor: '#ffffff'
-                }}
+                style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
               />
             </Form.Item>
           ) : (
