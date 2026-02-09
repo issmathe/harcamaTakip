@@ -147,7 +147,6 @@ const HarcamalarContent = () => {
   );
 
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
-  const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
   const openEditModal = (harcama) => {
     setEditingHarcama(harcama);
@@ -190,7 +189,7 @@ const HarcamalarContent = () => {
             <Text className="block text-[10px] uppercase tracking-tighter text-gray-400 font-bold">Harcamalar</Text>
             <Title level={5} className="m-0 capitalize" style={{ margin: 0 }}>{displayMonth}</Title>
           </div>
-          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} type="text" />
+          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} type="text" />
         </div>
       </div>
 
@@ -280,48 +279,47 @@ const HarcamalarContent = () => {
       </div>
 
       <Modal
-        title={<Title level={5} className="text-center m-0">Düzenle</Title>}
+        title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
-        onOk={handleEditSave}
-        okText="Güncelle"
+        footer={null}
         centered
-        closeIcon={null}
-        width={320}
-        okButtonProps={{ className: "bg-blue-600 rounded-xl w-full h-10 border-none" }}
-        cancelButtonProps={{ className: "hidden" }}
+        width={380}
+        styles={{ body: { padding: '12px 16px' } }}
+        className="edit-modal"
       >
-        <div className="space-y-4 pt-4">
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
-            <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
+        <div className="space-y-4">
+          <div className="bg-red-50/50 p-4 rounded-2xl text-center border border-red-100">
+             <Text strong className="text-[10px] text-red-400 uppercase block mb-1">Miktar</Text>
+             <Input 
+                variant="borderless" 
+                type="number" 
+                inputMode="decimal"
+                className="p-0 text-3xl font-black text-red-500 text-center" 
+                value={formData.miktar} 
+                suffix={<span className="text-red-300 text-lg">€</span>}
+                onFocus={(e) => e.target.select()}
+                onChange={e => setFormData({...formData, miktar: e.target.value})} 
+             />
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Miktar (€)</Text>
-            <Input 
-              variant="borderless" 
-              type="number" 
-              inputMode="decimal" // Sayısal klavye (nokta/virgül dahil) açar
-              pattern="[0-9]*"
-              className="p-0 text-xl font-black text-red-500" 
-              value={formData.miktar} 
-              onFocus={(e) => e.target.select()} // Tıklayınca tümünü seçer
-              onChange={e => setFormData({...formData, miktar: e.target.value})} 
-            />
-          </div>
-
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
-            <Select variant="borderless" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
-              {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
+                <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
+             </div>
+             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
+                <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
+                  {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
+                </Select>
+             </div>
           </div>
 
           {["Market", "Giyim", "Aile"].includes(formData.kategori) && (
              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Alt Seçim</Text>
-                <Select variant="borderless" className="w-full p-0 font-bold" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
+                <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
                     {(formData.kategori === "Market" ? MARKETLER : formData.kategori === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(sub => (
                         <Option key={sub} value={sub}>{sub}</Option>
                     ))}
@@ -330,9 +328,19 @@ const HarcamalarContent = () => {
           )}
 
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Not</Text>
+            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kaptan Notu</Text>
             <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Not..." />
           </div>
+
+          <Button 
+            type="primary" 
+            block 
+            onClick={handleEditSave}
+            loading={updateMutation.isPending}
+            className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-widest mt-2"
+          >
+            Güncelle
+          </Button>
         </div>
       </Modal>
     </div>

@@ -23,7 +23,7 @@ import { useMutation } from "@tanstack/react-query";
 
 // Video ve Görsel importları
 import dunyaVideo from "./gezegenler/dunya.mp4";
-import dunyaPoster from "./gezegenler/dunya.jpg"; // Dünya için poster eklendi
+import dunyaPoster from "./gezegenler/dunya.jpg";
 import gunesVideo from "./gezegenler/gunes.mp4";
 import gunesPoster from "./gezegenler/gunes.jpg";
 
@@ -32,9 +32,6 @@ dayjs.extend(isSameOrAfter);
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
-/**
- * Gelişmiş Gezegen Tasarımları
- */
 const PlanetStyle = ({ type, isTop }) => {
   const configs = {
     Market: { 
@@ -44,7 +41,7 @@ const PlanetStyle = ({ type, isTop }) => {
       extra: (
         <video
           src={dunyaVideo}
-          poster={dunyaPoster} // Video yüklenene kadar dunya.jpg görünür
+          poster={dunyaPoster}
           autoPlay
           loop
           muted
@@ -55,7 +52,7 @@ const PlanetStyle = ({ type, isTop }) => {
           style={{ 
             borderRadius: '50%', 
             pointerEvents: 'none',
-            backgroundImage: `url(${dunyaPoster})`, // Ekstra güvenlik için bg-image
+            backgroundImage: `url(${dunyaPoster})`,
             backgroundSize: 'cover'
           }}
         />
@@ -232,7 +229,7 @@ const NumericNumpad = ({ value, onChange }) => {
           key={key}
           onClick={() => handlePress(key)}
           className={`h-11 text-lg font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
-            key === "back" ? "bg-red-500/20 text-red-500" : "bg-white/5 text-gray-300"
+            key === "back" ? "bg-red-500/80 text-white" : "bg-white text-gray-800"
           }`}
         >
           {key === "back" ? <Delete size={20} /> : key}
@@ -525,12 +522,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 rows={2} 
                 placeholder="Kaptan Notu..."
                 autoFocus
-                className="bg-slate-800 border-slate-700 text-white rounded-xl"
-                style={{ color: 'white', WebkitTextFillColor: 'white' }}
+                className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
+                style={{ 
+                   color: '#ffffff', 
+                   backgroundColor: '#1e293b', 
+                   WebkitTextFillColor: '#ffffff'
+                }}
               />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-500 text-xs">Not Ekle</Button>
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
           <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
         </Form>
@@ -567,12 +568,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <Input 
                 placeholder="Not ekleyin..." 
                 autoFocus
-                className="bg-slate-800 border-slate-700 text-white rounded-xl h-10"
-                style={{ color: 'white', WebkitTextFillColor: 'white' }}
+                className="bg-slate-800 border-slate-700 text-white rounded-xl h-10 placeholder:text-slate-500"
+                style={{ 
+                   color: '#ffffff', 
+                   backgroundColor: '#1e293b', 
+                   WebkitTextFillColor: '#ffffff'
+                }}
               />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-500 text-xs">Not Ekle</Button>
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
           <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase">Gelir Ekle</Button>
         </Form>
