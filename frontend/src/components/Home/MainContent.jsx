@@ -23,6 +23,7 @@ import { useMutation } from "@tanstack/react-query";
 
 // Video ve Görsel importları
 import dunyaVideo from "./gezegenler/dunya.mp4";
+import dunyaPoster from "./gezegenler/dunya.jpg"; // Dünya için poster eklendi
 import gunesVideo from "./gezegenler/gunes.mp4";
 import gunesPoster from "./gezegenler/gunes.jpg";
 
@@ -43,6 +44,7 @@ const PlanetStyle = ({ type, isTop }) => {
       extra: (
         <video
           src={dunyaVideo}
+          poster={dunyaPoster} // Video yüklenene kadar dunya.jpg görünür
           autoPlay
           loop
           muted
@@ -50,7 +52,12 @@ const PlanetStyle = ({ type, isTop }) => {
           webkit-playsinline="true"
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover rounded-full overflow-hidden"
-          style={{ borderRadius: '50%', pointerEvents: 'none' }}
+          style={{ 
+            borderRadius: '50%', 
+            pointerEvents: 'none',
+            backgroundImage: `url(${dunyaPoster})`, // Ekstra güvenlik için bg-image
+            backgroundSize: 'cover'
+          }}
         />
       )
     },
