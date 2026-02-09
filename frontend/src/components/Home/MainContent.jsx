@@ -219,16 +219,16 @@ const NumericNumpad = ({ value, onChange }) => {
   };
 
   return (
-    <div className="grid grid-cols-3 gap-3 mt-4">
+    <div className="grid grid-cols-3 gap-2 mt-2">
       {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map((key) => (
         <Button
           key={key}
           onClick={() => handlePress(key)}
-          className={`h-14 text-xl font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
-            key === "back" ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-700"
+          className={`h-11 text-lg font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
+            key === "back" ? "bg-red-500/20 text-red-500" : "bg-white/5 text-gray-300"
           }`}
         >
-          {key === "back" ? <Delete size={24} /> : key}
+          {key === "back" ? <Delete size={20} /> : key}
         </Button>
       ))}
     </div>
@@ -488,23 +488,24 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
       {/* HARCAMA MODALI */}
       <Modal 
-        title={<div className="text-xl font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
-        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
+        title={<div className="text-lg font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
+        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
         className="space-modal"
+        styles={{ body: { padding: '12px 16px' } }}
       >
-        <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-3xl mb-6 text-center border border-blue-500/20 shadow-2xl">
-          <div className="text-5xl font-black text-white tracking-tight">
-            {amount || "0"}<span className="text-2xl ml-2 text-blue-500/50">€</span>
+        <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
+          <div className="text-4xl font-black text-white tracking-tight">
+            {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
           </div>
         </div>
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="tarih" label="Görev Tarihi" className="mb-2">
+          <div className="grid grid-cols-2 gap-3">
+            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
               <CustomDayPicker />
             </Form.Item>
             {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label="Alt Bölge" rules={[{ required: true, message: "Seç" }]} className="mb-2">
-                <Select placeholder="Hedef Seç">
+              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Alt Bölge</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
+                <Select placeholder="Seç" size="small" className="w-full">
                   {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
@@ -512,34 +513,41 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
-            <Form.Item name="not" label="Kaptan Notu" className="mt-4">
-              <Input.TextArea rows={2} className="bg-slate-800 border-slate-700 text-white rounded-xl" />
+            <Form.Item name="not" className="mt-2 mb-0">
+              <Input.TextArea 
+                rows={2} 
+                placeholder="Kaptan Notu..."
+                autoFocus
+                className="bg-slate-800 border-slate-700 text-white rounded-xl"
+                style={{ color: 'white', WebkitTextFillColor: 'white' }}
+              />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-4 text-slate-500">Not Ekle</Button>
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-500 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)]">KAYDET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
         </Form>
       </Modal>
 
-      {/* GELİR MODALI - HARCAMA İLE AYNI BOYUTTA */}
+      {/* GELİR MODALI */}
       <Modal 
-        title={<div className="text-xl font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
-        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
+        title={<div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
+        open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={380}
         className="space-modal"
+        styles={{ body: { padding: '12px 16px' } }}
       >
-        <div className="bg-orange-950/40 backdrop-blur-xl p-6 rounded-3xl mb-6 text-center border border-orange-500/20 shadow-2xl">
-          <div className="text-5xl font-black text-white tracking-tight">
-            {amount || "0"}<span className="text-2xl ml-2 text-orange-500/50">€</span>
+        <div className="bg-orange-950/40 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-orange-500/20">
+          <div className="text-4xl font-black text-white tracking-tight">
+            {amount || "0"}<span className="text-xl ml-2 text-orange-500/50">€</span>
           </div>
         </div>
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="tarih" label="İşlem Zamanı" className="mb-2">
+          <div className="grid grid-cols-2 gap-3">
+            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
               <CustomDayPicker isIncome={true} />
             </Form.Item>
-            <Form.Item name="kategori" label="Tür" className="mb-2">
-              <Select className="w-full">
+            <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
+              <Select className="w-full" size="small">
                 <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
                 <Option value="diğer">Ekstra</Option>
@@ -548,13 +556,18 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
-            <Form.Item name="not" label="Not" className="mt-4">
-              <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" placeholder="Not ekleyin..." />
+            <Form.Item name="not" className="mt-2 mb-0">
+              <Input 
+                placeholder="Not ekleyin..." 
+                autoFocus
+                className="bg-slate-800 border-slate-700 text-white rounded-xl h-10"
+                style={{ color: 'white', WebkitTextFillColor: 'white' }}
+              />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-4 text-slate-500">Not Ekle</Button>
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-500 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.4)] uppercase">Gelir Ekle</Button>
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase">Gelir Ekle</Button>
         </Form>
       </Modal>
     </main>

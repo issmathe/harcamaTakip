@@ -105,7 +105,7 @@ const AylikHarcamaTrendGrafigi = () => {
     },
     scales: {
       y: {
-        display: false, // Sayıları gizle, daha temiz dursun
+        display: false, 
         beginAtZero: true,
         grid: { display: false },
       },
@@ -124,15 +124,10 @@ const AylikHarcamaTrendGrafigi = () => {
 
   return (
     <Card className="rounded-2xl shadow-sm border-none bg-white overflow-hidden">
-      <div className="flex justify-between items-center mb-6">
-        <Text strong className="text-gray-500 text-xs uppercase tracking-wider">
-          6 Aylık Trend
+      <div className="mb-6">
+        <Text strong className="text-gray-400 text-[10px] uppercase tracking-[0.15em]">
+          6 Aylık Harcama Trendi
         </Text>
-        {hasData && (
-            <Text className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">
-                Canlı Veri
-            </Text>
-        )}
       </div>
 
       {hasData ? (
