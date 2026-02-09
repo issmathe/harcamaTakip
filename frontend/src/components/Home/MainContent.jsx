@@ -379,12 +379,14 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setAmount("");
     gelirForm.resetFields();
     gelirForm.setFieldsValue({ tarih: dayjs().toDate(), kategori: "gelir" });
+    setShowNote(false);
   };
 
   const handleGelirCancel = () => {
     setIsGelirModalVisible(false);
     setAmount("");
     gelirForm.resetFields();
+    setShowNote(false);
   };
 
   const onHarcamaFinish = (values) => {
@@ -424,14 +426,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       </div>
 
       <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
-        
-        {/* MERKEZ: GÜNEŞ VİDEOSU */}
         <div 
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
           <div className="absolute w-[180px] h-[180px] bg-orange-600/20 rounded-full blur-[50px] animate-pulse" />
-          
           <div 
             className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)] bg-cover bg-center"
             style={{ backgroundImage: `url(${gunesPoster})` }}
@@ -451,7 +450,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
         </div>
 
-        {/* GEZEGENLER ÇARKI */}
         <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
           style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.15, 0, 0.15, 1)" }}
           onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
@@ -488,12 +486,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
+      {/* HARCAMA MODALI */}
       <Modal 
-        title={<div className="text-xl font-bold text-blue-400 font-mono tracking-widest">{selectedCategory}</div>}
+        title={<div className="text-xl font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={400}
         className="space-modal"
       >
-        <div className="bg-slate-900/80 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-blue-500/20 shadow-2xl">
+        <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-3xl mb-6 text-center border border-blue-500/20 shadow-2xl">
           <div className="text-5xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-2xl ml-2 text-blue-500/50">€</span>
           </div>
@@ -523,13 +522,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </Form>
       </Modal>
 
-      {/* ENERJİ KAYNAĞI MODALI (DAİRELERLE AYNI BOYUT VE STİLE GETİRİLDİ) */}
+      {/* GELİR MODALI - HARCAMA İLE AYNI BOYUTTA */}
       <Modal 
-        title={<div className="text-xl font-bold text-orange-400 font-mono tracking-widest">Enerji Kaynağı</div>}
+        title={<div className="text-xl font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={400}
         className="space-modal"
       >
-        <div className="bg-orange-950/40 backdrop-blur-xl p-8 rounded-3xl mb-6 text-center border border-orange-500/20 shadow-2xl">
+        <div className="bg-orange-950/40 backdrop-blur-xl p-6 rounded-3xl mb-6 text-center border border-orange-500/20 shadow-2xl">
           <div className="text-5xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-2xl ml-2 text-orange-500/50">€</span>
           </div>
@@ -540,7 +539,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <CustomDayPicker isIncome={true} />
             </Form.Item>
             <Form.Item name="kategori" label="Tür" className="mb-2">
-              <Select>
+              <Select className="w-full">
                 <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
                 <Option value="diğer">Ekstra</Option>
@@ -548,10 +547,14 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             </Form.Item>
           </div>
           <NumericNumpad value={amount} onChange={setAmount} />
-          <Form.Item name="not" label="Not" className="mt-4">
-            <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" placeholder="Not ekleyin..." />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.4)]">ENERJİYİ EKLE</Button>
+          {showNote ? (
+            <Form.Item name="not" label="Not" className="mt-4">
+              <Input className="bg-slate-800 border-slate-700 text-white rounded-xl h-12" placeholder="Not ekleyin..." />
+            </Form.Item>
+          ) : (
+            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={16} />} className="w-full mt-4 text-slate-500">Not Ekle</Button>
+          )}
+          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-6 h-16 text-xl font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.4)] uppercase">Gelir Ekle</Button>
         </Form>
       </Modal>
     </main>
