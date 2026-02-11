@@ -21,11 +21,17 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
-// ARTIK IMPORT ETMİYORUZ, PUBLIC KLASÖRÜNDEKİ YOLLARI KULLANIYORUZ
+// Video ve Poster Tanımlamaları
 const dunyaVideo = "/gezegenler/dunya.mp4";
 const dunyaPoster = "/gezegenler/dunya.jpg";
 const gunesVideo = "/gezegenler/gunes.mp4";
 const gunesPoster = "/gezegenler/gunes.jpg";
+const jupiterVideo = "/gezegenler/jupiter.mp4";
+const jupiterPoster = "/gezegenler/jupiter.jpg";
+const uranusVideo = "/gezegenler/uranus.mp4";
+const uranusPoster = "/gezegenler/uranus.jpg";
+const marsVideo = "/gezegenler/mars.mp4";
+const marsPoster = "/gezegenler/mars.jpg";
 
 dayjs.extend(isSameOrAfter);
 
@@ -33,115 +39,54 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
 const PlanetStyle = ({ type, isTop }) => {
-  const configs = {
-    Market: { 
-      name: "Dünya",
-      bg: "bg-transparent", 
-      shadow: "", 
-      extra: (
-        <video
-          src={dunyaVideo}
-          poster={dunyaPoster}
-          autoPlay
-          loop
-          muted
-          playsInline
-          webkit-playsinline="true"
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover rounded-full overflow-hidden"
-          style={{ 
-            borderRadius: '50%', 
-            pointerEvents: 'none',
-            backgroundImage: `url(${dunyaPoster})`,
-            backgroundSize: 'cover'
-          }}
-        />
-      )
-    },
-    Giyim: { 
-      name: "Mars",
-      bg: "bg-red-700", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.7),0_0_10px_rgba(185,28,28,0.4)]",
-      extra: <div className="absolute top-2 left-4 w-1 h-1 bg-black/20 rounded-full shadow-[4px_10px_0_rgba(0,0,0,0.2),12px_2px_0_rgba(0,0,0,0.1)]" /> 
-    },
-    Tasarruf: { 
-      name: "Venüs",
-      bg: "bg-yellow-200", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.3),0_0_20px_rgba(253,224,71,0.3)]",
-      extra: <div className="absolute inset-0 opacity-30 bg-gradient-to-t from-orange-400 to-transparent rounded-full" />
-    },
-    Petrol: { 
-      name: "Jüpiter",
-      bg: "bg-orange-800", 
-      shadow: "shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.8)]",
-      extra: (
-        <div className="absolute inset-0 flex flex-col justify-around py-1 opacity-50">
-          <div className="h-[2px] bg-orange-200/40 w-full" />
-          <div className="h-[3px] bg-red-900/60 w-full" />
-          <div className="h-[1px] bg-orange-100/30 w-full" />
-          <div className="absolute top-1/2 right-2 w-2 h-1 bg-red-600 rounded-full blur-[1px]" />
-        </div>
-      )
-    },
-    Kira: { 
-      name: "Neptün",
-      bg: "bg-indigo-700", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6)]",
-      extra: <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full" />
-    },
-    Fatura: { 
-      name: "Uranüs",
-      bg: "bg-cyan-300", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.2)]",
-      ring: true,
-      ringColor: "border-cyan-100/30"
-    },
-    Eğitim: { 
-      name: "Merkür",
-      bg: "bg-gray-400", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.5)]",
-      extra: <div className="absolute inset-0 grid grid-cols-2 gap-1 p-2 opacity-20"><div className="bg-black rounded-full" /><div className="bg-black rounded-full" /></div>
-    },
-    Sağlık: { 
-      name: "Ay",
-      bg: "bg-slate-200", 
-      shadow: "shadow-[inset_-5px_-5px_10px_rgba(0,0,0,0.3)]",
-      extra: <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/pollen.png')] rounded-full" />
-    },
-    Ulaşım: { 
-      name: "Satürn",
-      bg: "bg-amber-600", 
-      shadow: "shadow-[inset_-8px_-8px_15px_rgba(0,0,0,0.6)]",
-      ring: true,
-      ringColor: "border-amber-200/40"
-    },
-    Eğlence: { name: "Plüton", bg: "bg-purple-400", shadow: "shadow-inner", extra: <div className="absolute bottom-1 right-2 w-4 h-4 bg-white/20 rounded-full blur-sm" /> },
-    Elektronik: { name: "Titan", bg: "bg-zinc-600", shadow: "shadow-2xl" },
-    İletisim: { name: "Io", bg: "bg-yellow-500", extra: <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#71710a_0%,transparent_20%)] opacity-40" /> },
-    Hediye: { name: "Europa", bg: "bg-blue-100", extra: <div className="absolute inset-0 opacity-30 border-t border-blue-900/20 rotate-45" /> },
-    Restoran: { name: "Callisto", bg: "bg-stone-700", shadow: "shadow-inner" },
-    Aile: { name: "Güneş-2", bg: "bg-lime-500", extra: <div className="absolute inset-0 animate-pulse bg-white/10 rounded-full" /> },
-    Diğer: { name: "Asteroid", bg: "bg-neutral-500", shadow: "shadow-none" },
+  // Video Gezegen Konfigürasyonları (Satürn Kaldırıldı)
+  const videoPlanets = {
+    Market: { video: dunyaVideo, poster: dunyaPoster },
+    Ulaşım: { video: jupiterVideo, poster: jupiterPoster },
+    Giyim: { video: uranusVideo, poster: uranusPoster },
+    Petrol: { video: marsVideo, poster: marsPoster }
   };
 
-  const current = configs[type] || configs.Diğer;
+  const currentVideoPlanet = videoPlanets[type];
+
+  const labelElement = (
+    <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
+      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
+        {type}
+      </span>
+    </div>
+  );
+
+  if (currentVideoPlanet) {
+    return (
+      <div className={`relative w-full h-full rounded-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
+        <div className="absolute inset-0 rounded-full overflow-hidden bg-black">
+          <video
+            src={currentVideoPlanet.video}
+            poster={currentVideoPlanet.poster}
+            autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
+            className="w-full h-full object-cover"
+            style={{ 
+              borderRadius: '50%', 
+              pointerEvents: 'none',
+              transform: 'scale(1.25)', 
+              filter: (type === "Ulaşım" || type === "Petrol") ? 'contrast(1.1) brightness(1.1)' : 'none'
+            }}
+          />
+        </div>
+        {labelElement}
+        {isTop && (
+          <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/20 pointer-events-none" />
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={`relative w-full h-full rounded-full ${current.bg} ${current.shadow} transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
-      {current.extra}
-      
-      {current.ring && (
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[25%] border-[3px] ${current.ringColor} rounded-[100%] rotate-[20deg] pointer-events-none`} />
-      )}
-
-      <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
-         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
-            {type}
-         </span>
-      </div>
-
+    <div className={`relative w-full h-full rounded-full border border-white/20 bg-white/5 transition-all duration-300 ${isTop ? 'scale-110 border-blue-500/50 bg-blue-500/10' : ''}`}>
+      {labelElement}
       {isTop && (
-        <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/20 pointer-events-none" />
+        <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/10 pointer-events-none" />
       )}
     </div>
   );
@@ -185,7 +130,9 @@ const SpaceBackground = () => {
 
         const x = (star.x - canvas.width / 2) * (canvas.width / star.z) + canvas.width / 2;
         const y = (star.y - canvas.height / 2) * (canvas.width / star.z) + canvas.height / 2;
-        const s = (1 - star.z / canvas.width) * 3;
+        
+        let s = (1 - star.z / canvas.width) * 3;
+        if (s <= 0) s = 0.1;
 
         ctx.beginPath();
         ctx.fillStyle = `rgba(255, 255, 255, ${star.o})`;
@@ -442,12 +389,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             <video
               src={gunesVideo}
               poster={gunesPoster}
-              autoPlay
-              loop
-              muted
-              playsInline
-              webkit-playsinline="true"
-              preload="auto"
+              autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
               className="w-full h-full object-cover pointer-events-none"
               style={{ borderRadius: '50%' }}
             />
