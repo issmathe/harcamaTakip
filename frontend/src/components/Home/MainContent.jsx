@@ -32,6 +32,10 @@ const uranusVideo = "/gezegenler/uranus.mp4";
 const uranusPoster = "/gezegenler/uranus.jpg";
 const marsVideo = "/gezegenler/mars.mp4";
 const marsPoster = "/gezegenler/mars.jpg";
+const ayVideo = "/gezegenler/ay.mp4";
+const ayPoster = "/gezegenler/ay.jpg";
+const saturnVideo = "/gezegenler/saturn.mp4";
+const saturnPoster = "/gezegenler/saturn.jpg";
 
 dayjs.extend(isSameOrAfter);
 
@@ -39,15 +43,18 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
 const PlanetStyle = ({ type, isTop }) => {
-  // Video Gezegen Konfigürasyonları (Satürn Kaldırıldı)
+  // Video Gezegen Konfigürasyonları
   const videoPlanets = {
     Market: { video: dunyaVideo, poster: dunyaPoster },
     Ulaşım: { video: jupiterVideo, poster: jupiterPoster },
     Giyim: { video: uranusVideo, poster: uranusPoster },
-    Petrol: { video: marsVideo, poster: marsPoster }
+    Petrol: { video: marsVideo, poster: marsPoster },
+    Eğitim: { video: ayVideo, poster: ayPoster },
+    Sağlık: { video: saturnVideo, poster: saturnPoster } // Satürn Sağlık'a atandı
   };
 
   const currentVideoPlanet = videoPlanets[type];
+  const isSaturn = type === "Sağlık"; // Halkaların taşması için özel kontrol
 
   const labelElement = (
     <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
@@ -59,17 +66,20 @@ const PlanetStyle = ({ type, isTop }) => {
 
   if (currentVideoPlanet) {
     return (
-      <div className={`relative w-full h-full rounded-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
-        <div className="absolute inset-0 rounded-full overflow-hidden bg-black">
+      <div className={`relative w-full h-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
+        {/* Satürn ise overflow-hidden kaldırılır ki halkalar taşsın */}
+        <div className={`absolute inset-0 ${isSaturn ? '' : 'rounded-full overflow-hidden bg-black'}`}>
           <video
             src={currentVideoPlanet.video}
             poster={currentVideoPlanet.poster}
             autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
-            className="w-full h-full object-cover"
+            className="w-full h-full"
             style={{ 
-              borderRadius: '50%', 
+              borderRadius: isSaturn ? '0' : '50%',
               pointerEvents: 'none',
-              transform: 'scale(1.25)', 
+              objectFit: isSaturn ? 'contain' : 'cover',
+              // Satürn için scale artırıldı (halkalar geniş olduğu için)
+              transform: isSaturn ? 'scale(1.8)' : 'scale(1.25)', 
               filter: (type === "Ulaşım" || type === "Petrol") ? 'contrast(1.1) brightness(1.1)' : 'none'
             }}
           />
@@ -82,6 +92,7 @@ const PlanetStyle = ({ type, isTop }) => {
     );
   }
 
+  // Video olmayanlar için standart beyaz halkalı tasarım
   return (
     <div className={`relative w-full h-full rounded-full border border-white/20 bg-white/5 transition-all duration-300 ${isTop ? 'scale-110 border-blue-500/50 bg-blue-500/10' : ''}`}>
       {labelElement}
