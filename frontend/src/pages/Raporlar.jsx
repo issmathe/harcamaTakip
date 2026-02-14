@@ -50,7 +50,7 @@ const categoryColors = {
   "Giyim": "#FF6384", "Tasarruf": "#36A2EB", "Petrol": "#FFCE56", "Kira": "#4BC0C0",
   "Fatura": "#9966FF", "Eğitim": "#FF9F40", "Sağlık": "#C9CBCF", "Ulaşım": "#8AFF33",
   "Eğlence": "#FF33F6", "Elektronik": "#33FFF3", "İletisim": "#FF8A33", "Market": "#338AFF",
-  "Hediye": "#FF3333", "Restoran": "#33FF8A", "Aile": "#AF52DE", "Diğer": "#AAAAAA"
+  "Hediye": "#FF3333", "Restoran": "#33FF8A", "Aile": "#AF52DE", "Diğer": "#71717a"
 };
 
 const RaporlarContent = () => {
@@ -63,62 +63,47 @@ const RaporlarContent = () => {
   const [activeTab, setActiveTab] = useState("Genel");
   const [lineChartData, setLineChartData] = useState({ datasets: [] });
 
-// 1. TREND GRAFİĞİ HESAPLAMALARI (Son 6 Ay) - TASARRUF HARİÇ
   const trendCalculation = useMemo(() => {
     const last6Months = [];
     for (let i = 5; i >= 0; i--) {
       last6Months.push(dayjs().subtract(i, "month"));
     }
-
     const labels = last6Months.map((m) => m.format("MMM"));
     const data = last6Months.map((month) => {
       const monthTotal = harcamalar
         .filter((h) => {
           const t = dayjs(h.createdAt);
-          // Sadece ilgili ay/yıl olsun VE kategorisi 'tasarruf' olmasın
-          return (
-            t.month() === month.month() && 
-            t.year() === month.year() && 
-            h.kategori?.toLowerCase() !== "tasarruf"
-          );
+          return t.month() === month.month() && t.year() === month.year() && h.kategori?.toLowerCase() !== "tasarruf";
         })
         .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
       return Number(monthTotal.toFixed(0));
     });
-
     return { labels, data };
   }, [harcamalar]);
 
-  // Trend Grafiği Gradient Efekti
   useEffect(() => {
     const chart = lineChartRef.current;
     if (!chart || trendCalculation.data.length === 0) return;
-
     const ctx = chart.ctx;
     const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, "rgba(59, 130, 246, 0.5)");
-    gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
-
+    gradient.addColorStop(0, "rgba(59, 130, 246, 0.4)");
+    gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
     setLineChartData({
       labels: trendCalculation.labels,
-      datasets: [
-        {
-          data: trendCalculation.data,
-          fill: true,
-          backgroundColor: gradient,
-          borderColor: "#3b82f6",
-          borderWidth: 3,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#3b82f6",
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          tension: 0.4,
-        },
-      ],
+      datasets: [{
+        data: trendCalculation.data,
+        fill: true,
+        backgroundColor: gradient,
+        borderColor: "#60a5fa",
+        borderWidth: 2,
+        pointBackgroundColor: "#fff",
+        pointBorderColor: "#60a5fa",
+        pointRadius: 3,
+        tension: 0.4,
+      }],
     });
   }, [trendCalculation]);
 
-  // 2. ÖLÇEK AYARLARI
   const globalMax = useMemo(() => {
     if (harcamalar.length === 0) return 500;
     const totals = {};
@@ -126,22 +111,9 @@ const RaporlarContent = () => {
       const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.kategori}`;
       totals[key] = (totals[key] || 0) + Number(h.miktar);
     });
-    const max = Math.max(...Object.values(totals), 100);
-    return max * 1.2;
+    return Math.max(...Object.values(totals), 100) * 1.2;
   }, [harcamalar]);
 
-  const globalMarketMax = useMemo(() => {
-    if (harcamalar.length === 0) return 200;
-    const totals = {};
-    harcamalar.filter(h => h.kategori === "Market").forEach(h => {
-      const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.altKategori || "Diğer"}`;
-      totals[key] = (totals[key] || 0) + Number(h.miktar);
-    });
-    const max = Math.max(...Object.values(totals), 50);
-    return max * 1.2;
-  }, [harcamalar]);
-
-  // 3. FİLTRELEME VE NAVİGASYON
   const filteredHarcamalar = useMemo(() => {
     return harcamalar.filter((h) => {
       const t = dayjs(h.createdAt); 
@@ -159,7 +131,6 @@ const RaporlarContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
-  // 4. CHART AYARLARI (OPTIONS)
   const getBarOptions = useCallback((fixedMax) => ({
     responsive: true, 
     indexAxis: 'y', 
@@ -167,14 +138,14 @@ const RaporlarContent = () => {
     layout: { padding: { right: 50 } }, 
     scales: { 
       x: { display: false, max: fixedMax }, 
-      y: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#4b5563' } } 
+      y: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#94a3b8' } } 
     },
     plugins: { 
       legend: { display: false }, 
       datalabels: { 
         anchor: 'end', align: 'end', offset: 4,
         formatter: (val) => val > 0 ? `${val.toFixed(0)}€` : '', 
-        font: { weight: 'bold', size: 10 }, color: '#374151'
+        font: { weight: 'bold', size: 10 }, color: '#e2e8f0'
       } 
     }
   }), []);
@@ -186,22 +157,17 @@ const RaporlarContent = () => {
       legend: { display: false },
       datalabels: {
         display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
-        align: "top",
-        offset: 10,
-        formatter: (v) => `${v}€`,
-        font: { weight: "bold", size: 10 },
-        color: "#1e40af",
+        align: "top", offset: 10, formatter: (v) => `${v}€`,
+        font: { weight: "bold", size: 10 }, color: "#60a5fa",
       },
       tooltip: { enabled: true }
     },
     scales: {
       y: { display: false, beginAtZero: true },
-      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#94a3b8" } }
-    },
-    layout: { padding: { top: 25, left: 10, right: 10 } }
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#64748b" } }
+    }
   };
 
-  // 5. DATA OBJELERİ
   const barData = useMemo(() => ({
     labels: ALL_CATEGORIES,
     datasets: [{
@@ -211,70 +177,66 @@ const RaporlarContent = () => {
     }]
   }), [filteredHarcamalar]);
 
-  const marketBarData = useMemo(() => ({
-    labels: MARKETLER,
-    datasets: [{
-      data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)),
-      backgroundColor: "#3b82f6", borderRadius: 4, barThickness: 10
-    }]
-  }), [filteredHarcamalar]);
-
   const hasData = filteredHarcamalar.length > 0;
-  const hasTrendData = trendCalculation.data.some(v => v > 0);
+
+  const cardStyle = {
+    background: "rgba(255, 255, 255, 0.03)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    borderRadius: "24px"
+  };
 
   const renderTabContent = () => {
-    if (!hasData) return <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Veri Yok" /></div>;
+    if (!hasData) return (
+      <div style={cardStyle} className="p-12 text-center">
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<span className="text-gray-500">Bu ay veri kaydı bulunamadı</span>} />
+      </div>
+    );
 
     switch(activeTab) {
       case "Genel":
         return (
-          <>
-            <Card className="rounded-2xl shadow-sm border-none bg-white overflow-hidden mb-4">
+          <div className="space-y-4">
+            <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
               <div className="mb-4">
-                <Text strong className="text-gray-400 text-[10px] uppercase tracking-wider">6 Aylık Harcama Trendi</Text>
+                <Text className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Aylık Trend</Text>
               </div>
-              {hasTrendData ? (
-                <div style={{ height: "180px" }}>
-                  <Line ref={lineChartRef} data={lineChartData} options={lineOptions} />
-                </div>
-              ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+              <div style={{ height: "180px" }}>
+                <Line ref={lineChartRef} data={lineChartData} options={lineOptions} />
+              </div>
             </Card>
-
-            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '12px' }}>
+            <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
               <div style={{ height: '380px' }}>
                 <Bar data={barData} options={getBarOptions(globalMax)} />
               </div>
             </Card>
-          </>
+          </div>
         );
       case "Market":
+        const marketData = MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0));
         return (
-          <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '12px' }}>
+          <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
             <div style={{ height: '420px' }}>
-              <Bar data={marketBarData} options={getBarOptions(globalMarketMax)} />
+              <Bar data={{
+                labels: MARKETLER,
+                datasets: [{ data: marketData, backgroundColor: "#3b82f6", borderRadius: 4, barThickness: 10 }]
+              }} options={getBarOptions(Math.max(...marketData, 50) * 1.2)} />
             </div>
           </Card>
         );
       case "Detay":
         const giyimData = GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori === "Giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0));
         const aileData = AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori === "Aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0));
-        
         return (
           <div className="space-y-4">
-            <Card title={<Text strong className="text-[11px] uppercase text-gray-400">Giyim Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '12px' }}>
+            <Card title={<Text className="text-pink-400 text-[10px] font-bold uppercase">Giyim Detay</Text>} style={cardStyle} bodyStyle={{ padding: '16px' }}>
               <div style={{ height: '160px' }}>
-                <Bar data={{
-                  labels: GIYIM_KISILERI,
-                  datasets: [{ data: giyimData, backgroundColor: "#FF6384", borderRadius: 4, barThickness: 12 }]
-                }} options={getBarOptions(globalMax)} />
+                <Bar data={{ labels: GIYIM_KISILERI, datasets: [{ data: giyimData, backgroundColor: "#FF6384", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(Math.max(...giyimData, 50) * 1.2)} />
               </div>
             </Card>
-            <Card title={<Text strong className="text-[11px] uppercase text-gray-400">Aile Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '12px' }}>
+            <Card title={<Text className="text-purple-400 text-[10px] font-bold uppercase">Aile Detay</Text>} style={cardStyle} bodyStyle={{ padding: '16px' }}>
               <div style={{ height: '130px' }}>
-                <Bar data={{
-                  labels: AILE_UYELERI,
-                  datasets: [{ data: aileData, backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 12 }]
-                }} options={getBarOptions(globalMax)} />
+                <Bar data={{ labels: AILE_UYELERI, datasets: [{ data: aileData, backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(Math.max(...aileData, 50) * 1.2)} />
               </div>
             </Card>
           </div>
@@ -284,33 +246,56 @@ const RaporlarContent = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+    <div className="max-w-md mx-auto min-h-screen bg-[#020617] pb-32">
+      {/* Header Area */}
+      <div className="sticky top-0 z-50 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
         <div className="flex justify-between items-center">
-          <Button icon={<ArrowLeftOutlined />} onClick={() => changeMonth("prev")} type="text" />
+          <Button 
+            icon={<ArrowLeftOutlined className="text-white" />} 
+            onClick={() => changeMonth("prev")} 
+            type="text" 
+            className="hover:bg-white/5"
+          />
           <div className="text-center">
-            <Text className="block text-[10px] text-gray-400 font-bold uppercase">Rapor Dönemi</Text>
-            <Title level={5} className="m-0" style={{ margin: 0 }}>{displayMonth}</Title>
+            <Text className="block text-[9px] text-blue-400 font-black uppercase tracking-[0.2em]">Rapor Dönemi</Text>
+            <Title level={4} className="!text-white !m-0 font-black italic tracking-tighter uppercase">{displayMonth}</Title>
           </div>
-          <Button icon={<ArrowRightOutlined />} onClick={() => changeMonth("next")} disabled={isCurrentMonth} type="text" />
+          <Button 
+            icon={<ArrowRightOutlined className="text-white" />} 
+            onClick={() => changeMonth("next")} 
+            disabled={isCurrentMonth} 
+            type="text" 
+            className="hover:bg-white/5 disabled:opacity-20"
+          />
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        <div className="bg-gray-200/50 p-1 rounded-xl">
-            <Segmented
-              block
-              value={activeTab}
-              onChange={setActiveTab}
-              options={[
-                  { label: 'Genel', value: 'Genel', icon: <BarChartOutlined /> },
-                  { label: 'Market', value: 'Market', icon: <ShopOutlined /> },
-                  { label: 'Kişisel', value: 'Detay', icon: <UserOutlined /> },
-              ]}
-            />
-        </div>
+      <div className="p-4 space-y-6">
+        {/* Navigation Tabs */}
+        <ConfigProvider theme={{
+          components: {
+            Segmented: {
+              itemSelectedBg: "rgba(59, 130, 246, 0.2)",
+              itemSelectedColor: "#60a5fa",
+              itemColor: "#94a3b8",
+              trackBg: "rgba(255, 255, 255, 0.03)"
+            }
+          }
+        }}>
+          <Segmented
+            block
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+                { label: 'Trend', value: 'Genel', icon: <BarChartOutlined /> },
+                { label: 'Market', value: 'Market', icon: <ShopOutlined /> },
+                { label: 'Kişi', value: 'Detay', icon: <UserOutlined /> },
+            ]}
+            className="p-1 rounded-2xl"
+          />
+        </ConfigProvider>
         
-        <div className="transition-opacity duration-300">
+        <div className="animate-in fade-in duration-500">
           {renderTabContent()}
         </div>
       </div>
@@ -319,7 +304,15 @@ const RaporlarContent = () => {
 };
 
 const Raporlar = () => (
-    <ConfigProvider theme={{ token: { borderRadius: 16, colorPrimary: '#3b82f6' } }}>
+    <ConfigProvider theme={{ 
+        token: { borderRadius: 16, colorPrimary: '#3b82f6' },
+        components: {
+            Card: {
+                headerBg: "transparent",
+                colorTextHeading: "#f8fafc"
+            }
+        }
+    }}>
         <RaporlarContent />
     </ConfigProvider>
 );

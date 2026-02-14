@@ -488,7 +488,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             <Form.Item name="not" className="mt-2 mb-0">
               <Input.TextArea 
                 rows={2} 
-                placeholder="Kaptan Notu..."
+                placeholder="Not ekleyin..."
                 autoFocus
                 className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
                 style={{ color: '#ffffff', backgroundColor: '#1e293b' }}

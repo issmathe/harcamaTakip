@@ -52,13 +52,13 @@ const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toLowerCase();
   switch (normalizedKategori) {
     case "tasarruf": case "market": case "restoran": case "aile": 
-      return { icon: <DollarCircleOutlined />, color: "bg-red-50 text-red-500" };
+      return { icon: <DollarCircleOutlined />, color: "bg-red-500/10 text-red-400" };
     case "kira": case "fatura":
-      return { icon: <TagOutlined />, color: "bg-blue-50 text-blue-500" };
+      return { icon: <TagOutlined />, color: "bg-blue-500/10 text-blue-400" };
     case "ulaşım": case "petrol":
-      return { icon: <CalendarOutlined />, color: "bg-emerald-50 text-emerald-500" };
+      return { icon: <CalendarOutlined />, color: "bg-emerald-500/10 text-emerald-400" };
     default:
-      return { icon: <SolutionOutlined />, color: "bg-gray-50 text-gray-400" };
+      return { icon: <SolutionOutlined />, color: "bg-gray-500/10 text-gray-400" };
   }
 };
 
@@ -106,14 +106,19 @@ const HarcamalarContent = () => {
 
   const startDeleteProcess = (id) => {
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-    message.success({ 
+    message.open({ 
+      key: MESSAGE_KEY,
       content: (
-        <span className="flex items-center space-x-2">
-          <Text strong>🗑️ Silindi</Text>
-          <Button type="link" size="small" onClick={() => { clearTimeout(deleteTimerRef.current); message.destroy(MESSAGE_KEY); }}>Geri Al</Button>
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="text-white font-bold">🗑️ Harcama silindi</span>
+          <Button type="link" size="small" className="text-blue-400 p-0" onClick={() => { 
+              clearTimeout(deleteTimerRef.current); 
+              message.destroy(MESSAGE_KEY); 
+            }}>GERİ AL</Button>
+        </div>
       ), 
-      key: MESSAGE_KEY, duration: 3 
+      style: { marginTop: '10vh' },
+      duration: 3 
     });
     deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
   };
@@ -133,13 +138,13 @@ const HarcamalarContent = () => {
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm]);
 
-// Dönem toplamı hesaplanırken Tasarruf kategorisini dışlıyoruz
   const kategoriToplam = useMemo(
     () => filteredHarcamalar
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") // Tasarruf gider değildir
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
     [filteredHarcamalar]
   );
+
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
@@ -172,53 +177,43 @@ const HarcamalarContent = () => {
     });
   };
 
-  const leadingActions = (harcama) => (
-    <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-20 rounded-l-3xl"><EditOutlined className="text-xl" /></div></SwipeAction></LeadingActions>
-  );
-
-  const trailingActions = (harcama) => (
-    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-20 rounded-r-3xl"><DeleteOutlined className="text-xl" /></div></SwipeAction></TrailingActions>
-  );
-
-  if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
+  if (isLoading) return <div className="flex justify-center items-center h-screen bg-[#020617]"><Spin size="large" /></div>;
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 shadow-sm">
+    <div className="max-w-md mx-auto min-h-screen bg-[#020617] pb-32">
+      {/* STICKY HEADER */}
+      <div className="sticky top-0 z-50 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
         <div className="flex justify-between items-center">
-          <Button icon={<LeftOutlined />} onClick={() => changeMonth("prev")} type="text" />
+          <Button icon={<LeftOutlined className="text-white" />} onClick={() => changeMonth("prev")} type="text" className="hover:bg-white/5" />
           <div className="text-center">
-            <Text className="block text-[10px] uppercase tracking-tighter text-gray-400 font-bold">Harcamalar</Text>
-            <Title level={5} className="m-0 capitalize" style={{ margin: 0 }}>{displayMonth}</Title>
+            <Text className="block text-[9px] uppercase tracking-[0.2em] text-blue-400 font-black">Harcama Kayıtları</Text>
+            <Title level={4} className="!text-white !m-0 italic font-black tracking-tighter uppercase">{displayMonth}</Title>
           </div>
-          <Button icon={<RightOutlined />} onClick={() => changeMonth("next")} type="text" />
+          <Button icon={<RightOutlined className="text-white" />} onClick={() => changeMonth("next")} type="text" className="hover:bg-white/5" />
         </div>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* TOPLAM KARTI */}
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+        {/* TOPLAM KARTI (GLASS) */}
+        <div className="bg-white/5 backdrop-blur-md p-5 rounded-[28px] border border-white/10 shadow-xl">
           <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-2">
-              <Text className="text-[11px] font-bold uppercase text-gray-400">Dönem Toplamı:</Text>
-              <Text className="text-base font-black text-red-500">
-                -{kategoriToplam.toFixed(2).replace('.', ',')}€
+            <div className="flex flex-col">
+              <Text className="text-[10px] font-black uppercase tracking-widest text-gray-500">Dönem Toplamı</Text>
+              <Text className="text-2xl font-black italic text-red-500">
+                -€{kategoriToplam.toLocaleString('tr-TR')}
               </Text>
             </div>
             <div className="flex gap-2">
               <Button 
                 icon={<SearchOutlined />} 
-                size="small"
-                className={`rounded-lg border-none ${isSearchVisible ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-400'}`}
+                className={`rounded-xl border-none h-10 w-10 flex items-center justify-center transition-all ${isSearchVisible ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400'}`}
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
               />
               <Select 
                 value={selectedCategory} 
                 onChange={setSelectedCategory} 
-                size="small"
+                className="w-24 h-10 category-select-dark"
                 variant="filled"
-                className="w-24"
-                style={{ borderRadius: '8px' }}
               >
                 <Option value="Tümü">Tümü</Option>
                 {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
@@ -228,10 +223,10 @@ const HarcamalarContent = () => {
 
           {isSearchVisible && (
             <Input 
-              placeholder="Ara..." 
+              placeholder="Filtrele..." 
               variant="filled"
-              className="rounded-2xl h-9 border-none bg-gray-50"
-              prefix={<SearchOutlined className="text-gray-300" />} 
+              className="rounded-xl h-10 border-none bg-white/5 text-white placeholder:text-gray-600"
+              prefix={<SearchOutlined className="text-gray-500" />} 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               allowClear
@@ -242,33 +237,36 @@ const HarcamalarContent = () => {
 
         {/* LIST */}
         {filteredHarcamalar.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
+          <div className="bg-white/5 rounded-[32px] p-12 text-center border border-white/5">
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<span className="text-gray-500">Kayıt bulunamadı</span>} />
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {filteredHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
                 
                 return (
-                  <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
-                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-orange-50/50 border-orange-100' : 'bg-white border-gray-50'}`}>
-                      <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>{icon}</div>
+                  <SwipeableListItem 
+                    key={h._id} 
+                    leadingActions={<LeadingActions><SwipeAction onClick={() => openEditModal(h)}><div className="bg-blue-600 text-white flex justify-center items-center h-[76px] w-20 rounded-l-[24px] mb-3"><EditOutlined className="text-xl" /></div></SwipeAction></LeadingActions>} 
+                    trailingActions={<TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(h._id)}><div className="bg-red-600 text-white flex justify-center items-center h-[76px] w-20 rounded-r-[24px] mb-3"><DeleteOutlined className="text-xl" /></div></SwipeAction></TrailingActions>}
+                  >
+                    <div className={`flex items-center w-full p-4 mb-3 rounded-[24px] border active:scale-[0.98] transition-all ${isToday ? 'bg-orange-500/10 border-orange-500/20' : 'bg-white/5 border-white/5'}`}>
+                      <div className={`w-12 h-12 rounded-2xl mr-4 ${color} flex items-center justify-center text-xl`}>{icon}</div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className={`text-xs uppercase tracking-wide truncate max-w-[120px] ${isToday ? 'text-orange-600' : 'text-gray-500'}`}>
+                          <Text className={`text-[10px] uppercase font-black tracking-widest truncate max-w-[120px] ${isToday ? 'text-orange-400' : 'text-gray-500'}`}>
                             {h.altKategori || h.kategori}
                           </Text>
-                          <Text className="text-base font-black text-red-500">-{h.miktar}€</Text>
+                          <Text className="text-lg font-black italic text-red-500">-€{h.miktar}</Text>
                         </div>
-                        <div className="flex justify-between items-end mt-1">
-                          <div className="flex flex-col">
-                            <Text className={`text-[10px] font-medium ${isToday ? 'text-orange-400' : 'text-gray-400'}`}>
-                                {isToday ? "Bugün, " : ""}{dayjs(h.createdAt).format('DD MMMM, HH:mm')}
+                        <div className="flex justify-between items-end">
+                            <Text className={`text-[10px] font-bold uppercase tracking-tighter ${isToday ? 'text-orange-300' : 'text-gray-500'}`}>
+                                {isToday ? "Bugün, " : ""}{dayjs(h.createdAt).format('DD MMMM')}
                             </Text>
-                            {h.not && <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">{h.not}</Text>}
-                          </div>
-                          {isToday && <div className="bg-orange-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-orange-600 uppercase font-bold">Yeni</Text></div>}
+                            {h.not && <Text className="text-[11px] text-gray-400 italic truncate max-w-[140px]">{h.not}</Text>}
                         </div>
                       </div>
                     </div>
@@ -281,47 +279,45 @@ const HarcamalarContent = () => {
       </div>
 
       <Modal
-        title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
+        title={<div className="text-center text-blue-400 font-black uppercase tracking-widest text-sm">İşlemi Revize Et</div>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         footer={null}
         centered
-        width={380}
-        styles={{ body: { padding: '12px 16px' } }}
-        className="edit-modal"
+        width={360}
+        className="space-modal"
+        styles={{ body: { padding: '20px' } }}
       >
         <div className="space-y-4">
-          <div className="bg-red-50/50 p-4 rounded-2xl text-center border border-red-100">
-             <Text strong className="text-[10px] text-red-400 uppercase block mb-1">Miktar</Text>
+          <div className="bg-red-500/5 p-4 rounded-2xl text-center border border-red-500/10">
+             <Text className="text-[9px] text-red-400/60 uppercase font-black block mb-1">Harcama Tutarı</Text>
              <Input 
                 variant="borderless" 
                 type="number" 
-                inputMode="decimal"
                 className="p-0 text-3xl font-black text-red-500 text-center" 
                 value={formData.miktar} 
-                suffix={<span className="text-red-300 text-lg">€</span>}
-                onFocus={(e) => e.target.select()}
+                suffix={<span className="text-red-900/40 text-lg">€</span>}
                 onChange={e => setFormData({...formData, miktar: e.target.value})} 
              />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
+             <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                <Text className="text-[9px] text-gray-500 uppercase font-black block mb-1">Tarih</Text>
                 <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
              </div>
-             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
-                <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
+             <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                <Text className="text-[9px] text-gray-500 uppercase font-black block mb-1">Kategori</Text>
+                <Select variant="borderless" size="small" className="w-full p-0 font-bold text-white" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
                   {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
                 </Select>
              </div>
           </div>
 
           {["Market", "Giyim", "Aile"].includes(formData.kategori) && (
-             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Alt Seçim</Text>
-                <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
+             <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                <Text className="text-[9px] text-gray-500 uppercase font-black block mb-1">Alt Kategori</Text>
+                <Select variant="borderless" size="small" className="w-full p-0 font-bold text-white" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
                     {(formData.kategori === "Market" ? MARKETLER : formData.kategori === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(sub => (
                         <Option key={sub} value={sub}>{sub}</Option>
                     ))}
@@ -329,9 +325,9 @@ const HarcamalarContent = () => {
              </div>
           )}
 
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kaptan Notu</Text>
-            <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Not..." />
+          <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+            <Text className="text-[9px] text-gray-500 uppercase font-black block mb-1">Not</Text>
+            <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm text-gray-300" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="..." />
           </div>
 
           <Button 
@@ -339,7 +335,7 @@ const HarcamalarContent = () => {
             block 
             onClick={handleEditSave}
             loading={updateMutation.isPending}
-            className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-widest mt-2"
+            className="h-12 text-md font-black bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-[0.2em] mt-2 shadow-lg shadow-blue-900/20"
           >
             Güncelle
           </Button>
@@ -350,8 +346,14 @@ const HarcamalarContent = () => {
 };
 
 const Harcamalar = () => (
-    <ConfigProvider theme={{ token: { borderRadius: 16, colorPrimary: '#3b82f6' } }}>
-        <div className="relative min-h-screen bg-gray-50">
+    <ConfigProvider theme={{ 
+        token: { borderRadius: 16, colorPrimary: '#3b82f6', colorBgBase: '#020617', colorText: '#f8fafc' },
+        components: {
+            Modal: { contentBg: '#0f172a', headerBg: '#0f172a' },
+            Select: { selectorBg: 'transparent' }
+        }
+    }}>
+        <div className="relative min-h-screen bg-[#020617]">
             <main><HarcamalarContent /></main>
             <BottomNav />
         </div>
