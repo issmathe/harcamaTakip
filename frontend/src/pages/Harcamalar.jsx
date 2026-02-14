@@ -133,11 +133,13 @@ const HarcamalarContent = () => {
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm]);
 
+// Dönem toplamı hesaplanırken Tasarruf kategorisini dışlıyoruz
   const kategoriToplam = useMemo(
-    () => filteredHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0),
+    () => filteredHarcamalar
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") // Tasarruf gider değildir
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
     [filteredHarcamalar]
   );
-
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");

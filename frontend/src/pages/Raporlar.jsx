@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { Card, Typography, Empty, Button, Segmented, ConfigProvider } from "antd";
 import { 
   ArrowLeftOutlined, 
@@ -8,24 +8,36 @@ import {
   UserOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
-import { Bar } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
 
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  PointElement,
+  LineElement,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
-import AylikHarcamaTrendGrafigi from "../components/grafik/AylikHarcamaTrendGrafigi";
 
 dayjs.locale(tr);
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
+ChartJS.register(
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  PointElement, 
+  LineElement, 
+  Tooltip, 
+  Legend, 
+  Filler, 
+  ChartDataLabels
+);
 
 const { Title, Text } = Typography;
 
@@ -43,43 +55,93 @@ const categoryColors = {
 
 const RaporlarContent = () => {
   const { harcamalar = [] } = useTotalsContext();
+  const lineChartRef = useRef(null);
   const now = dayjs();
   
   const [selectedMonth, setSelectedMonth] = useState(now.month());
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [activeTab, setActiveTab] = useState("Genel");
+  const [lineChartData, setLineChartData] = useState({ datasets: [] });
 
-  // ÖLÇEK TUTARLILIĞI: Tüm zamanların en yüksek kategori harcamasını bul
-  const globalMax = useMemo(() => {
-    if (harcamalar.length === 0) return 500;
-    
-    // Her ayı ve kategoriyi grupla
-    const totals = {};
-    harcamalar.forEach(h => {
-      const monthKey = dayjs(h.createdAt).format("YYYY-MM");
-      const catKey = h.kategori;
-      const key = `${monthKey}-${catKey}`;
-      totals[key] = (totals[key] || 0) + Number(h.miktar);
+// 1. TREND GRAFİĞİ HESAPLAMALARI (Son 6 Ay) - TASARRUF HARİÇ
+  const trendCalculation = useMemo(() => {
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      last6Months.push(dayjs().subtract(i, "month"));
+    }
+
+    const labels = last6Months.map((m) => m.format("MMM"));
+    const data = last6Months.map((month) => {
+      const monthTotal = harcamalar
+        .filter((h) => {
+          const t = dayjs(h.createdAt);
+          // Sadece ilgili ay/yıl olsun VE kategorisi 'tasarruf' olmasın
+          return (
+            t.month() === month.month() && 
+            t.year() === month.year() && 
+            h.kategori?.toLowerCase() !== "tasarruf"
+          );
+        })
+        .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+      return Number(monthTotal.toFixed(0));
     });
-    
-    const max = Math.max(...Object.values(totals), 100);
-    return max * 1.2; // Sağda %20 boşluk bırak
+
+    return { labels, data };
   }, [harcamalar]);
 
-  // MARKET ÖLÇEĞİ: Market alt kategorileri için kendi içinde global max
+  // Trend Grafiği Gradient Efekti
+  useEffect(() => {
+    const chart = lineChartRef.current;
+    if (!chart || trendCalculation.data.length === 0) return;
+
+    const ctx = chart.ctx;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, "rgba(59, 130, 246, 0.5)");
+    gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
+
+    setLineChartData({
+      labels: trendCalculation.labels,
+      datasets: [
+        {
+          data: trendCalculation.data,
+          fill: true,
+          backgroundColor: gradient,
+          borderColor: "#3b82f6",
+          borderWidth: 3,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#3b82f6",
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          tension: 0.4,
+        },
+      ],
+    });
+  }, [trendCalculation]);
+
+  // 2. ÖLÇEK AYARLARI
+  const globalMax = useMemo(() => {
+    if (harcamalar.length === 0) return 500;
+    const totals = {};
+    harcamalar.forEach(h => {
+      const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.kategori}`;
+      totals[key] = (totals[key] || 0) + Number(h.miktar);
+    });
+    const max = Math.max(...Object.values(totals), 100);
+    return max * 1.2;
+  }, [harcamalar]);
+
   const globalMarketMax = useMemo(() => {
     if (harcamalar.length === 0) return 200;
     const totals = {};
     harcamalar.filter(h => h.kategori === "Market").forEach(h => {
-      const monthKey = dayjs(h.createdAt).format("YYYY-MM");
-      const subKey = h.altKategori || "Diğer";
-      const key = `${monthKey}-${subKey}`;
+      const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.altKategori || "Diğer"}`;
       totals[key] = (totals[key] || 0) + Number(h.miktar);
     });
     const max = Math.max(...Object.values(totals), 50);
     return max * 1.2;
   }, [harcamalar]);
 
+  // 3. FİLTRELEME VE NAVİGASYON
   const filteredHarcamalar = useMemo(() => {
     return harcamalar.filter((h) => {
       const t = dayjs(h.createdAt); 
@@ -88,75 +150,77 @@ const RaporlarContent = () => {
   }, [harcamalar, selectedMonth, selectedYear]);
 
   const changeMonth = useCallback((direction) => {
-      const current = dayjs().year(selectedYear).month(selectedMonth);
-      const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
-      setSelectedMonth(newDate.month());
-      setSelectedYear(newDate.year());
-    }, [selectedMonth, selectedYear]
-  );
+    const current = dayjs().year(selectedYear).month(selectedMonth);
+    const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
+    setSelectedMonth(newDate.month());
+    setSelectedYear(newDate.year());
+  }, [selectedMonth, selectedYear]);
 
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format("MMMM YYYY");
   const isCurrentMonth = dayjs().month() === selectedMonth && dayjs().year() === selectedYear;
 
+  // 4. CHART AYARLARI (OPTIONS)
   const getBarOptions = useCallback((fixedMax) => ({
     responsive: true, 
     indexAxis: 'y', 
     maintainAspectRatio: false,
     layout: { padding: { right: 50 } }, 
     scales: { 
-      x: { 
-        display: false, 
-        max: fixedMax // Her ay için aynı tavan fiyat kullanılır
-      }, 
-      y: { 
-        grid: { display: false }, 
-        ticks: { font: { size: 11, weight: '500' }, color: '#4b5563' } 
-      } 
+      x: { display: false, max: fixedMax }, 
+      y: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#4b5563' } } 
     },
     plugins: { 
       legend: { display: false }, 
       datalabels: { 
-        anchor: 'end', 
-        align: 'end', 
-        offset: 4,
+        anchor: 'end', align: 'end', offset: 4,
         formatter: (val) => val > 0 ? `${val.toFixed(0)}€` : '', 
-        font: { weight: 'bold', size: 10 },
-        color: '#374151'
+        font: { weight: 'bold', size: 10 }, color: '#374151'
       } 
     }
   }), []);
 
-  const barData = useMemo(() => {
-    const data = ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0));
-    return {
-      labels: ALL_CATEGORIES,
-      datasets: [{
-        data,
-        backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]),
-        borderRadius: 4,
-        barThickness: 10, 
-        categoryPercentage: 0.8,
-        barPercentage: 0.9
-      }]
-    }
-  }, [filteredHarcamalar]);
+  const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
+        align: "top",
+        offset: 10,
+        formatter: (v) => `${v}€`,
+        font: { weight: "bold", size: 10 },
+        color: "#1e40af",
+      },
+      tooltip: { enabled: true }
+    },
+    scales: {
+      y: { display: false, beginAtZero: true },
+      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#94a3b8" } }
+    },
+    layout: { padding: { top: 25, left: 10, right: 10 } }
+  };
 
-  const marketBarData = useMemo(() => {
-    const data = MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0));
-    return {
-      labels: MARKETLER,
-      datasets: [{
-        data,
-        backgroundColor: "#3b82f6",
-        borderRadius: 4,
-        barThickness: 10,
-        categoryPercentage: 0.8,
-        barPercentage: 0.9
-      }]
-    }
-  }, [filteredHarcamalar]);
+  // 5. DATA OBJELERİ
+  const barData = useMemo(() => ({
+    labels: ALL_CATEGORIES,
+    datasets: [{
+      data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]),
+      borderRadius: 4, barThickness: 10
+    }]
+  }), [filteredHarcamalar]);
+
+  const marketBarData = useMemo(() => ({
+    labels: MARKETLER,
+    datasets: [{
+      data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)),
+      backgroundColor: "#3b82f6", borderRadius: 4, barThickness: 10
+    }]
+  }), [filteredHarcamalar]);
 
   const hasData = filteredHarcamalar.length > 0;
+  const hasTrendData = trendCalculation.data.some(v => v > 0);
 
   const renderTabContent = () => {
     if (!hasData) return <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Veri Yok" /></div>;
@@ -165,8 +229,18 @@ const RaporlarContent = () => {
       case "Genel":
         return (
           <>
-            <AylikHarcamaTrendGrafigi />
-            <Card className="rounded-3xl border-none shadow-sm mt-4" bodyStyle={{ padding: '12px' }}>
+            <Card className="rounded-2xl shadow-sm border-none bg-white overflow-hidden mb-4">
+              <div className="mb-4">
+                <Text strong className="text-gray-400 text-[10px] uppercase tracking-wider">6 Aylık Harcama Trendi</Text>
+              </div>
+              {hasTrendData ? (
+                <div style={{ height: "180px" }}>
+                  <Line ref={lineChartRef} data={lineChartData} options={lineOptions} />
+                </div>
+              ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+            </Card>
+
+            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '12px' }}>
               <div style={{ height: '380px' }}>
                 <Bar data={barData} options={getBarOptions(globalMax)} />
               </div>
