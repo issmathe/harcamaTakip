@@ -116,6 +116,7 @@ const SpaceBackground = () => {
     window.addEventListener("resize", resize);
     resize();
 
+    // Yıldızlar
     const stars = Array.from({ length: 150 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -123,10 +124,33 @@ const SpaceBackground = () => {
       o: Math.random(),
     }));
 
+    // Ana İçerik için Galaksiler (Daha büyük ve daha şeffaf)
+    const galaxies = Array.from({ length: 5 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 250 + 150,
+      color: Math.random() > 0.5 ? "rgba(67, 56, 202, 0.08)" : "rgba(147, 51, 234, 0.08)",
+      speed: Math.random() * 0.1 + 0.05
+    }));
+
     const draw = () => {
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // 1. Galaksileri Çiz
+      galaxies.forEach(g => {
+        g.x -= g.speed;
+        if (g.x + g.size < 0) g.x = canvas.width + g.size;
+
+        const gradient = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size);
+        gradient.addColorStop(0, g.color);
+        gradient.addColorStop(1, "rgba(2, 6, 23, 0)");
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(g.x - g.size, g.y - g.size, g.size * 2, g.size * 2);
+      });
+
+      // 2. Yıldızları Çiz
       stars.forEach((star) => {
         star.z -= 0.5;
         if (star.z <= 0) star.z = canvas.width;
