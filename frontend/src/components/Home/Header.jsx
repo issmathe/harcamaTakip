@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Typography, Progress } from "antd";
+import { Typography, Progress, Button } from "antd";
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -8,7 +8,9 @@ import {
   DashboardOutlined,
   HistoryOutlined,
   CalendarOutlined,
-  SaveOutlined
+  SaveOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
 import dayjs from "dayjs";
@@ -23,8 +25,8 @@ const Header = () => {
   } = useTotalsContext();
   
   const [activeState, setActiveState] = useState({ id: null, mode: 1 });
+  const [isHidden, setIsHidden] = useState(false); // Gizleme durumu
 
-  // Tasarruf kategorisindeki tüm zamanların toplamı
   const totalSavings = useMemo(() => {
     const harcamaTasarruf = (harcamalar || [])
       .filter(h => h.kategori?.toLowerCase() === "tasarruf")
@@ -68,6 +70,7 @@ const Header = () => {
   const fuelColor = remainingFuel > 50 ? "#10b981" : remainingFuel > 20 ? "#f59e0b" : "#ef4444";
 
   const formatCurrency = (val) => {
+    if (isHidden) return "****"; // Gizleme aktifse yıldız göster
     return (val || 0).toLocaleString("tr-TR", { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
@@ -127,7 +130,16 @@ const Header = () => {
         <div className="relative z-10">
           <div className="flex justify-between items-start">
             <div>
-              <Text className="!text-indigo-200 text-[10px] uppercase font-bold tracking-widest">Toplam Varlık</Text>
+              <div className="flex items-center gap-2 mb-1">
+                <Text className="!text-indigo-200 text-[10px] uppercase font-bold tracking-widest">Toplam Varlık</Text>
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={isHidden ? <EyeOutlined className="text-white/50" /> : <EyeInvisibleOutlined className="text-white/50" />} 
+                  onClick={() => setIsHidden(!isHidden)}
+                  className="h-4 w-4 flex items-center justify-center hover:bg-white/10"
+                />
+              </div>
               <Title level={2} className="!text-white !m-0 !text-3xl font-black italic">
                 €{formatCurrency(totalAssets)}
               </Title>
