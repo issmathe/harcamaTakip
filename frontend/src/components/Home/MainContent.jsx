@@ -34,23 +34,41 @@ const marsVideo = "/gezegenler/mars.mp4";
 const marsPoster = "/gezegenler/mars.jpg";
 const ayVideo = "/gezegenler/ay.mp4";
 const ayPoster = "/gezegenler/ay.jpg";
-
+const nebulaVideo = "/gezegenler/nebula.mp4";
+const nebulaPoster = "/gezegenler/nebula.jpg";
+const karadelikVideo = "/gezegenler/karadelik.mp4";
+const karadelikPoster = "/gezegenler/karadelik.jpg";
+const bulutsuVideo = "/gezegenler/bulutsu.mp4";
+const bulutsuPoster = "/gezegenler/bulutsu.jpeg";
+const roketVideo = "/gezegenler/roket.mp4"; // Yeni eklendi
+const roketPoster = "/gezegenler/roket.jpg"; // Yeni eklendi
+const hubbleVideo = "/gezegenler/hubble.mp4"; // Yeni eklendi
+const hubblePoster = "/gezegenler/hubble.jpeg";
 dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
 const PlanetStyle = ({ type, isTop }) => {
-  // Video Gezegen Konfigürasyonları
   const videoPlanets = {
     Market: { video: dunyaVideo, poster: dunyaPoster },
-    Ulaşım: { video: jupiterVideo, poster: jupiterPoster },
+    Ulaşım: { video: roketVideo, poster: roketPoster },
     Giyim: { video: uranusVideo, poster: uranusPoster },
     Petrol: { video: marsVideo, poster: marsPoster },
-    Eğitim: { video: ayVideo, poster: ayPoster }
+    Eğitim: { video: hubbleVideo, poster: hubblePoster },
+    Aile: { video: nebulaVideo, poster: nebulaPoster },
+    İletisim: { video: karadelikVideo, poster: karadelikPoster },
+    Restoran: { video: bulutsuVideo, poster: bulutsuPoster },
+    Kira: { video: jupiterVideo, poster: jupiterPoster }, // Jüpiter buraya geldi
+    Sağlık: { video: ayVideo, poster: ayPoster }         // Ay buraya geldi
   };
 
   const currentVideoPlanet = videoPlanets[type];
+  const isFamily = type === "Aile";
+  const isBlackHole = type === "İletisim";
+  const isNebula = type === "Restoran";
+  const isRocket = type === "Ulaşım";
+  const isHubble = type === "Eğitim";
 
   const labelElement = (
     <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
@@ -62,25 +80,43 @@ const PlanetStyle = ({ type, isTop }) => {
 
   if (currentVideoPlanet) {
     return (
-      <div className={`relative w-full h-full rounded-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
-        <div className="absolute inset-0 rounded-full overflow-hidden bg-black">
+      <div className={`relative w-full h-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
+        <div 
+          className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500
+            ${(isFamily || isNebula) 
+              ? 'rounded-[60%_40%_70%_30%/50%] animate-[blob_8s_infinite_alternate] scale-x-125' 
+              : 'rounded-full'
+            }`}
+          style={{ 
+            boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
+                       isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
+                       isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 'none'
+          }}
+        >
           <video
             src={currentVideoPlanet.video}
             poster={currentVideoPlanet.poster}
             autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
             className="w-full h-full object-cover"
             style={{ 
-              borderRadius: '50%', 
               pointerEvents: 'none',
-              transform: 'scale(1.25)', 
-              filter: (type === "Ulaşım" || type === "Petrol") ? 'contrast(1.1) brightness(1.1)' : 'none'
+              transform: isBlackHole ? 'scale(1.4)' : ((isFamily || isNebula) ? 'scale(1.5)' : 'scale(1.25)'), 
+              filter: (isRocket || type === "Petrol") ? 'contrast(1.1) brightness(1.1)' : 'none'
             }}
           />
         </div>
-        {labelElement}
+
         {isTop && (
-          <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/20 pointer-events-none" />
+          <div className={`absolute inset-0 animate-ping pointer-events-none 
+            ${(isFamily || isNebula) ? 'rounded-[60%_40%_70%_30%/50%] bg-purple-400/20' : 
+              isBlackHole ? 'rounded-full bg-white/10 scale-150' : 
+              isRocket ? 'rounded-full bg-orange-400/20' :
+              isHubble ? 'rounded-full bg-cyan-400/20' :
+              'rounded-full bg-blue-400/20'}`} 
+          />
         )}
+        
+        {labelElement}
       </div>
     );
   }
@@ -94,7 +130,6 @@ const PlanetStyle = ({ type, isTop }) => {
     </div>
   );
 };
-
 const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Diğer"];
 const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
