@@ -133,13 +133,13 @@ const HarcamalarContent = () => {
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm]);
 
-// Dönem toplamı hesaplanırken Tasarruf kategorisini dışlıyoruz
   const kategoriToplam = useMemo(
     () => filteredHarcamalar
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") // Tasarruf gider değildir
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
     [filteredHarcamalar]
   );
+  
   const changeMonth = useCallback((direction) => {
       const current = dayjs().year(selectedYear).month(selectedMonth);
       const newDate = direction === "prev" ? current.subtract(1, "month") : current.add(1, "month");
@@ -205,19 +205,20 @@ const HarcamalarContent = () => {
                 -{kategoriToplam.toFixed(2).replace('.', ',')}€
               </Text>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Button 
                 icon={<SearchOutlined />} 
                 size="small"
-                className={`rounded-lg border-none ${isSearchVisible ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-400'}`}
+                className={`rounded-lg border-none h-8 w-8 flex items-center justify-center ${isSearchVisible ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-400'}`}
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
               />
               <Select 
                 value={selectedCategory} 
                 onChange={setSelectedCategory} 
-                size="small"
+                size="middle"
                 variant="filled"
-                className="w-24"
+                /* w-24 yerine w-32 veya daha büyük bir değer (w-40 gibi) kullanabilirsin */
+                className="w-32" 
                 style={{ borderRadius: '8px' }}
               >
                 <Option value="Tümü">Tümü</Option>
@@ -291,32 +292,47 @@ const HarcamalarContent = () => {
         className="edit-modal"
       >
         <div className="space-y-4">
-          <div className="bg-red-50/50 p-4 rounded-2xl text-center border border-red-100">
-             <Text strong className="text-[10px] text-red-400 uppercase block mb-1">Miktar</Text>
-             <Input 
-                variant="borderless" 
-                type="number" 
-                inputMode="decimal"
-                className="p-0 text-3xl font-black text-red-500 text-center" 
-                value={formData.miktar} 
-                suffix={<span className="text-red-300 text-lg">€</span>}
-                onFocus={(e) => e.target.select()}
-                onChange={e => setFormData({...formData, miktar: e.target.value})} 
-             />
-          </div>
+<div className="bg-red-50/50 py-2 px-4 rounded-2xl text-center border border-red-100">
+  <Text strong className="text-[10px] text-red-400 uppercase block mb-0">Miktar</Text>
+  <Input 
+    variant="borderless" 
+    type="number" 
+    inputMode="decimal"
+    className="p-0 text-3xl font-black text-red-500 text-center leading-tight" 
+    value={formData.miktar} 
+    suffix={<span className="text-red-300 text-lg">€</span>}
+    onFocus={(e) => e.target.select()}
+    onChange={e => setFormData({...formData, miktar: e.target.value})} 
+  />
+</div>
 
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
-                <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
-             </div>
-             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
-                <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
-                  {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
-                </Select>
-             </div>
-          </div>
+<div className="grid grid-cols-2 gap-2">
+  {/* Tarih Bölümü */}
+  <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
+    <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Tarih</Text>
+    <div className="flex items-center w-full overflow-hidden">
+      <CustomDayPicker 
+        value={formData.tarih} 
+        onChange={d => setFormData({...formData, tarih: d})}
+      />
+    </div>
+  </div>
+
+  {/* Kategori Bölümü */}
+  <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
+    <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Kategori</Text>
+    <Select 
+      variant="borderless" 
+      size="small" 
+      className="w-full font-bold text-xs" 
+      style={{ padding: 0 }}
+      value={formData.kategori} 
+      onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}
+    >
+      {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
+    </Select>
+  </div>
+</div>
 
           {["Market", "Giyim", "Aile"].includes(formData.kategori) && (
              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
