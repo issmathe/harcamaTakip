@@ -82,16 +82,12 @@ const PlanetStyle = ({ type, isTop }) => {
     return (
       <div className={`relative w-full h-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
         <div 
-          className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500
-            ${(isFamily || isNebula) 
-              ? 'rounded-[60%_40%_70%_30%/50%] animate-[blob_8s_infinite_alternate] scale-x-125' 
-              : 'rounded-full'
-            }`}
-          style={{ 
-            boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
-                       isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
-                       isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 'none'
-          }}
+className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500 rounded-full`}
+  style={{ 
+    boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
+               isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
+               isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 'none'
+  }}
         >
           <video
             src={currentVideoPlanet.video}
@@ -130,8 +126,7 @@ const PlanetStyle = ({ type, isTop }) => {
     </div>
   );
 };
-const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Diğer"];
-const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
+const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Diğer", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Eğitim"];const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 
