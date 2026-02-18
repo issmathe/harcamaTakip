@@ -116,14 +116,23 @@ const RaporlarContent = () => {
     plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', offset: 4, formatter: (val) => val > 0 ? `${Math.round(val)}€` : '', font: { weight: 'bold', size: 10 }, color: '#374151' } }
   }), []);
 
-  const yillikAnalizVeri = useMemo(() => {
+ const yillikAnalizVeri = useMemo(() => {
     const baslangicTarihi = timeRange === "YTD" ? dayjs().startOf('year') : dayjs().subtract(12, 'month');
     const aralikHarcamalar = harcamalar.filter(h => dayjs(h.createdAt).isAfter(baslangicTarihi));
-    const calculate = (list, key) => list.map(item => ({
+
+    // Kategoriye göre süzüp sonra alt kategori toplamlarını alan geliştirilmiş fonksiyon
+    const calculateDetailed = (list, categoryName) => list.map(item => ({
         name: item,
-        total: aralikHarcamalar.filter(h => h[key] === item).reduce((s, h) => s + Number(h.miktar), 0)
+        total: aralikHarcamalar
+          .filter(h => h.kategori === categoryName && h.altKategori === item)
+          .reduce((s, h) => s + Number(h.miktar), 0)
     })).filter(i => i.total > 0).sort((a, b) => b.total - a.total);
-    return { market: calculate(MARKETLER, 'altKategori'), giyim: calculate(GIYIM_KISILERI, 'altKategori'), aile: calculate(AILE_UYELERI, 'altKategori') };
+
+    return { 
+      market: calculateDetailed(MARKETLER, 'Market'), 
+      giyim: calculateDetailed(GIYIM_KISILERI, 'Giyim'), 
+      aile: calculateDetailed(AILE_UYELERI, 'Aile') 
+    };
   }, [harcamalar, timeRange]);
 
   const renderYillikContent = () => {
