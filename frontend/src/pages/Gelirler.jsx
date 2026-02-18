@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useRef } from "react";
 import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider } from "antd";
 import { 
   EditOutlined, DeleteOutlined, 
-  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined
+  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -26,7 +27,7 @@ dayjs.locale(tr);
 
 const { Text, Title } = Typography;
 const { Option } = Select;
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = 'silmeIslemi'; 
 
 const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
@@ -44,6 +45,8 @@ const GelirlerContent = () => {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingGelir, setEditingGelir] = useState(null);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const [formData, setFormData] = useState({ 
     miktar: "", kategori: "", not: "", tarih: dayjs().toDate()
@@ -67,10 +70,19 @@ const GelirlerContent = () => {
     return (gelirler || [])
       .filter((g) => {
         const t = dayjs(g.createdAt);
-        return t.month() === selectedMonth && t.year() === selectedYear;
+        const isSearching = searchTerm.trim().length > 0;
+        const monthMatch = isSearching ? true : (t.month() === selectedMonth && t.year() === selectedYear);
+        const searchMatch = g.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           g.not?.toLowerCase().includes(searchTerm.toLowerCase());
+        return monthMatch && searchMatch;
       })
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
-  }, [gelirler, selectedMonth, selectedYear]); 
+  }, [gelirler, selectedMonth, selectedYear, searchTerm]);
+
+  // Ay Toplamı Hesaplama
+  const aylikToplam = useMemo(() => {
+    return filteredGelirler.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+  }, [filteredGelirler]);
 
   const openEditModal = (gelir) => {
     setEditingGelir(gelir);
@@ -159,6 +171,39 @@ const GelirlerContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* TOPLAM KARTI (Harcamalar ile aynı tasarım) */}
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-0">
+            <div className="flex items-center gap-2">
+              <Text className="text-[11px] font-bold uppercase text-gray-400">Dönem Toplamı:</Text>
+              <Text className="text-base font-black text-emerald-600">
+                +{aylikToplam.toFixed(2).replace('.', ',')}€
+              </Text>
+            </div>
+            <Button 
+                icon={<SearchOutlined />} 
+                size="small"
+                className={`rounded-lg border-none h-8 w-8 flex items-center justify-center ${isSearchVisible ? 'bg-emerald-500 text-white' : 'bg-gray-50 text-gray-400'}`}
+                onClick={() => setIsSearchVisible(!isSearchVisible)}
+              />
+          </div>
+
+          {isSearchVisible && (
+            <div className="mt-3">
+              <Input 
+                placeholder="Gelirlerde ara..." 
+                variant="filled"
+                className="rounded-2xl h-9 border-none bg-gray-50"
+                prefix={<SearchOutlined className="text-gray-300" />} 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                allowClear
+                autoFocus
+              />
+            </div>
+          )}
+        </div>
+
         {/* LIST */}
         {filteredGelirler.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm">
@@ -169,25 +214,27 @@ const GelirlerContent = () => {
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {filteredGelirler.map((gelir) => {
                 const { icon, color } = getCategoryDetails(gelir.kategori);
+                const isToday = dayjs(gelir.createdAt).isSame(now, 'day');
+
                 return (
                   <SwipeableListItem 
                     key={gelir._id} 
                     leadingActions={leadingActions(gelir)} 
                     trailingActions={trailingActions(gelir)}
                   >
-                    <div className="flex items-center w-full p-4 mb-3 bg-white rounded-3xl shadow-sm border border-gray-50 active:scale-[0.98] transition-transform">
+                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-gray-50'}`}>
                       <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>
                         {icon}
                       </div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className="text-xs uppercase tracking-wide text-gray-500">{gelir.kategori}</Text>
+                          <Text strong className={`text-xs uppercase tracking-wide ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>{gelir.kategori}</Text>
                           <Text className="text-base font-black text-emerald-600">+{gelir.miktar}€</Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
                           <div className="flex flex-col">
-                            <Text className="text-[10px] text-gray-400 font-medium">
-                                {dayjs(gelir.createdAt).format('DD MMMM, HH:mm')}
+                            <Text className={`text-[10px] font-medium ${isToday ? 'text-emerald-400' : 'text-gray-400'}`}>
+                                {isToday ? "Bugün, " : ""}{dayjs(gelir.createdAt).format('DD MMMM, HH:mm')}
                             </Text>
                             {gelir.not && (
                                 <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">
@@ -195,6 +242,7 @@ const GelirlerContent = () => {
                                 </Text>
                             )}
                           </div>
+                          {isToday && <div className="bg-emerald-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-emerald-600 uppercase font-bold">Yeni</Text></div>}
                         </div>
                       </div>
                     </div>
@@ -207,36 +255,54 @@ const GelirlerContent = () => {
       </div>
 
       <Modal
-        title={<Title level={5} className="text-center m-0">Düzenle</Title>}
+        title={<div className="text-lg font-bold text-emerald-600 font-mono tracking-widest uppercase text-center">Geliri Düzenle</div>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
-        onOk={handleEditSave}
-        okText="Güncelle"
+        footer={null}
         centered
-        closeIcon={null}
-        width={320}
-        okButtonProps={{ className: "bg-emerald-600 rounded-xl w-full h-10 shadow-none border-none" }}
-        cancelButtonProps={{ className: "hidden" }}
+        width={350}
+        styles={{ body: { padding: '12px 16px' } }}
       >
-        <div className="space-y-4 pt-4">
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tarih</Text>
-            <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} isIncome={true} />
+        <div className="space-y-4">
+          <div className="bg-emerald-50/50 py-2 px-4 rounded-2xl text-center border border-emerald-100">
+            <Text strong className="text-[10px] text-emerald-400 uppercase block mb-0">Miktar</Text>
+            <Input 
+              variant="borderless" 
+              type="number" 
+              inputMode="decimal" 
+              className="p-0 text-3xl font-black text-emerald-600 text-center" 
+              value={formData.miktar} 
+              suffix={<span className="text-emerald-300 text-lg">€</span>}
+              onChange={e => setFormData({...formData, miktar: e.target.value})} 
+            />
           </div>
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Tutar (€)</Text>
-            <Input variant="borderless" type="number" inputMode="decimal" className="p-0 text-xl font-black text-emerald-600" value={formData.miktar} onChange={e => setFormData({...formData, miktar: e.target.value})} />
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100">
+              <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Tarih</Text>
+              <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} isIncome={true} />
+            </div>
+            <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100">
+              <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Kategori</Text>
+              <Select variant="borderless" size="small" className="w-full font-bold text-xs" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v})}>
+                {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>)}
+              </Select>
+            </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kategori</Text>
-            <Select variant="borderless" className="w-full p-0 font-bold" value={formData.kategori} onChange={v => setFormData({...formData, kategori: v})}>
-              {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>)}
-            </Select>
-          </div>
+
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
             <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Not</Text>
             <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Açıklama..." />
           </div>
+
+          <Button 
+            type="primary" 
+            block 
+            onClick={handleEditSave}
+            className="h-12 text-lg font-bold bg-emerald-600 hover:bg-emerald-500 border-none rounded-xl uppercase tracking-widest mt-2"
+          >
+            Güncelle
+          </Button>
         </div>
       </Modal>
     </div>
