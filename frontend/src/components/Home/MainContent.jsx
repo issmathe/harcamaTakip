@@ -45,6 +45,11 @@ const roketPoster = "/gezegenler/roket.jpg";
 const hubbleVideo = "/gezegenler/hubble.mp4"; 
 const hubblePoster = "/gezegenler/hubble.jpeg";
 const uyduPoster = "/gezegenler/uydu.png"; 
+const astronotVideo = "/gezegenler/astronot.mp4"; 
+const astronotPoster = "/gezegenler/astoronot.png"; 
+const meteorVideo = "/gezegenler/meteor.mp4"; 
+const meteorPoster = "/gezegenler/meteor.png"; 
+
 
 dayjs.extend(isSameOrAfter);
 
@@ -63,6 +68,9 @@ const PlanetStyle = ({ type, isTop }) => {
     Restoran: { video: bulutsuVideo, poster: bulutsuPoster },
     Kira: { video: jupiterVideo, poster: jupiterPoster },
     Sağlık: { video: ayVideo, poster: ayPoster },
+    Fatura: { video: astronotVideo, poster: astronotPoster },
+    Tasarruf: { video: meteorVideo, poster: meteorPoster },
+
     Diğer: {  poster: uyduPoster }
   };
 
