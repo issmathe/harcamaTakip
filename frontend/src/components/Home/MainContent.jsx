@@ -33,7 +33,7 @@ const uranusPoster = "/gezegenler/uranus.jpg";
 const marsVideo = "/gezegenler/mars.mp4";
 const marsPoster = "/gezegenler/mars.jpg";
 const ayVideo = "/gezegenler/ay.mp4";
-const ayPoster = "/gezegenler/dunya.jpg";
+const ayPoster = "/gezegenler/dunya.png";
 const nebulaVideo = "/gezegenler/nebula.mp4";
 const nebulaPoster = "/gezegenler/nebula.jpg";
 const karadelikVideo = "/gezegenler/karadelik.mp4";
@@ -44,8 +44,7 @@ const roketVideo = "/gezegenler/roket.mp4"; // Yeni eklendi
 const roketPoster = "/gezegenler/roket.jpg"; // Yeni eklendi
 const hubbleVideo = "/gezegenler/hubble.mp4"; // Yeni eklendi
 const hubblePoster = "/gezegenler/hubble.jpeg";
-const uyduVideo = "/gezegenler/uydu.mp4"; // Yeni eklendi
-const uyduPoster = "/gezegenler/uydu.jpg"; // Yeni eklendi
+const uyduPoster = "/gezegenler/uydu.png"; // Yeni eklendi
 
 dayjs.extend(isSameOrAfter);
 
@@ -64,7 +63,7 @@ const PlanetStyle = ({ type, isTop }) => {
     Restoran: { video: bulutsuVideo, poster: bulutsuPoster },
     Kira: { video: jupiterVideo, poster: jupiterPoster }, // Jüpiter buraya geldi
     Sağlık: { video: ayVideo, poster: ayPoster },         // Ay buraya geldi
-    Diğer: { video: uyduVideo, poster: uyduPoster }       // Uydu eklendi
+    Diğer: {  poster: uyduPoster }       // Uydu eklendi
   };
 
   const currentVideoPlanet = videoPlanets[type];
