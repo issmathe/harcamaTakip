@@ -47,6 +47,7 @@ const ALL_CATEGORIES = [
 const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
+const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toLowerCase();
@@ -195,7 +196,6 @@ const HarcamalarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* TOPLAM KARTI VE FİLTRELER */}
         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
@@ -231,7 +231,6 @@ const HarcamalarContent = () => {
           </div>
         </div>
 
-        {/* LIST */}
         {filteredHarcamalar.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
         ) : (
@@ -322,11 +321,14 @@ const HarcamalarContent = () => {
             </div>
           </div>
 
-          {["Market", "Giyim", "Aile"].includes(formData.kategori) && (
+          {["Market", "Giyim", "Aile", "Ulaşım"].includes(formData.kategori) && (
              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Alt Seçim</Text>
                 <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
-                    {(formData.kategori === "Market" ? MARKETLER : formData.kategori === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(sub => (
+                    {(formData.kategori === "Market" ? MARKETLER : 
+                      formData.kategori === "Giyim" ? GIYIM_KISILERI : 
+                      formData.kategori === "Aile" ? AILE_UYELERI : 
+                      ULASIM_TURLERI).map(sub => (
                         <Option key={sub} value={sub}>{sub}</Option>
                     ))}
                 </Select>
@@ -334,7 +336,6 @@ const HarcamalarContent = () => {
           )}
 
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Kaptan Notu</Text>
             <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Not..." />
           </div>
 
