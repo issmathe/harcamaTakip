@@ -40,11 +40,11 @@ const karadelikVideo = "/gezegenler/karadelik.mp4";
 const karadelikPoster = "/gezegenler/karadelik.jpg";
 const bulutsuVideo = "/gezegenler/bulutsu.mp4";
 const bulutsuPoster = "/gezegenler/bulutsu.jpeg";
-const roketVideo = "/gezegenler/roket.mp4"; // Yeni eklendi
-const roketPoster = "/gezegenler/roket.jpg"; // Yeni eklendi
-const hubbleVideo = "/gezegenler/hubble.mp4"; // Yeni eklendi
+const roketVideo = "/gezegenler/roket.mp4"; 
+const roketPoster = "/gezegenler/roket.jpg"; 
+const hubbleVideo = "/gezegenler/hubble.mp4"; 
 const hubblePoster = "/gezegenler/hubble.jpeg";
-const uyduPoster = "/gezegenler/uydu.png"; // Yeni eklendi
+const uyduPoster = "/gezegenler/uydu.png"; 
 
 dayjs.extend(isSameOrAfter);
 
@@ -56,14 +56,14 @@ const PlanetStyle = ({ type, isTop }) => {
     Market: { video: dunyaVideo, poster: dunyaPoster },
     Ulaşım: { video: roketVideo, poster: roketPoster },
     Giyim: { video: uranusVideo, poster: uranusPoster },
-    Petrol: { video: marsVideo, poster: marsPoster },
+    Elektronik: { video: marsVideo, poster: marsPoster }, // Mars buraya taşındı
     Eğitim: { video: hubbleVideo, poster: hubblePoster },
     Aile: { video: nebulaVideo, poster: nebulaPoster },
     İletisim: { video: karadelikVideo, poster: karadelikPoster },
     Restoran: { video: bulutsuVideo, poster: bulutsuPoster },
-    Kira: { video: jupiterVideo, poster: jupiterPoster }, // Jüpiter buraya geldi
-    Sağlık: { video: ayVideo, poster: ayPoster },         // Ay buraya geldi
-    Diğer: {  poster: uyduPoster }       // Uydu eklendi
+    Kira: { video: jupiterVideo, poster: jupiterPoster },
+    Sağlık: { video: ayVideo, poster: ayPoster },
+    Diğer: {  poster: uyduPoster }
   };
 
   const currentVideoPlanet = videoPlanets[type];
@@ -73,6 +73,7 @@ const PlanetStyle = ({ type, isTop }) => {
   const isRocket = type === "Ulaşım";
   const isHubble = type === "Eğitim";
   const isSatellite = type === "Diğer";
+  const isElectronic = type === "Elektronik";
 
   const labelElement = (
     <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
@@ -86,13 +87,13 @@ const PlanetStyle = ({ type, isTop }) => {
     return (
       <div className={`relative w-full h-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
         <div 
-className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500 rounded-full`}
-  style={{ 
-    boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
-               isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
-               isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 
-               isSatellite && isTop ? '0 0 30px rgba(148, 163, 184, 0.3)' : 'none'
-  }}
+          className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500 rounded-full`}
+          style={{ 
+            boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
+                       isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
+                       isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 
+                       isSatellite && isTop ? '0 0 30px rgba(148, 163, 184, 0.3)' : 'none'
+          }}
         >
           <video
             src={currentVideoPlanet.video}
@@ -102,7 +103,7 @@ className={`absolute inset-0 overflow-hidden bg-black transition-all duration-50
             style={{ 
               pointerEvents: 'none',
               transform: isBlackHole ? 'scale(1.4)' : ((isFamily || isNebula) ? 'scale(1.5)' : 'scale(1.25)'), 
-              filter: (isRocket || type === "Petrol") ? 'contrast(1.1) brightness(1.1)' : 'none'
+              filter: (isRocket || isElectronic) ? 'contrast(1.1) brightness(1.1)' : 'none'
             }}
           />
         </div>
@@ -132,9 +133,13 @@ className={`absolute inset-0 overflow-hidden bg-black transition-all duration-50
     </div>
   );
 };
-const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Diğer", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Eğitim"];const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
+
+// Kategori Listesinden Petrol Kaldırıldı
+const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Kira", "Fatura", "Diğer", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Eğitim"];
+const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
+const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 
 const SpaceBackground = () => {
   const canvasRef = useRef(null);
@@ -152,7 +157,6 @@ const SpaceBackground = () => {
     window.addEventListener("resize", resize);
     resize();
 
-    // Yıldızlar
     const stars = Array.from({ length: 150 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -160,7 +164,6 @@ const SpaceBackground = () => {
       o: Math.random(),
     }));
 
-    // Ana İçerik için Galaksiler (Daha büyük ve daha şeffaf)
     const galaxies = Array.from({ length: 5 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -173,30 +176,23 @@ const SpaceBackground = () => {
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 1. Galaksileri Çiz
       galaxies.forEach(g => {
         g.x -= g.speed;
         if (g.x + g.size < 0) g.x = canvas.width + g.size;
-
         const gradient = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size);
         gradient.addColorStop(0, g.color);
         gradient.addColorStop(1, "rgba(2, 6, 23, 0)");
-        
         ctx.fillStyle = gradient;
         ctx.fillRect(g.x - g.size, g.y - g.size, g.size * 2, g.size * 2);
       });
 
-      // 2. Yıldızları Çiz
       stars.forEach((star) => {
         star.z -= 0.5;
         if (star.z <= 0) star.z = canvas.width;
-
         const x = (star.x - canvas.width / 2) * (canvas.width / star.z) + canvas.width / 2;
         const y = (star.y - canvas.height / 2) * (canvas.width / star.z) + canvas.height / 2;
-        
         let s = (1 - star.z / canvas.width) * 3;
         if (s <= 0) s = 0.1;
-
         ctx.beginPath();
         ctx.fillStyle = `rgba(255, 255, 255, ${star.o})`;
         ctx.arc(x, y, s, 0, Math.PI * 2);
@@ -410,7 +406,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     harcamaMutation.mutate({
       miktar: num,
       kategori: selectedCategory || "Diğer",
-      altKategori: ["Market", "Giyim", "Aile"].includes(selectedCategory) ? values.altKategori : "",
+      altKategori: ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) ? values.altKategori : "",
       not: values.not || "",
       createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
@@ -511,10 +507,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
               <CustomDayPicker />
             </Form.Item>
-            {["Market", "Giyim", "Aile"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Alt Bölge</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
+            {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) && (
+              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
                 <Select placeholder="Seç" size="small" className="w-full">
-                  {(selectedCategory === "Market" ? MARKETLER : selectedCategory === "Giyim" ? GIYIM_KISILERI : AILE_UYELERI).map(i => <Option key={i} value={i}>{i}</Option>)}
+                  {(selectedCategory === "Market" ? MARKETLER : 
+                    selectedCategory === "Giyim" ? GIYIM_KISILERI : 
+                    selectedCategory === "Aile" ? AILE_UYELERI : 
+                    ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
             )}
