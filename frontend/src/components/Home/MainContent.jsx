@@ -49,7 +49,8 @@ const astronotVideo = "/gezegenler/astronot.mp4";
 const astronotPoster = "/gezegenler/astoronot.png"; 
 const meteorVideo = "/gezegenler/meteor.mp4"; 
 const meteorPoster = "/gezegenler/meteor.png"; 
-
+const supernovaVideo = "/gezegenler/supernova.mp4"; 
+const supernovaPoster = "/gezegenler/supernova.png"; 
 
 dayjs.extend(isSameOrAfter);
 
@@ -70,7 +71,7 @@ const PlanetStyle = ({ type, isTop }) => {
     Sağlık: { video: ayVideo, poster: ayPoster },
     Fatura: { video: astronotVideo, poster: astronotPoster },
     Tasarruf: { video: meteorVideo, poster: meteorPoster },
-
+    Eğlence: { video: supernovaVideo, poster: supernovaPoster },
     Diğer: {  poster: uyduPoster }
   };
 
@@ -142,7 +143,6 @@ const PlanetStyle = ({ type, isTop }) => {
   );
 };
 
-// Kategori Listesinden Petrol Kaldırıldı
 const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Kira", "Fatura", "Diğer", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Eğitim"];
 const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];

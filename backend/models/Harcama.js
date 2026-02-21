@@ -12,7 +12,6 @@ const HarcamaSchema = new mongoose.Schema(
       enum: [
         "Giyim",
         "Tasarruf",
-        "Petrol",
         "Kira",
         "Fatura",
         "Eğitim",

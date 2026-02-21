@@ -39,7 +39,7 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const MESSAGE_KEY = "harcamaSilmeIslemi";
 
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Tasarruf", "Petrol", "Kira", "Fatura", "Eğitim",
+  "Market", "Giyim", "Tasarruf", "Kira", "Fatura", "Eğitim",
   "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
   "Restoran", "Aile", "Diğer",
 ];
@@ -56,7 +56,7 @@ const getCategoryDetails = (kategori) => {
       return { icon: <DollarCircleOutlined />, color: "bg-red-50 text-red-500" };
     case "kira": case "fatura":
       return { icon: <TagOutlined />, color: "bg-blue-50 text-blue-500" };
-    case "ulaşım": case "petrol":
+    case "ulaşım":
       return { icon: <CalendarOutlined />, color: "bg-emerald-50 text-emerald-500" };
     default:
       return { icon: <SolutionOutlined />, color: "bg-gray-50 text-gray-400" };

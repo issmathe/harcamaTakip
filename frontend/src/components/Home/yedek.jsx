@@ -16,7 +16,6 @@ import CustomDayPicker from "../Forms/CustomDayPicker";
 import {
   Shirt,
   Wallet,
-  Fuel,
   Home,
   ReceiptText,
   BookOpen,
@@ -48,7 +47,6 @@ const CategoryIcons = {
   Market: { icon: ShoppingCart, color: "text-teal-500", bgColor: "bg-teal-100" },
   Giyim: { icon: Shirt, color: "text-red-500", bgColor: "bg-red-100" },
   Tasarruf: { icon: Wallet, color: "text-pink-500", bgColor: "bg-pink-100" },
-  Petrol: { icon: Fuel, color: "text-amber-500", bgColor: "bg-amber-100" },
   Kira: { icon: Home, color: "text-purple-500", bgColor: "bg-purple-100" },
   Fatura: { icon: ReceiptText, color: "text-indigo-500", bgColor: "bg-indigo-100" },
   Eğitim: { icon: BookOpen, color: "text-lime-600", bgColor: "bg-lime-100" },
