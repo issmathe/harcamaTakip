@@ -43,7 +43,7 @@ const bulutsuPoster = "/gezegenler/bulutsu.jpeg";
 const roketVideo = "/gezegenler/roket.mp4"; 
 const roketPoster = "/gezegenler/roket.jpg"; 
 const hubbleVideo = "/gezegenler/hubble.mp4"; 
-const hubblePoster = "/gezegenler/hubble.jpeg";
+const hubblePoster = "/gezegenler/hubble.jpg";
 const uyduPoster = "/gezegenler/uydu.png"; 
 const astronotVideo = "/gezegenler/astronot.mp4"; 
 const astronotPoster = "/gezegenler/astoronot.png"; 
@@ -51,6 +51,8 @@ const meteorVideo = "/gezegenler/meteor.mp4";
 const meteorPoster = "/gezegenler/meteor.png"; 
 const supernovaVideo = "/gezegenler/supernova.mp4"; 
 const supernovaPoster = "/gezegenler/supernova.png"; 
+const saturnVideo = "/gezegenler/saturn.mp4"; 
+const saturnPoster = "/gezegenler/saturn.jpg"; 
 
 dayjs.extend(isSameOrAfter);
 
@@ -72,7 +74,9 @@ const PlanetStyle = ({ type, isTop }) => {
     Fatura: { video: astronotVideo, poster: astronotPoster },
     Tasarruf: { video: meteorVideo, poster: meteorPoster },
     Eğlence: { video: supernovaVideo, poster: supernovaPoster },
-    Diğer: {  poster: uyduPoster }
+    Diğer: {  poster: uyduPoster },
+    Hediye: { video: saturnVideo, poster: saturnPoster },
+
   };
 
   const currentVideoPlanet = videoPlanets[type];
