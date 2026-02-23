@@ -1,70 +1,62 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   HomeOutlined,
   BarChartOutlined,
   DollarCircleOutlined,
   MinusCircleOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 
 const BottomNav = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-  const goToHome = () => navigate("/");
-  const goToRaporlar = () => navigate("/raporlar");
-  const goToGelirler = () => navigate("/gelirler");
-  const goToHarcamalar = () => navigate("/harcamalar");
-  
-  // goToDonustur (Transfer) fonksiyonu kaldırıldı
-
-  const currentPath = window.location.pathname;
-  const activeColor = "text-indigo-400";
-  const defaultColor = "text-gray-400";
-
-  const getButtonClass = (path, customActiveColor = activeColor) =>
-    `flex flex-col items-center justify-center h-full transition-colors duration-200 flex-grow 
-    ${currentPath === path ? customActiveColor : defaultColor} 
-    hover:${customActiveColor}`;
+  const navItems = [
+    { path: "/", label: "Ana Sayfa", icon: <HomeOutlined />, activeColor: "text-blue-400" },
+    { path: "/raporlar", label: "Raporlar", icon: <BarChartOutlined />, activeColor: "text-purple-400" },
+    { path: "/gelirler", label: "Gelirler", icon: <DollarCircleOutlined />, activeColor: "text-emerald-400" },
+    { path: "/harcamalar", label: "Harcamalar", icon: <MinusCircleOutlined />, activeColor: "text-red-400" },
+  ];
 
   return (
-    // Navigasyon çubuğu sabit kaldı
-    <nav className="fixed bottom-0 left-0 w-full bg-gray-700 shadow-xl z-20 h-20">
-      {/* 5 yerine 4 eşit butona ayarlandı */}
-      <div className="flex items-center h-full px-2 sm:px-4">
+    <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-6 pt-2 pointer-events-none">
+      <div className="max-w-md mx-auto relative pointer-events-auto">
+        {/* Glassmorphism Arka Plan */}
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]" />
         
-        {/* 1. Ana Sayfa */}
-        <button className={getButtonClass("/")} onClick={goToHome}>
-          <HomeOutlined className="text-3xl" />
-          <span className="text-xs font-medium mt-1">Ana Sayfa</span>
-        </button>
-        
-        {/* 2. Raporlar */}
-        <button className={getButtonClass("/raporlar")} onClick={goToRaporlar}>
-          <BarChartOutlined className="text-3xl" />
-          <span className="text-xs font-medium mt-1">Raporlar</span>
-        </button>
+        <nav className="relative flex items-center justify-around h-16 px-2">
+          {navItems.map((item) => {
+            const isActive = currentPath === item.path;
+            
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex flex-col items-center justify-center transition-all duration-300 w-16 relative ${
+                  isActive ? item.activeColor : "text-slate-500"
+                }`}
+              >
+                {/* İkon ve Parlama Efekti */}
+                <span className={`text-2xl transition-transform duration-300 ${isActive ? "-translate-y-1 scale-110" : "scale-100"}`}>
+                  {item.icon}
+                </span>
+                
+                {/* Yazı */}
+                <span className={`text-[10px] mt-1 font-bold tracking-tight uppercase ${isActive ? "opacity-100" : "opacity-60"}`}>
+                  {item.label}
+                </span>
 
-        {/* ORTADAKİ TRANSFER BUTONU KALDIRILDI */}
-
-        {/* 3. Gelirler (eskiden 4.) */}
-        <button
-          className={getButtonClass("/gelirler", "text-emerald-300")}
-          onClick={goToGelirler}
-        >
-          <DollarCircleOutlined className="text-3xl" />
-          <span className="text-xs font-medium mt-1">Gelirler</span>
-        </button>
-        
-        {/* 4. Harcamalar (eskiden 5.) */}
-        <button
-          className={getButtonClass("/harcamalar", "text-red-300")}
-          onClick={goToHarcamalar}
-        >
-          <MinusCircleOutlined className="text-3xl" />
-          <span className="text-xs font-medium mt-1">Harcamalar</span>
-        </button>
+                {/* Seçili Göstergesi (Alt Işık) */}
+                {isActive && (
+                  <div className={`absolute -bottom-1 w-1.5 h-1.5 rounded-full blur-[1px] shadow-[0_0_8px_currentColor] ${item.activeColor.replace('text', 'bg')}`} />
+                )}
+              </button>
+            );
+          })}
+        </nav>
       </div>
-    </nav>
+    </div>
   );
 };
 
