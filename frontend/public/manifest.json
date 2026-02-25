@@ -3,22 +3,24 @@
   "short_name": "Bütçem", 
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1976D2",
-  "description": "Gelir ve Harcamaları takip eden kişisel bütçe uygulaması.",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "description": "Gelir ve Harcamaları takip eden fütüristik kişisel bütçe uygulaması.",
   "icons": [
     {
-      "src": "/icons/192menu.png",
+      "src": "/icons/anamenu192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/512menu.png",
+      "src": "/icons/anamenu512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/192menu.png", 
+      "src": "/icons/anamenu192.png", 
       "sizes": "180x180",
       "type": "image/png"
     }
