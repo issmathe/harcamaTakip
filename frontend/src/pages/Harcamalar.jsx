@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
-import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider } from "antd";
+import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider, Badge } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -9,7 +9,8 @@ import {
   SolutionOutlined,
   LeftOutlined,
   RightOutlined,
-  SearchOutlined
+  SearchOutlined,
+  ClockCircleOutlined
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -72,6 +73,7 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
   const [searchTerm, setSearchTerm] = useState("");
+  const [futureModalVisible, setFutureModalVisible] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -118,26 +120,41 @@ const HarcamalarContent = () => {
     deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
   };
 
-  const filteredHarcamalar = useMemo(() => {
-    return harcamalar
-      .filter((h) => {
-        const t = dayjs(h.createdAt);
+  const { normalHarcamalar, futureHarcamalar } = useMemo(() => {
+    const filtered = harcamalar.filter((h) => {
+      const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
+      const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         h.not?.toLowerCase().includes(searchTerm.toLowerCase());
+      return categoryMatch && searchMatch;
+    });
+
+    const normal = [];
+    const future = [];
+
+    filtered.forEach(h => {
+      const t = dayjs(h.createdAt);
+      if (t.isAfter(now, 'minute')) {
+        future.push(h);
+      } else {
         const isSearching = searchTerm.trim().length > 0;
-        const monthMatch = isSearching ? true : (t.month() === selectedMonth && t.year() === selectedYear);
-        const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
-        const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           h.not?.toLowerCase().includes(searchTerm.toLowerCase());
-        return monthMatch && categoryMatch && searchMatch;
-      })
-      .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
-  }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm]);
+        if (isSearching || (t.month() === selectedMonth && t.year() === selectedYear)) {
+          normal.push(h);
+        }
+      }
+    });
+
+    return {
+      normalHarcamalar: normal.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()),
+      futureHarcamalar: future.sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf())
+    };
+  }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now]);
 
   const kategoriToplam = useMemo(
-    () => filteredHarcamalar
+    () => normalHarcamalar
       .filter(h => h.kategori?.toLowerCase() !== "tasarruf") 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
-    [filteredHarcamalar]
+    [normalHarcamalar]
   );
   
   const changeMonth = useCallback((direction) => {
@@ -160,6 +177,7 @@ const HarcamalarContent = () => {
       tarih: dayjs(harcama.createdAt).toDate(),
     });
     setEditModalVisible(true);
+    setFutureModalVisible(false);
   };
 
   const handleEditSave = () => {
@@ -196,7 +214,21 @@ const HarcamalarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3 relative overflow-hidden">
+          {futureHarcamalar.length > 0 && (
+            <div className="absolute top-2 right-2">
+              <Badge count={futureHarcamalar.length} size="small" offset={[-2, 2]}>
+                <Button 
+                  shape="circle" 
+                  icon={<ClockCircleOutlined className="text-orange-500" />} 
+                  size="small"
+                  className="bg-orange-50 border-orange-100"
+                  onClick={() => setFutureModalVisible(true)}
+                />
+              </Badge>
+            </div>
+          )}
+
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
               <Text className="text-[10px] font-bold uppercase text-gray-400">Dönem Toplamı</Text>
@@ -209,9 +241,8 @@ const HarcamalarContent = () => {
               onChange={setSelectedCategory} 
               size="middle"
               variant="filled"
-              className="w-40" 
+              className="w-32" 
               style={{ borderRadius: '12px' }}
-              dropdownStyle={{ borderRadius: '12px' }}
             >
               <Option value="Tümü">Tümü</Option>
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
@@ -220,7 +251,7 @@ const HarcamalarContent = () => {
 
           <div className="pt-2 border-t border-gray-50">
             <Input 
-              placeholder="İşlem veya not ara..." 
+              placeholder="Ara..." 
               variant="filled"
               className="rounded-2xl h-10 border-none bg-gray-50"
               prefix={<SearchOutlined className="text-gray-400" />} 
@@ -231,12 +262,12 @@ const HarcamalarContent = () => {
           </div>
         </div>
 
-        {filteredHarcamalar.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
+        {normalHarcamalar.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Bu ay kayıt yok" /></div>
         ) : (
           <div className="space-y-3">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
-              {filteredHarcamalar.map((h) => {
+              {normalHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
                 
@@ -271,6 +302,33 @@ const HarcamalarContent = () => {
       </div>
 
       <Modal
+        title={<div className="text-sm font-bold text-orange-500 uppercase flex items-center justify-center gap-2"><ClockCircleOutlined /> Bekleyen İşlemler</div>}
+        open={futureModalVisible}
+        onCancel={() => setFutureModalVisible(false)}
+        footer={null}
+        centered
+        width={340}
+        styles={{ body: { padding: '12px', maxHeight: '60vh', overflowY: 'auto' } }}
+      >
+        {futureHarcamalar.length > 0 ? (
+          <div className="space-y-2">
+            {futureHarcamalar.map(h => (
+              <div key={h._id} onClick={() => openEditModal(h)} className="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex justify-between items-center active:bg-gray-100 transition-colors">
+                <div>
+                  <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
+                  <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
+                  {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1">{h.not}</Text>}
+                </div>
+                <div className="text-right">
+                  <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : <Empty description="Gelecek tarihli işlem yok" />}
+      </Modal>
+
+      <Modal
         title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
@@ -278,7 +336,6 @@ const HarcamalarContent = () => {
         centered
         width={380}
         styles={{ body: { padding: '12px 16px' } }}
-        className="edit-modal"
       >
         <div className="space-y-4">
           <div className="bg-red-50/50 py-2 px-4 rounded-2xl text-center border border-red-100">
