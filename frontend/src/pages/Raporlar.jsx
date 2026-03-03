@@ -135,45 +135,103 @@ const RaporlarContent = () => {
     };
   }, [harcamalar, timeRange]);
 
-  const renderYillikContent = () => {
-    let currentData = [];
-    let color = "#3b82f6";
-    if (yillikSubTab === "Market") { currentData = yillikAnalizVeri.market; color = "#3b82f6"; }
-    else if (yillikSubTab === "Giyim") { currentData = yillikAnalizVeri.giyim; color = "#FF6384"; }
-    else { currentData = yillikAnalizVeri.aile; color = "#AF52DE"; }
+const renderYillikContent = () => {
+  let currentData = [];
+  let color = "#3b82f6";
+  let label = "";
 
-    if (currentData.length === 0) return <Empty description="Veri bulunamadı" />;
+  if (yillikSubTab === "Market") { 
+    currentData = yillikAnalizVeri.market; 
+    color = "#3b82f6"; 
+    label = "Toplam Market";
+  } else if (yillikSubTab === "Giyim") { 
+    currentData = yillikAnalizVeri.giyim; 
+    color = "#FF6384"; 
+    label = "Toplam Giyim";
+  } else { 
+    currentData = yillikAnalizVeri.aile; 
+    color = "#AF52DE"; 
+    label = "Toplam Aile";
+  }
 
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-center">
-            <Segmented
-                value={timeRange}
-                onChange={setTimeRange}
-                options={[
-                    { label: 'Yılbaşından Bu Yana', value: 'YTD', icon: <CalendarOutlined /> },
-                    { label: 'Son 12 Ay', value: '12AY', icon: <HistoryOutlined /> }
-                ]}
-                className="bg-gray-100 p-1 rounded-xl"
-            />
-        </div>
-        <div style={{ height: '300px' }}>
-            <Bar 
-              data={{
-                  labels: currentData.map(d => d.name),
-                  datasets: [{ data: currentData.map(d => d.total), backgroundColor: color, borderRadius: 6, barThickness: currentData.length > 5 ? 18 : 35 }]
-              }}
-              options={{
-                  responsive: true, maintainAspectRatio: false,
-                  plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => `${Math.round(v)}€`, font: { size: 10, weight: 'bold' }, color: '#4b5563', offset: 5 } },
-                  scales: { y: { display: false, beginAtZero: true }, x: { grid: { display: false }, ticks: { font: { size: 10 }, autoSkip: false, maxRotation: 45, minRotation: 45 } } },
-                  layout: { padding: { top: 25 } }
-              }}
-            />
-        </div>
+  // Seçili alt kategorilerin toplamını hesapla
+  const genelToplam = currentData.reduce((sum, item) => sum + item.total, 0);
+
+  if (currentData.length === 0) return <Empty description="Veri bulunamadı" />;
+
+  return (
+    <div className="space-y-6">
+      {/* Zaman Aralığı Seçici */}
+      <div className="flex justify-center">
+          <Segmented
+              value={timeRange}
+              onChange={setTimeRange}
+              options={[
+                  { label: 'Yılbaşından Bu Yana', value: 'YTD', icon: <CalendarOutlined /> },
+                  { label: 'Son 12 Ay', value: '12AY', icon: <HistoryOutlined /> }
+              ]}
+              className="bg-gray-100 p-1 rounded-xl"
+          />
       </div>
-    );
-  };
+
+      {/* TOPLAM TUTAR KARTI - Yeni eklendi */}
+      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col items-center justify-center shadow-inner">
+        <Text strong className="text-[10px] uppercase text-gray-400 tracking-widest mb-1">{label}</Text>
+        <div className="flex items-baseline gap-1">
+          <Title level={3} className="m-0 font-black" style={{ margin: 0, color: color }}>
+            {Math.round(genelToplam).toLocaleString('tr-TR')}
+          </Title>
+          <Text strong style={{ color: color }} className="text-lg">€</Text>
+        </div>
+        <Text className="text-[9px] text-gray-400 italic">
+          {timeRange === "YTD" ? `${dayjs().year()} yılı toplamı` : "Son 12 ayın toplamı"}
+        </Text>
+      </div>
+
+      {/* Grafik Alanı */}
+      <div style={{ height: '280px' }}>
+          <Bar 
+            data={{
+                labels: currentData.map(d => d.name),
+                datasets: [{ 
+                  data: currentData.map(d => d.total), 
+                  backgroundColor: color, 
+                  borderRadius: 8, 
+                  barThickness: currentData.length > 5 ? 15 : 30 
+                }]
+            }}
+            options={{
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                  legend: { display: false }, 
+                  datalabels: { 
+                    anchor: 'end', 
+                    align: 'top', 
+                    formatter: (v) => v > 0 ? `${Math.round(v)}€` : '', 
+                    font: { size: 10, weight: 'bold' }, 
+                    color: '#4b5563', 
+                    offset: 2 
+                  } 
+                },
+                scales: { 
+                  y: { display: false, beginAtZero: true }, 
+                  x: { 
+                    grid: { display: false }, 
+                    ticks: { 
+                      font: { size: 10, weight: '600' }, 
+                      autoSkip: false, 
+                      maxRotation: 45, 
+                      minRotation: 45 
+                    } 
+                  } 
+                },
+                layout: { padding: { top: 20 } }
+            }}
+          />
+      </div>
+    </div>
+  );
+};
 
   if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
 
