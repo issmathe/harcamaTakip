@@ -10,7 +10,9 @@ import {
   LeftOutlined,
   RightOutlined,
   SearchOutlined,
-  PushpinOutlined
+  ClockCircleOutlined,
+  DownOutlined,
+  UpOutlined
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -73,6 +75,7 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showFuture, setShowFuture] = useState(false); // Katlanabilir bölüm kontrolü
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -117,40 +120,40 @@ const HarcamalarContent = () => {
     deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
   };
 
-  const sortedHarcamalar = useMemo(() => {
+  const { normalHarcamalar, futureHarcamalar } = useMemo(() => {
     const filtered = harcamalar.filter((h) => {
       const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
       const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.not?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+      return categoryMatch && searchMatch;
+    });
+
+    const normal = [];
+    const future = [];
+
+    filtered.forEach(h => {
       const t = dayjs(h.createdAt);
-      // İleri tarihli harcamalar her zaman görünür, geçmiş harcamalar seçili aya göre filtrelenir
-      const dateMatch = t.isAfter(now, 'minute') || (t.month() === selectedMonth && t.year() === selectedYear);
-      
-      return categoryMatch && searchMatch && (searchTerm.trim().length > 0 || dateMatch);
+      if (t.isAfter(now, 'minute')) {
+        future.push(h);
+      } else {
+        if (searchTerm.trim().length > 0 || (t.month() === selectedMonth && t.year() === selectedYear)) {
+          normal.push(h);
+        }
+      }
     });
 
-    return filtered.sort((a, b) => {
-      const dateA = dayjs(a.createdAt);
-      const dateB = dayjs(b.createdAt);
-      const isFutureA = dateA.isAfter(now, 'minute');
-      const isFutureB = dateB.isAfter(now, 'minute');
-
-      // İleri tarihli olanlar en başa
-      if (isFutureA && !isFutureB) return -1;
-      if (!isFutureA && isFutureB) return 1;
-      
-      // Kendi içlerinde en yeni en üstte
-      return dateB.valueOf() - dateA.valueOf();
-    });
+    return {
+      normalHarcamalar: normal.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()),
+      futureHarcamalar: future.sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf())
+    };
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now]);
 
   const kategoriToplam = useMemo(
-    () => sortedHarcamalar
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf" && !dayjs(h.createdAt).isAfter(now, 'minute')) 
+    () => normalHarcamalar
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
-    [sortedHarcamalar, now]
+    [normalHarcamalar]
   );
   
   const changeMonth = useCallback((direction) => {
@@ -199,7 +202,8 @@ const HarcamalarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3 relative overflow-hidden">
+        {/* Özet ve Arama Kartı */}
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
               <Text className="text-[10px] font-bold uppercase text-gray-400">Dönem Toplamı</Text>
@@ -217,35 +221,67 @@ const HarcamalarContent = () => {
           </div>
         </div>
 
-        {sortedHarcamalar.length === 0 ? (
+        {/* Bekleyen İşlemler - Akordiyon Yapısı */}
+        {futureHarcamalar.length > 0 && (
+          <div className="bg-orange-50/50 rounded-3xl border border-orange-100 overflow-hidden transition-all">
+            <div 
+              className="flex justify-between items-center p-4 cursor-pointer active:bg-orange-100/50"
+              onClick={() => setShowFuture(!showFuture)}
+            >
+              <div className="flex items-center space-x-2">
+                <ClockCircleOutlined className="text-orange-500" />
+                <Text className="text-[11px] font-bold uppercase text-orange-600 tracking-wider">
+                  Bekleyen İşlemler ({futureHarcamalar.length})
+                </Text>
+              </div>
+              {showFuture ? <UpOutlined className="text-[10px] text-orange-400" /> : <DownOutlined className="text-[10px] text-orange-400" />}
+            </div>
+            
+            {showFuture && (
+              <div className="px-3 pb-3 space-y-2">
+                <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
+                  {futureHarcamalar.map((h) => (
+                    <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
+                      <div className="bg-white/80 p-3 mb-2 rounded-2xl border border-orange-100 flex justify-between items-center w-full shadow-sm">
+                        <div className="min-w-0">
+                          <Text strong className="text-[9px] block text-orange-400 uppercase leading-none mb-1">{h.kategori}</Text>
+                          <Text className="text-[11px] font-bold block leading-none truncate max-w-[150px]">{h.altKategori || h.kategori}</Text>
+                          <Text className="text-[9px] text-gray-400 block mt-1">{dayjs(h.createdAt).format('DD MMM, HH:mm')}</Text>
+                        </div>
+                        <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
+                      </div>
+                    </SwipeableListItem>
+                  ))}
+                </SwipeableList>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ana Liste */}
+        {normalHarcamalar.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
         ) : (
           <div className="space-y-3">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
-              {sortedHarcamalar.map((h) => {
+              {normalHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
-                const hDate = dayjs(h.createdAt);
-                const isFuture = hDate.isAfter(now, 'minute');
-                const isToday = hDate.isSame(now, 'day');
-
+                const isToday = dayjs(h.createdAt).isSame(now, 'day');
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
-                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border transition-all ${isFuture ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-100' : isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
+                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
                       <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg shadow-sm`}>{icon}</div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {isFuture && <PushpinOutlined className="text-orange-500 text-xs flex-shrink-0" />}
-                            <Text strong className={`text-xs uppercase tracking-wide truncate ${isFuture ? 'text-orange-700' : 'text-gray-500'}`}>{h.altKategori || h.kategori}</Text>
-                          </div>
-                          <Text className={`text-base font-black ${isFuture ? 'text-orange-600' : 'text-red-500'}`}>-{h.miktar}€</Text>
+                          <Text strong className="text-xs uppercase tracking-wide truncate max-w-[120px] text-gray-500">{h.altKategori || h.kategori}</Text>
+                          <Text className="text-base font-black text-red-500">-{h.miktar}€</Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
                           <div className="flex flex-col">
-                            <Text className={`text-[10px] font-medium ${isFuture ? 'text-orange-400' : 'text-gray-400'}`}>{hDate.format('DD MMMM, HH:mm')}</Text>
+                            <Text className="text-[10px] font-medium text-gray-400">{dayjs(h.createdAt).format('DD MMMM, HH:mm')}</Text>
                             {h.not && <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">{h.not}</Text>}
                           </div>
-                          {isFuture && <div className="bg-orange-200/50 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-orange-700 uppercase font-bold">Bekleyen</Text></div>}
+                          {isToday && <div className="bg-blue-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-blue-600 uppercase font-bold">Bugün</Text></div>}
                         </div>
                       </div>
                     </div>
@@ -257,6 +293,7 @@ const HarcamalarContent = () => {
         )}
       </div>
 
+      {/* Düzenleme Modalı */}
       <Modal
         title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
         open={editModalVisible}

@@ -8,7 +8,6 @@ import {
   UserOutlined,
   HistoryOutlined,
   TeamOutlined,
-  CalendarOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
 import BottomNav from "../components/Home/BottomNav";
@@ -138,96 +137,90 @@ const RaporlarContent = () => {
 const renderYillikContent = () => {
   let currentData = [];
   let color = "#3b82f6";
-  let label = "";
+  
+  if (yillikSubTab === "Market") { currentData = yillikAnalizVeri.market; color = "#3b82f6"; }
+  else if (yillikSubTab === "Giyim") { currentData = yillikAnalizVeri.giyim; color = "#FF6384"; }
+  else { currentData = yillikAnalizVeri.aile; color = "#AF52DE"; }
 
-  if (yillikSubTab === "Market") { 
-    currentData = yillikAnalizVeri.market; 
-    color = "#3b82f6"; 
-    label = "Toplam Market";
-  } else if (yillikSubTab === "Giyim") { 
-    currentData = yillikAnalizVeri.giyim; 
-    color = "#FF6384"; 
-    label = "Toplam Giyim";
-  } else { 
-    currentData = yillikAnalizVeri.aile; 
-    color = "#AF52DE"; 
-    label = "Toplam Aile";
-  }
-
-  // Seçili alt kategorilerin toplamını hesapla
   const genelToplam = currentData.reduce((sum, item) => sum + item.total, 0);
 
   if (currentData.length === 0) return <Empty description="Veri bulunamadı" />;
 
   return (
     <div className="space-y-6">
-      {/* Zaman Aralığı Seçici */}
-      <div className="flex justify-center">
-          <Segmented
+      {/* Üst Bar: Zaman Seçici ve Toplam Tutarı Aynı Hizada Tutan Yapı */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200/50">
+          {/* Sol Taraf: Zaman Seçici */}
+          <div className="flex-grow max-w-[65%]">
+            <Segmented
               value={timeRange}
               onChange={setTimeRange}
+              block
               options={[
-                  { label: 'Yılbaşından Bu Yana', value: 'YTD', icon: <CalendarOutlined /> },
-                  { label: 'Son 12 Ay', value: '12AY', icon: <HistoryOutlined /> }
+                { label: 'YTD', value: 'YTD' },
+                { label: '12 Ay', value: '12AY' }
               ]}
-              className="bg-gray-100 p-1 rounded-xl"
-          />
-      </div>
+              className="bg-transparent custom-segmented"
+            />
+          </div>
 
-      {/* TOPLAM TUTAR KARTI - Yeni eklendi */}
-      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col items-center justify-center shadow-inner">
-        <Text strong className="text-[10px] uppercase text-gray-400 tracking-widest mb-1">{label}</Text>
-        <div className="flex items-baseline gap-1">
-          <Title level={3} className="m-0 font-black" style={{ margin: 0, color: color }}>
-            {Math.round(genelToplam).toLocaleString('tr-TR')}
-          </Title>
-          <Text strong style={{ color: color }} className="text-lg">€</Text>
+          {/* Sağ Taraf: Şık Toplam Göstergesi */}
+          <div className="flex flex-col items-end pr-2 min-w-[30%]">
+            <Text className="text-[8px] uppercase font-black text-gray-400 leading-none mb-1">Toplam</Text>
+            <div className="flex items-baseline gap-0.5">
+              <Text className="text-sm font-black tracking-tight" style={{ color: color }}>
+                {Math.round(genelToplam).toLocaleString('tr-TR')}
+              </Text>
+              <Text className="text-[10px] font-bold" style={{ color: color }}>€</Text>
+            </div>
+          </div>
         </div>
-        <Text className="text-[9px] text-gray-400 italic">
-          {timeRange === "YTD" ? `${dayjs().year()} yılı toplamı` : "Son 12 ayın toplamı"}
-        </Text>
       </div>
 
       {/* Grafik Alanı */}
-      <div style={{ height: '280px' }}>
-          <Bar 
-            data={{
-                labels: currentData.map(d => d.name),
-                datasets: [{ 
-                  data: currentData.map(d => d.total), 
-                  backgroundColor: color, 
-                  borderRadius: 8, 
-                  barThickness: currentData.length > 5 ? 15 : 30 
-                }]
-            }}
-            options={{
-                responsive: true, maintainAspectRatio: false,
-                plugins: { 
-                  legend: { display: false }, 
-                  datalabels: { 
-                    anchor: 'end', 
-                    align: 'top', 
-                    formatter: (v) => v > 0 ? `${Math.round(v)}€` : '', 
-                    font: { size: 10, weight: 'bold' }, 
-                    color: '#4b5563', 
-                    offset: 2 
-                  } 
-                },
-                scales: { 
-                  y: { display: false, beginAtZero: true }, 
-                  x: { 
-                    grid: { display: false }, 
-                    ticks: { 
-                      font: { size: 10, weight: '600' }, 
-                      autoSkip: false, 
-                      maxRotation: 45, 
-                      minRotation: 45 
-                    } 
-                  } 
-                },
-                layout: { padding: { top: 20 } }
-            }}
-          />
+      <div style={{ height: '320px' }} className="relative">
+        <Bar 
+          data={{
+            labels: currentData.map(d => d.name),
+            datasets: [{ 
+              data: currentData.map(d => d.total), 
+              backgroundColor: color, 
+              borderRadius: 6, 
+              barThickness: currentData.length > 5 ? 14 : 28 
+            }]
+          }}
+          options={{
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { 
+              legend: { display: false }, 
+              datalabels: { 
+                anchor: 'end', 
+                align: 'top', 
+                formatter: (v) => v > 0 ? `${Math.round(v)}€` : '', 
+                font: { size: 9, weight: '900' }, 
+                color: '#64748b', 
+                offset: 2 
+              } 
+            },
+            scales: { 
+              y: { display: false, beginAtZero: true }, 
+              x: { 
+                grid: { display: false }, 
+                border: { display: false },
+                ticks: { 
+                  font: { size: 10, weight: '700' }, 
+                  color: '#94a3b8',
+                  autoSkip: false, 
+                  maxRotation: 45, 
+                  minRotation: 45 
+                } 
+              } 
+            },
+            layout: { padding: { top: 25, bottom: 10 } }
+          }}
+        />
       </div>
     </div>
   );
