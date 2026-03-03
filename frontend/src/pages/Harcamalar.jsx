@@ -26,7 +26,7 @@ import {
 import "react-swipeable-list/dist/styles.css";
 
 import BottomNav from "../components/Home/BottomNav";
-import { useTotalsContext } from "../context/TotalsContext"; // Context'i içeri aldık
+import { useTotalsContext } from "../context/TotalsContext";
 import axios from "axios";
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
@@ -65,7 +65,6 @@ const getCategoryDetails = (kategori) => {
 };
 
 const HarcamalarContent = () => {
-  // Veriyi artık useQuery ile değil, Context'ten alıyoruz. Hızın kaynağı burası.
   const { harcamalar = [], refetch, isLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null);
   const now = dayjs();
@@ -94,7 +93,7 @@ const HarcamalarContent = () => {
       await axios.put(`${API_URL}/harcama/${editingHarcama._id}`, payload);
       message.success("İşlem güncellendi");
       setEditModalVisible(false);
-      refetch(); // Tüm uygulamadaki veriyi tazele
+      refetch();
     } catch (err) {
       message.error("Güncelleme hatası");
     }
@@ -102,7 +101,7 @@ const HarcamalarContent = () => {
 
   const definitiveDelete = async (id) => {
     await axios.delete(`${API_URL}/harcama/${id}`);
-    refetch(); // Silme sonrası context'i tazele
+    refetch();
   };
 
   const startDeleteProcess = (id) => {
@@ -180,11 +179,11 @@ const HarcamalarContent = () => {
   };
 
   const leadingActions = (harcama) => (
-    <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-20 rounded-l-3xl"><EditOutlined className="text-xl" /></div></SwipeAction></LeadingActions>
+    <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-16 rounded-l-2xl"><EditOutlined className="text-lg" /></div></SwipeAction></LeadingActions>
   );
 
   const trailingActions = (harcama) => (
-    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-20 rounded-r-3xl"><DeleteOutlined className="text-xl" /></div></SwipeAction></TrailingActions>
+    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-16 rounded-r-2xl"><DeleteOutlined className="text-lg" /></div></SwipeAction></TrailingActions>
   );
 
   if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
@@ -225,29 +224,14 @@ const HarcamalarContent = () => {
                 -{kategoriToplam.toFixed(2).replace('.', ',')}€
               </Text>
             </div>
-            <Select 
-              value={selectedCategory} 
-              onChange={setSelectedCategory} 
-              size="middle"
-              variant="filled"
-              className="w-32" 
-              style={{ borderRadius: '12px' }}
-            >
+            <Select value={selectedCategory} onChange={setSelectedCategory} size="middle" variant="filled" className="w-32" style={{ borderRadius: '12px' }}>
               <Option value="Tümü">Tümü</Option>
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
           </div>
 
           <div className="pt-2 border-t border-gray-50">
-            <Input 
-              placeholder="Ara..." 
-              variant="filled"
-              className="rounded-2xl h-10 border-none bg-gray-50"
-              prefix={<SearchOutlined className="text-gray-400" />} 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              allowClear
-            />
+            <Input placeholder="Ara..." variant="filled" className="rounded-2xl h-10 border-none bg-gray-50" prefix={<SearchOutlined className="text-gray-400" />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} allowClear />
           </div>
         </div>
 
@@ -259,23 +243,18 @@ const HarcamalarContent = () => {
               {normalHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
-                
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                     <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-orange-50/50 border-orange-100' : 'bg-white border-gray-50'}`}>
                       <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>{icon}</div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className={`text-xs uppercase tracking-wide truncate max-w-[120px] ${isToday ? 'text-orange-600' : 'text-gray-500'}`}>
-                            {h.altKategori || h.kategori}
-                          </Text>
+                          <Text strong className={`text-xs uppercase tracking-wide truncate max-w-[120px] ${isToday ? 'text-orange-600' : 'text-gray-500'}`}>{h.altKategori || h.kategori}</Text>
                           <Text className="text-base font-black text-red-500">-{h.miktar}€</Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
                           <div className="flex flex-col">
-                            <Text className={`text-[10px] font-medium ${isToday ? 'text-orange-400' : 'text-gray-400'}`}>
-                                {isToday ? "Bugün, " : ""}{dayjs(h.createdAt).format('DD MMMM, HH:mm')}
-                            </Text>
+                            <Text className={`text-[10px] font-medium ${isToday ? 'text-orange-400' : 'text-gray-400'}`}>{isToday ? "Bugün, " : ""}{dayjs(h.createdAt).format('DD MMMM, HH:mm')}</Text>
                             {h.not && <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">{h.not}</Text>}
                           </div>
                           {isToday && <div className="bg-orange-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-orange-600 uppercase font-bold">Yeni</Text></div>}
@@ -296,25 +275,25 @@ const HarcamalarContent = () => {
         onCancel={() => setFutureModalVisible(false)}
         footer={null}
         centered
-        width={340}
-        styles={{ body: { padding: '12px', maxHeight: '60vh', overflowY: 'auto' } }}
+        width={360}
+        styles={{ body: { padding: '12px 8px', maxHeight: '60vh', overflowY: 'auto' } }}
       >
         {futureHarcamalar.length > 0 ? (
-          <div className="space-y-2">
+          <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
             {futureHarcamalar.map(h => (
-              <div key={h._id} onClick={() => openEditModal(h)} className="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex justify-between items-center active:bg-gray-100 transition-colors">
-                <div>
-                  <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
-                  <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
-                  {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1">{h.not}</Text>}
-                </div>
-                <div className="text-right">
+              <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
+                <div className="bg-gray-50 p-4 mb-2 rounded-2xl border border-gray-100 flex justify-between items-center w-full">
+                  <div>
+                    <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
+                    <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
+                    {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1 truncate max-w-[140px]">{h.not}</Text>}
+                  </div>
                   <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
                 </div>
-              </div>
+              </SwipeableListItem>
             ))}
-          </div>
-        ) : <Empty description="Gelecek tarihli işlem yok" />}
+          </SwipeableList>
+        ) : <Empty description="Bekleyen işlem yok" />}
       </Modal>
 
       <Modal
@@ -329,70 +308,36 @@ const HarcamalarContent = () => {
         <div className="space-y-4">
           <div className="bg-red-50/50 py-2 px-4 rounded-2xl text-center border border-red-100">
             <Text strong className="text-[10px] text-red-400 uppercase block mb-0">Miktar</Text>
-            <Input 
-              variant="borderless" 
-              type="number" 
-              inputMode="decimal"
-              className="p-0 text-3xl font-black text-red-500 text-center leading-tight" 
-              value={formData.miktar} 
-              suffix={<span className="text-red-300 text-lg">€</span>}
-              onFocus={(e) => e.target.select()}
-              onChange={e => setFormData({...formData, miktar: e.target.value})} 
-            />
+            <Input variant="borderless" type="number" inputMode="decimal" className="p-0 text-3xl font-black text-red-500 text-center leading-tight" value={formData.miktar} suffix={<span className="text-red-300 text-lg">€</span>} onFocus={(e) => e.target.select()} onChange={e => setFormData({...formData, miktar: e.target.value})} />
           </div>
-
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
               <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Tarih</Text>
               <div className="flex items-center w-full overflow-hidden">
-                <CustomDayPicker 
-                  value={formData.tarih} 
-                  onChange={d => setFormData({...formData, tarih: d})}
-                />
+                <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} />
               </div>
             </div>
-
             <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
               <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Kategori</Text>
-              <Select 
-                variant="borderless" 
-                size="small" 
-                className="w-full font-bold text-xs" 
-                style={{ padding: 0 }}
-                value={formData.kategori} 
-                onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}
-              >
+              <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.kategori} onChange={v => setFormData({...formData, kategori: v, altKategori: ""})}>
                 {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
               </Select>
             </div>
           </div>
-
           {["Market", "Giyim", "Aile", "Ulaşım"].includes(formData.kategori) && (
              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Alt Seçim</Text>
                 <Select variant="borderless" size="small" className="w-full p-0 font-bold" value={formData.altKategori} onChange={v => setFormData({...formData, altKategori: v})}>
-                    {(formData.kategori === "Market" ? MARKETLER : 
-                      formData.kategori === "Giyim" ? GIYIM_KISILERI : 
-                      formData.kategori === "Aile" ? AILE_UYELERI : 
-                      ULASIM_TURLERI).map(sub => (
+                    {(formData.kategori === "Market" ? MARKETLER : formData.kategori === "Giyim" ? GIYIM_KISILERI : formData.kategori === "Aile" ? AILE_UYELERI : ULASIM_TURLERI).map(sub => (
                         <Option key={sub} value={sub}>{sub}</Option>
                     ))}
                 </Select>
              </div>
           )}
-
           <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
             <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Not..." />
           </div>
-
-          <Button 
-            type="primary" 
-            block 
-            onClick={handleEditSave}
-            className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-widest mt-2"
-          >
-            Güncelle
-          </Button>
+          <Button type="primary" block onClick={handleEditSave} className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-widest mt-2">Güncelle</Button>
         </div>
       </Modal>
     </div>
