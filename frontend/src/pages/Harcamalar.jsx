@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
-import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider, Badge } from "antd";
+import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -10,7 +10,7 @@ import {
   LeftOutlined,
   RightOutlined,
   SearchOutlined,
-  ClockCircleOutlined
+  PushpinOutlined
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -73,7 +73,6 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
   const [searchTerm, setSearchTerm] = useState("");
-  const [futureModalVisible, setFutureModalVisible] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -118,41 +117,40 @@ const HarcamalarContent = () => {
     deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
   };
 
-  const { normalHarcamalar, futureHarcamalar } = useMemo(() => {
+  const sortedHarcamalar = useMemo(() => {
     const filtered = harcamalar.filter((h) => {
       const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
       const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.not?.toLowerCase().includes(searchTerm.toLowerCase());
-      return categoryMatch && searchMatch;
-    });
-
-    const normal = [];
-    const future = [];
-
-    filtered.forEach(h => {
+      
       const t = dayjs(h.createdAt);
-      if (t.isAfter(now, 'minute')) {
-        future.push(h);
-      } else {
-        const isSearching = searchTerm.trim().length > 0;
-        if (isSearching || (t.month() === selectedMonth && t.year() === selectedYear)) {
-          normal.push(h);
-        }
-      }
+      // İleri tarihli harcamalar her zaman görünür, geçmiş harcamalar seçili aya göre filtrelenir
+      const dateMatch = t.isAfter(now, 'minute') || (t.month() === selectedMonth && t.year() === selectedYear);
+      
+      return categoryMatch && searchMatch && (searchTerm.trim().length > 0 || dateMatch);
     });
 
-    return {
-      normalHarcamalar: normal.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()),
-      futureHarcamalar: future.sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf())
-    };
+    return filtered.sort((a, b) => {
+      const dateA = dayjs(a.createdAt);
+      const dateB = dayjs(b.createdAt);
+      const isFutureA = dateA.isAfter(now, 'minute');
+      const isFutureB = dateB.isAfter(now, 'minute');
+
+      // İleri tarihli olanlar en başa
+      if (isFutureA && !isFutureB) return -1;
+      if (!isFutureA && isFutureB) return 1;
+      
+      // Kendi içlerinde en yeni en üstte
+      return dateB.valueOf() - dateA.valueOf();
+    });
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now]);
 
   const kategoriToplam = useMemo(
-    () => normalHarcamalar
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") 
+    () => sortedHarcamalar
+      .filter(h => h.kategori?.toLowerCase() !== "tasarruf" && !dayjs(h.createdAt).isAfter(now, 'minute')) 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
-    [normalHarcamalar]
+    [sortedHarcamalar, now]
   );
   
   const changeMonth = useCallback((direction) => {
@@ -175,15 +173,14 @@ const HarcamalarContent = () => {
       tarih: dayjs(harcama.createdAt).toDate(),
     });
     setEditModalVisible(true);
-    setFutureModalVisible(false);
   };
 
   const leadingActions = (harcama) => (
-    <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-16 rounded-l-2xl"><EditOutlined className="text-lg" /></div></SwipeAction></LeadingActions>
+    <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-16 rounded-l-3xl"><EditOutlined className="text-lg" /></div></SwipeAction></LeadingActions>
   );
 
   const trailingActions = (harcama) => (
-    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-16 rounded-r-2xl"><DeleteOutlined className="text-lg" /></div></SwipeAction></TrailingActions>
+    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-16 rounded-r-3xl"><DeleteOutlined className="text-lg" /></div></SwipeAction></TrailingActions>
   );
 
   if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
@@ -203,20 +200,6 @@ const HarcamalarContent = () => {
 
       <div className="p-4 space-y-4">
         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3 relative overflow-hidden">
-          {futureHarcamalar.length > 0 && (
-            <div className="absolute top-2 right-2">
-              <Badge count={futureHarcamalar.length} size="small" offset={[-2, 2]}>
-                <Button 
-                  shape="circle" 
-                  icon={<ClockCircleOutlined className="text-orange-500" />} 
-                  size="small"
-                  className="bg-orange-50 border-orange-100"
-                  onClick={() => setFutureModalVisible(true)}
-                />
-              </Badge>
-            </div>
-          )}
-
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
               <Text className="text-[10px] font-bold uppercase text-gray-400">Dönem Toplamı</Text>
@@ -229,35 +212,40 @@ const HarcamalarContent = () => {
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
           </div>
-
           <div className="pt-2 border-t border-gray-50">
             <Input placeholder="Ara..." variant="filled" className="rounded-2xl h-10 border-none bg-gray-50" prefix={<SearchOutlined className="text-gray-400" />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} allowClear />
           </div>
         </div>
 
-        {normalHarcamalar.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Bu ay kayıt yok" /></div>
+        {sortedHarcamalar.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
         ) : (
           <div className="space-y-3">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
-              {normalHarcamalar.map((h) => {
+              {sortedHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
-                const isToday = dayjs(h.createdAt).isSame(now, 'day');
+                const hDate = dayjs(h.createdAt);
+                const isFuture = hDate.isAfter(now, 'minute');
+                const isToday = hDate.isSame(now, 'day');
+
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
-                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-orange-50/50 border-orange-100' : 'bg-white border-gray-50'}`}>
-                      <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>{icon}</div>
+                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border transition-all ${isFuture ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-100' : isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
+                      <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg shadow-sm`}>{icon}</div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className={`text-xs uppercase tracking-wide truncate max-w-[120px] ${isToday ? 'text-orange-600' : 'text-gray-500'}`}>{h.altKategori || h.kategori}</Text>
-                          <Text className="text-base font-black text-red-500">-{h.miktar}€</Text>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {isFuture && <PushpinOutlined className="text-orange-500 text-xs flex-shrink-0" />}
+                            <Text strong className={`text-xs uppercase tracking-wide truncate ${isFuture ? 'text-orange-700' : 'text-gray-500'}`}>{h.altKategori || h.kategori}</Text>
+                          </div>
+                          <Text className={`text-base font-black ${isFuture ? 'text-orange-600' : 'text-red-500'}`}>-{h.miktar}€</Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
                           <div className="flex flex-col">
-                            <Text className={`text-[10px] font-medium ${isToday ? 'text-orange-400' : 'text-gray-400'}`}>{isToday ? "Bugün, " : ""}{dayjs(h.createdAt).format('DD MMMM, HH:mm')}</Text>
+                            <Text className={`text-[10px] font-medium ${isFuture ? 'text-orange-400' : 'text-gray-400'}`}>{hDate.format('DD MMMM, HH:mm')}</Text>
                             {h.not && <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">{h.not}</Text>}
                           </div>
-                          {isToday && <div className="bg-orange-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-orange-600 uppercase font-bold">Yeni</Text></div>}
+                          {isFuture && <div className="bg-orange-200/50 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-orange-700 uppercase font-bold">Bekleyen</Text></div>}
                         </div>
                       </div>
                     </div>
@@ -268,51 +256,6 @@ const HarcamalarContent = () => {
           </div>
         )}
       </div>
-
-      <Modal
-        title={<div className="text-sm font-bold text-orange-500 uppercase flex items-center justify-center gap-2"><ClockCircleOutlined /> Bekleyen İşlemler</div>}
-        open={futureModalVisible}
-        onCancel={() => setFutureModalVisible(false)}
-        footer={null}
-        centered
-        width={360}
-        styles={{ 
-          body: { 
-            padding: '12px 8px', 
-            maxHeight: '65vh', 
-            overflowY: 'auto', 
-            /* touchAction: 'none' yaparak modalın kendi kaydırmasını kapatıp listeye odaklıyoruz */
-            touchAction: 'none' 
-          } 
-        }}
-      >
-        {futureHarcamalar.length > 0 ? (
-          <div style={{ touchAction: 'pan-y' }}> {/* Dikey kaydırmaya izin ver, yatayı listeye bırak */}
-            <SwipeableList 
-              threshold={0.15} 
-              fullSwipe={true} 
-              listType={ListType.IOS}
-            >
-              {futureHarcamalar.map(h => (
-                <SwipeableListItem 
-                  key={h._id} 
-                  leadingActions={leadingActions(h)} 
-                  trailingActions={trailingActions(h)}
-                >
-                  <div className="bg-white p-4 mb-3 rounded-2xl border border-gray-100 flex justify-between items-center w-full active:bg-gray-50 shadow-sm">
-                    <div>
-                      <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
-                      <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
-                      {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1 truncate max-w-[140px]">{h.not}</Text>}
-                    </div>
-                    <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
-                  </div>
-                </SwipeableListItem>
-              ))}
-            </SwipeableList>
-          </div>
-        ) : <Empty description="Bekleyen işlem yok" />}
-      </Modal>
 
       <Modal
         title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
