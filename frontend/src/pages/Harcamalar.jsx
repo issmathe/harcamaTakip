@@ -26,7 +26,7 @@ import {
 import "react-swipeable-list/dist/styles.css";
 
 import BottomNav from "../components/Home/BottomNav";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTotalsContext } from "../context/TotalsContext"; // Context'i içeri aldık
 import axios from "axios";
 import dayjs from "dayjs";
 import tr from "dayjs/locale/tr";
@@ -65,7 +65,8 @@ const getCategoryDetails = (kategori) => {
 };
 
 const HarcamalarContent = () => {
-  const queryClient = useQueryClient();
+  // Veriyi artık useQuery ile değil, Context'ten alıyoruz. Hızın kaynağı burası.
+  const { harcamalar = [], refetch, isLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null);
   const now = dayjs();
 
@@ -82,28 +83,26 @@ const HarcamalarContent = () => {
     miktar: "", kategori: "", altKategori: "", not: "", tarih: dayjs().toDate(),
   });
 
-  const { data: harcamalar = [], isLoading } = useQuery({
-    queryKey: ["harcamalar"],
-    queryFn: async () => {
-      const res = await axios.get(`${API_URL}/harcama`);
-      return res.data;
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (payload) => axios.put(`${API_URL}/harcama/${payload._id}`, payload),
-    onSuccess: () => {
+  const handleEditSave = async () => {
+    if (!formData.miktar) return message.error("Miktar giriniz");
+    try {
+      const payload = {
+        ...formData,
+        miktar: parseFloat(formData.miktar),
+        createdAt: dayjs(formData.tarih).toISOString(),
+      };
+      await axios.put(`${API_URL}/harcama/${editingHarcama._id}`, payload);
       message.success("İşlem güncellendi");
-      queryClient.invalidateQueries(["harcamalar"]);
-      queryClient.invalidateQueries(["totals"]);
       setEditModalVisible(false);
-    },
-  });
+      refetch(); // Tüm uygulamadaki veriyi tazele
+    } catch (err) {
+      message.error("Güncelleme hatası");
+    }
+  };
 
   const definitiveDelete = async (id) => {
     await axios.delete(`${API_URL}/harcama/${id}`);
-    queryClient.invalidateQueries(["harcamalar"]);
-    queryClient.invalidateQueries(["totals"]);
+    refetch(); // Silme sonrası context'i tazele
   };
 
   const startDeleteProcess = (id) => {
@@ -178,16 +177,6 @@ const HarcamalarContent = () => {
     });
     setEditModalVisible(true);
     setFutureModalVisible(false);
-  };
-
-  const handleEditSave = () => {
-    if (!formData.miktar) return message.error("Miktar giriniz");
-    updateMutation.mutate({
-      ...formData,
-      _id: editingHarcama._id,
-      miktar: parseFloat(formData.miktar),
-      createdAt: dayjs(formData.tarih).toISOString(),
-    });
   };
 
   const leadingActions = (harcama) => (
@@ -400,7 +389,6 @@ const HarcamalarContent = () => {
             type="primary" 
             block 
             onClick={handleEditSave}
-            loading={updateMutation.isPending}
             className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl uppercase tracking-widest mt-2"
           >
             Güncelle
