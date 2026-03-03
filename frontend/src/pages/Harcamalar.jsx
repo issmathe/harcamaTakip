@@ -269,45 +269,50 @@ const HarcamalarContent = () => {
         )}
       </div>
 
-<Modal
-  title={<div className="text-sm font-bold text-orange-500 uppercase flex items-center justify-center gap-2"><ClockCircleOutlined /> Bekleyen İşlemler</div>}
-  open={futureModalVisible}
-  onCancel={() => setFutureModalVisible(false)}
-  footer={null}
-  centered
-  width={360}
-  /* touch-action: pan-y ekleyerek tarayıcının kaydırma hareketine müdahale etmesini önlüyoruz */
-  styles={{ body: { padding: '12px 8px', maxHeight: '65vh', overflowY: 'auto', touchAction: 'pan-y' } }}
->
-  {futureHarcamalar.length > 0 ? (
-    <div className="swipe-container"> {/* Container eklemek dokunmatik hassasiyetini artırır */}
-      <SwipeableList 
-        threshold={0.2} // Kaydırma eşiğini %20'ye düşürdüm (Telefonda daha kolay açılır)
-        fullSwipe={false} // Modal içinde yanlışlıkla tam kaydırmayı önlemek için false yaptık
-        listType={ListType.IOS}
+      <Modal
+        title={<div className="text-sm font-bold text-orange-500 uppercase flex items-center justify-center gap-2"><ClockCircleOutlined /> Bekleyen İşlemler</div>}
+        open={futureModalVisible}
+        onCancel={() => setFutureModalVisible(false)}
+        footer={null}
+        centered
+        width={360}
+        styles={{ 
+          body: { 
+            padding: '12px 8px', 
+            maxHeight: '65vh', 
+            overflowY: 'auto', 
+            /* touchAction: 'none' yaparak modalın kendi kaydırmasını kapatıp listeye odaklıyoruz */
+            touchAction: 'none' 
+          } 
+        }}
       >
-        {futureHarcamalar.map(h => (
-          <SwipeableListItem 
-            key={h._id} 
-            leadingActions={leadingActions(h)} 
-            trailingActions={trailingActions(h)}
-            // Telefonda kaydırma başlar başlamaz listeyi kilitlememesi için:
-            scrollStartThreshold={10} 
-          >
-            <div className="bg-gray-50 p-4 mb-2 rounded-2xl border border-gray-100 flex justify-between items-center w-full active:bg-gray-100">
-              <div>
-                <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
-                <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
-                {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1 truncate max-w-[140px]">{h.not}</Text>}
-              </div>
-              <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
-            </div>
-          </SwipeableListItem>
-        ))}
-      </SwipeableList>
-    </div>
-  ) : <Empty description="Bekleyen işlem yok" />}
-</Modal>
+        {futureHarcamalar.length > 0 ? (
+          <div style={{ touchAction: 'pan-y' }}> {/* Dikey kaydırmaya izin ver, yatayı listeye bırak */}
+            <SwipeableList 
+              threshold={0.15} 
+              fullSwipe={true} 
+              listType={ListType.IOS}
+            >
+              {futureHarcamalar.map(h => (
+                <SwipeableListItem 
+                  key={h._id} 
+                  leadingActions={leadingActions(h)} 
+                  trailingActions={trailingActions(h)}
+                >
+                  <div className="bg-white p-4 mb-3 rounded-2xl border border-gray-100 flex justify-between items-center w-full active:bg-gray-50 shadow-sm">
+                    <div>
+                      <Text strong className="text-[10px] block text-gray-400 uppercase leading-none mb-1">{h.kategori}</Text>
+                      <Text className="text-xs font-bold block leading-none">{dayjs(h.createdAt).format('DD MMM, ddd HH:mm')}</Text>
+                      {h.not && <Text className="text-[10px] text-gray-400 italic block mt-1 truncate max-w-[140px]">{h.not}</Text>}
+                    </div>
+                    <Text className="text-sm font-black text-orange-500">-{h.miktar}€</Text>
+                  </div>
+                </SwipeableListItem>
+              ))}
+            </SwipeableList>
+          </div>
+        ) : <Empty description="Bekleyen işlem yok" />}
+      </Modal>
 
       <Modal
         title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
