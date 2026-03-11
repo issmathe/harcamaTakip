@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; 
+import Birikim from "./pages/Birikim"; 
 
 // --- Scroll SIFIRLAMA MANTIĞI BURADA ---
 const ScrollToTop = ({ containerRef }) => {
@@ -48,6 +49,7 @@ function App() {
               <Route path="/gelirler" element={<Gelirler />} />
               <Route path="/harcamalar" element={<Harcamalar />} />
               <Route path="/raporlar" element={<Raporlar />} /> 
+              <Route path="/birikim" element={<Birikim />} /> 
             </Routes>
           </main>
           
