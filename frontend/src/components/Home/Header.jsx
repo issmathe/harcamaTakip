@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; // navigate eklendi
 import { Typography, Progress, Button } from "antd";
 import {
   ArrowUpOutlined,
@@ -18,6 +19,7 @@ import dayjs from "dayjs";
 const { Title, Text } = Typography;
 
 const Header = () => {
+  const navigate = useNavigate(); // navigate tanımlandı
   const { 
     totalIncome, totalExpense, totalToday, 
     cumulativeIncome, cumulativeExpense, bankBalance,
@@ -149,7 +151,11 @@ const Header = () => {
                 <BankOutlined className="text-emerald-400 text-xs" />
                 <span className="font-bold text-[11px]">banka €{formatCurrency(bankBalance)}</span>
               </div>
-              <div className="bg-blue-500/20 backdrop-blur-md px-3 py-1 rounded-xl border border-blue-400/30 flex items-center gap-2">
+              {/* Birikim butonu tıklandığında /birikim sayfasına gider */}
+              <div 
+                onClick={() => navigate("/birikim")}
+                className="bg-blue-500/20 backdrop-blur-md px-3 py-1 rounded-xl border border-blue-400/30 flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
+              >
                 <SaveOutlined className="text-blue-300 text-xs" />
                 <span className="font-bold text-[11px] text-blue-100">birikim €{formatCurrency(totalSavings)}</span>
               </div>
@@ -209,4 +215,4 @@ const Header = () => {
   );
 };
 
-export default Header; 
+export default Header;
