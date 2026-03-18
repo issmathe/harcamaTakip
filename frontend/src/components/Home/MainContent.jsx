@@ -503,52 +503,85 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      <Modal 
-        title={<div className="text-lg font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
-        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
-        className="space-modal"
-        styles={{ body: { padding: '12px 16px' } }}
+<Modal 
+  title={<div className="text-lg font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
+  open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
+  className="space-modal"
+  styles={{ body: { padding: '12px 16px' } }}
+>
+  <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
+    <div className="text-4xl font-black text-white tracking-tight">
+      {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
+    </div>
+  </div>
+  <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
+    <div className="grid grid-cols-2 gap-3 items-end"> 
+      <Form.Item 
+        name="tarih" 
+        label={<span className="text-gray-400 text-xs">Tarih</span>} 
+        className="mb-0"
       >
-        <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
-          <div className="text-4xl font-black text-white tracking-tight">
-            {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
-          </div>
-        </div>
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
-              <CustomDayPicker />
-            </Form.Item>
-            {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
-                <Select placeholder="Seç" size="small" className="w-full">
-                  {(selectedCategory === "Market" ? MARKETLER : 
-                    selectedCategory === "Giyim" ? GIYIM_KISILERI : 
-                    selectedCategory === "Aile" ? AILE_UYELERI : 
-                    ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
-                </Select>
-              </Form.Item>
-            )}
-          </div>
-          <NumericNumpad value={amount} onChange={setAmount} />
-          {showNote ? (
-            <Form.Item name="not" className="mt-2 mb-0">
-              <Input.TextArea 
-                rows={2} 
-                placeholder="Not ekleyin..."
-                autoFocus
-                className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
-                style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
-              />
-            </Form.Item>
-          ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
-          )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
-        </Form>
-      </Modal>
+        {/* İlk koddaki saf haliyle bıraktık, sadece hizalama için items-end ekledik */}
+        <CustomDayPicker />
+      </Form.Item>
 
-      <Modal 
+      {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) && (
+        <Form.Item 
+          name="altKategori" 
+          label={<span className="text-gray-400 text-xs">Detay</span>} 
+          rules={[{ required: true, message: "Seç" }]} 
+          className="mb-0"
+        >
+          <Select 
+            placeholder="Seç" 
+            className="w-full"
+            style={{ height: '38px' }} // CustomDayPicker'ın standart yüksekliğine eşitledik
+            dropdownStyle={{ borderRadius: '12px' }}
+          >
+            {(selectedCategory === "Market" ? MARKETLER : 
+              selectedCategory === "Giyim" ? GIYIM_KISILERI : 
+              selectedCategory === "Aile" ? AILE_UYELERI : 
+              ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
+          </Select>
+        </Form.Item>
+      )}
+    </div>
+    
+    <NumericNumpad value={amount} onChange={setAmount} />
+
+    {showNote ? (
+      <Form.Item name="not" className="mt-2 mb-0">
+        <Input.TextArea 
+          rows={2} 
+          placeholder="Not ekleyin..."
+          autoFocus
+          className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
+          style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
+        />
+      </Form.Item>
+    ) : (
+      <Button 
+        type="text" 
+        onClick={() => setShowNote(true)} 
+        icon={<MessageCircle size={14} />} 
+        className="w-full mt-2 text-slate-400 text-xs"
+      >
+        Not Ekle
+      </Button>
+    )}
+    <Button 
+      type="primary" 
+      htmlType="submit" 
+      block 
+      loading={harcamaMutation.isPending} 
+      className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
+    >
+      KAYDET
+    </Button>
+  </Form>
+</Modal>
+
+<Modal 
         title={<div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={380}
         className="space-modal"
@@ -560,12 +593,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
         </div>
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-end">
             <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
               <CustomDayPicker isIncome={true} />
             </Form.Item>
             <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
-              <Select className="w-full" size="small">
+              <Select 
+                className="w-full" 
+                style={{ height: '38px' }}
+                dropdownStyle={{ borderRadius: '12px' }}
+              >
                 <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
                 <Option value="diğer">Ekstra</Option>
