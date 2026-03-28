@@ -211,7 +211,7 @@ const HarcamalarContent = () => {
                 -{kategoriToplam.toFixed(2).replace('.', ',')}€
               </Text>
             </div>
-            <Select value={selectedCategory} onChange={setSelectedCategory} size="middle" variant="filled" className="w-32" style={{ borderRadius: '12px' }}>
+            <Select value={selectedCategory} onChange={setSelectedCategory} size="middle" variant="filled" className="w-40" style={{ borderRadius: '12px' }}>
               <Option value="Tümü">Tümü</Option>
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
             </Select>
