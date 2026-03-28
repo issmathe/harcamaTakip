@@ -15,90 +15,139 @@ import CustomDayPicker from "../Forms/CustomDayPicker";
 import {
   MessageCircle,
   Delete,
-  ShoppingCart,
-  Shirt,
-  PiggyBank,
-  Home,
-  FileText,
-  MoreHorizontal,
-  HeartPulse,
-  Car,
-  Gamepad2,
-  Smartphone,
-  Wifi,
-  Gift,
-  Utensils,
-  Users,
-  GraduationCap,
-  Plus,
 } from "lucide-react";
 
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 import { useMutation } from "@tanstack/react-query";
 
+// Video ve Poster Tanımlamaları
+const dunyaVideo = "/gezegenler/dunya.mp4";
+const dunyaPoster = "/gezegenler/dunya.jpg";
+const gunesVideo = "/gezegenler/gunes.mp4";
+const gunesPoster = "/gezegenler/gunes.jpg";
+const jupiterVideo = "/gezegenler/jupiter.mp4";
+const jupiterPoster = "/gezegenler/jupiter.jpg";
+const uranusVideo = "/gezegenler/uranus.mp4";
+const uranusPoster = "/gezegenler/uranus.jpg";
+const marsVideo = "/gezegenler/mars.mp4";
+const marsPoster = "/gezegenler/mars.jpg";
+const ayVideo = "/gezegenler/ay.mp4";
+const ayPoster = "/gezegenler/dunya.png";
+const nebulaVideo = "/gezegenler/nebula.mp4";
+const nebulaPoster = "/gezegenler/nebula.jpg";
+const karadelikVideo = "/gezegenler/karadelik.mp4";
+const karadelikPoster = "/gezegenler/karadelik.jpg";
+const bulutsuVideo = "/gezegenler/bulutsu.mp4";
+const bulutsuPoster = "/gezegenler/bulutsu.jpeg";
+const roketVideo = "/gezegenler/roket.mp4"; 
+const roketPoster = "/gezegenler/roket.jpg"; 
+const hubbleVideo = "/gezegenler/hubble.mp4"; 
+const hubblePoster = "/gezegenler/hubble.jpg";
+const uyduPoster = "/gezegenler/uydu.png"; 
+const astronotVideo = "/gezegenler/astronot.mp4"; 
+const astronotPoster = "/gezegenler/astoronot.png"; 
+const meteorVideo = "/gezegenler/meteor.mp4"; 
+const meteorPoster = "/gezegenler/meteor.png"; 
+const supernovaVideo = "/gezegenler/supernova.mp4"; 
+const supernovaPoster = "/gezegenler/supernova.png"; 
+const saturnVideo = "/gezegenler/saturn.mp4"; 
+const saturnPoster = "/gezegenler/saturn.jpg"; 
+
 dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
-// Kategori - İkon - Renk Eşleşmesi
-const CATEGORY_CONFIG = {
-  Market: { icon: ShoppingCart, color: "#10b981", bg: "rgba(16, 185, 129, 0.2)" },
-  Giyim: { icon: Shirt, color: "#ec4899", bg: "rgba(236, 72, 153, 0.2)" },
-  Tasarruf: { icon: PiggyBank, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.2)" },
-  Kira: { icon: Home, color: "#6366f1", bg: "rgba(99, 102, 241, 0.2)" },
-  Fatura: { icon: FileText, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.2)" },
-  Diğer: { icon: MoreHorizontal, color: "#94a3b8", bg: "rgba(148, 163, 184, 0.2)" },
-  Sağlık: { icon: HeartPulse, color: "#ef4444", bg: "rgba(239, 68, 68, 0.2)" },
-  Ulaşım: { icon: Car, color: "#f97316", bg: "rgba(249, 115, 22, 0.2)" },
-  Eğlence: { icon: Gamepad2, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.2)" },
-  Elektronik: { icon: Smartphone, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" },
-  İletisim: { icon: Wifi, color: "#14b8a6", bg: "rgba(20, 184, 166, 0.2)" },
-  Hediye: { icon: Gift, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.2)" },
-  Restoran: { icon: Utensils, color: "#d946ef", bg: "rgba(217, 70, 239, 0.2)" },
-  Aile: { icon: Users, color: "#84cc16", bg: "rgba(132, 204, 22, 0.2)" },
-  Eğitim: { icon: GraduationCap, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.2)" },
-};
+const PlanetStyle = ({ type, isTop }) => {
+  const videoPlanets = {
+    Market: { video: dunyaVideo, poster: dunyaPoster },
+    Ulaşım: { video: roketVideo, poster: roketPoster },
+    Giyim: { video: uranusVideo, poster: uranusPoster },
+    Elektronik: { video: marsVideo, poster: marsPoster }, // Mars buraya taşındı
+    Eğitim: { video: hubbleVideo, poster: hubblePoster },
+    Aile: { video: nebulaVideo, poster: nebulaPoster },
+    İletisim: { video: karadelikVideo, poster: karadelikPoster },
+    Restoran: { video: bulutsuVideo, poster: bulutsuPoster },
+    Kira: { video: jupiterVideo, poster: jupiterPoster },
+    Sağlık: { video: ayVideo, poster: ayPoster },
+    Fatura: { video: astronotVideo, poster: astronotPoster },
+    Tasarruf: { video: meteorVideo, poster: meteorPoster },
+    Eğlence: { video: supernovaVideo, poster: supernovaPoster },
+    Diğer: {  poster: uyduPoster },
+    Hediye: { video: saturnVideo, poster: saturnPoster },
 
-const CategoryIcon = ({ type, isTop }) => {
-  const config = CATEGORY_CONFIG[type] || CATEGORY_CONFIG.Diğer;
-  const IconComponent = config.icon;
+  };
+
+  const currentVideoPlanet = videoPlanets[type];
+  const isFamily = type === "Aile";
+  const isBlackHole = type === "İletisim";
+  const isNebula = type === "Restoran";
+  const isRocket = type === "Ulaşım";
+  const isHubble = type === "Eğitim";
+  const isSatellite = type === "Diğer";
+  const isElectronic = type === "Elektronik";
 
   const labelElement = (
-    <div className={`absolute -bottom-7 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-1' : 'opacity-40 scale-90'}`}>
-      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-white text-black' : 'bg-black/20 text-gray-400'}`}>
+    <div className={`absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-2' : 'opacity-60 scale-90'}`}>
+      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-black/50 text-gray-300'}`}>
         {type}
       </span>
     </div>
   );
 
+  if (currentVideoPlanet) {
+    return (
+      <div className={`relative w-full h-full transition-all duration-300 ${isTop ? 'scale-110' : ''}`}>
+        <div 
+          className={`absolute inset-0 overflow-hidden bg-black transition-all duration-500 rounded-full`}
+          style={{ 
+            boxShadow: isBlackHole && isTop ? '0 0 40px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(0,0,0,1)' : 
+                       isRocket && isTop ? '0 0 30px rgba(234, 88, 12, 0.4)' : 
+                       isHubble && isTop ? '0 0 30px rgba(34, 211, 238, 0.3)' : 
+                       isSatellite && isTop ? '0 0 30px rgba(148, 163, 184, 0.3)' : 'none'
+          }}
+        >
+          <video
+            src={currentVideoPlanet.video}
+            poster={currentVideoPlanet.poster}
+            autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
+            className="w-full h-full object-cover"
+            style={{ 
+              pointerEvents: 'none',
+              transform: isBlackHole ? 'scale(1.4)' : ((isFamily || isNebula) ? 'scale(1.5)' : 'scale(1.25)'), 
+              filter: (isRocket || isElectronic) ? 'contrast(1.1) brightness(1.1)' : 'none'
+            }}
+          />
+        </div>
+
+        {isTop && (
+          <div className={`absolute inset-0 animate-ping pointer-events-none 
+            ${(isFamily || isNebula) ? 'rounded-[60%_40%_70%_30%/50%] bg-purple-400/20' : 
+              isBlackHole ? 'rounded-full bg-white/10 scale-150' : 
+              isRocket ? 'rounded-full bg-orange-400/20' :
+              isHubble ? 'rounded-full bg-cyan-400/20' :
+              isSatellite ? 'rounded-full bg-slate-400/20' :
+              'rounded-full bg-blue-400/20'}`} 
+          />
+        )}
+        
+        {labelElement}
+      </div>
+    );
+  }
+
   return (
-    <div className={`relative w-full h-full flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl 
-      ${isTop ? 'scale-125' : 'scale-100 opacity-60'}`}
-      style={{ 
-        backgroundColor: isTop ? config.bg : 'rgba(255,255,255,0.05)',
-        border: `1.5px solid ${isTop ? config.color : 'rgba(255,255,255,0.1)'}`,
-        boxShadow: isTop ? `0 0 20px ${config.bg}` : 'none'
-      }}
-    >
-      <IconComponent 
-        size={isTop ? 32 : 24} 
-        color={isTop ? config.color : "#94a3b8"} 
-        strokeWidth={2.5}
-      />
+    <div className={`relative w-full h-full rounded-full border border-white/20 bg-white/5 transition-all duration-300 ${isTop ? 'scale-110 border-blue-500/50 bg-blue-500/10' : ''}`}>
       {labelElement}
       {isTop && (
-        <div 
-          className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none" 
-          style={{ border: `2px solid ${config.color}`, opacity: 0.3 }}
-        />
+        <div className="absolute inset-0 rounded-full animate-ping bg-blue-400/10 pointer-events-none" />
       )}
     </div>
   );
 };
 
-const CATEGORIES = Object.keys(CATEGORY_CONFIG);
+const CATEGORIES = ["Market", "Giyim", "Tasarruf", "Kira", "Fatura", "Diğer", "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye", "Restoran", "Aile", "Eğitim"];
 const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
@@ -120,21 +169,45 @@ const SpaceBackground = () => {
     window.addEventListener("resize", resize);
     resize();
 
-    const stars = Array.from({ length: 80 }, () => ({
+    const stars = Array.from({ length: 150 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 1.5,
-      opacity: Math.random(),
+      z: Math.random() * canvas.width,
+      o: Math.random(),
+    }));
+
+    const galaxies = Array.from({ length: 5 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 250 + 150,
+      color: Math.random() > 0.5 ? "rgba(67, 56, 202, 0.08)" : "rgba(147, 51, 234, 0.08)",
+      speed: Math.random() * 0.1 + 0.05
     }));
 
     const draw = () => {
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      galaxies.forEach(g => {
+        g.x -= g.speed;
+        if (g.x + g.size < 0) g.x = canvas.width + g.size;
+        const gradient = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size);
+        gradient.addColorStop(0, g.color);
+        gradient.addColorStop(1, "rgba(2, 6, 23, 0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(g.x - g.size, g.y - g.size, g.size * 2, g.size * 2);
+      });
+
       stars.forEach((star) => {
+        star.z -= 0.5;
+        if (star.z <= 0) star.z = canvas.width;
+        const x = (star.x - canvas.width / 2) * (canvas.width / star.z) + canvas.width / 2;
+        const y = (star.y - canvas.height / 2) * (canvas.width / star.z) + canvas.height / 2;
+        let s = (1 - star.z / canvas.width) * 3;
+        if (s <= 0) s = 0.1;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.o})`;
+        ctx.arc(x, y, s, 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -368,10 +441,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       <SpaceBackground />
       
       <div className="text-center mb-6 pt-4 relative z-10">
-        <div className="text-white font-bold text-2xl tracking-widest transition-all uppercase" style={{ color: CATEGORY_CONFIG[currentTopCategory]?.color || '#fff' }}>
+        <div className="text-blue-300 font-bold text-2xl drop-shadow-[0_0_15px_rgba(59,130,246,0.6)] tracking-[0.2em] transition-all uppercase">
           {currentTopCategory}
         </div>
-        <div className="text-white/60 font-mono text-xl mt-1">{formattedTotal} €</div>
+        <div className="text-white font-mono text-xl mt-1 opacity-80">{formattedTotal} €</div>
       </div>
 
       <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
@@ -379,11 +452,18 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           onClick={handleGelirClick} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
-          <div className="absolute w-[160px] h-[160px] bg-orange-500/10 rounded-full blur-[40px]" />
+          <div className="absolute w-[180px] h-[180px] bg-orange-600/20 rounded-full blur-[50px] animate-pulse" />
           <div 
-            className="relative w-[110px] h-[110px] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] bg-gradient-to-tr from-orange-600 to-amber-400 border-4 border-white/20"
+            className="relative w-[130px] h-[130px] rounded-full overflow-hidden shadow-[0_0_40px_rgba(234,88,12,0.6)] bg-cover bg-center"
+            style={{ backgroundImage: `url(${gunesPoster})` }}
           >
-            <Plus size={48} color="white" strokeWidth={3} />
+            <video
+              src={gunesVideo}
+              poster={gunesPoster}
+              autoPlay loop muted playsInline webkit-playsinline="true" preload="auto"
+              className="w-full h-full object-cover pointer-events-none"
+              style={{ borderRadius: '50%' }}
+            />
           </div>
         </div>
 
@@ -405,8 +485,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                   top: `${center + y}%`, 
                   left: `${center + x}%`, 
                   transform: `translate(-50%, -50%)`,
-                  width: isTop ? '80px' : '55px',
-                  height: isTop ? '80px' : '55px',
+                  width: isTop ? '75px' : '45px',
+                  height: isTop ? '75px' : '45px',
                   zIndex: isTop ? 50 : 10
                 }}
               >
@@ -415,7 +495,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                   className="w-full h-full p-0 border-none bg-transparent outline-none"
                   style={{ transform: `rotate(${-rotation}deg)` }}
                 >
-                  <CategoryIcon type={cat} isTop={isTop} />
+                  <PlanetStyle type={cat} isTop={isTop} />
                 </button>
               </div>
             );
@@ -423,46 +503,85 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      <Modal 
-        title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory}</div>}
-        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
-        className="space-modal"
-        styles={{ body: { padding: '12px 16px' } }}
+<Modal 
+  title={<div className="text-lg font-bold text-blue-400 font-mono tracking-widest uppercase">{selectedCategory}</div>}
+  open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
+  className="space-modal"
+  styles={{ body: { padding: '12px 16px' } }}
+>
+  <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
+    <div className="text-4xl font-black text-white tracking-tight">
+      {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
+    </div>
+  </div>
+  <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
+    <div className="grid grid-cols-2 gap-3 items-end"> 
+      <Form.Item 
+        name="tarih" 
+        label={<span className="text-gray-400 text-xs">Tarih</span>} 
+        className="mb-0"
       >
-        <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
-          <div className="text-4xl font-black text-white tracking-tight">
-            {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
-          </div>
-        </div>
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div className="grid grid-cols-2 gap-3 items-end"> 
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
-              <CustomDayPicker />
-            </Form.Item>
-            {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) && (
-              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
-                <Select placeholder="Seç" className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
-                  {(selectedCategory === "Market" ? MARKETLER : 
-                    selectedCategory === "Giyim" ? GIYIM_KISILERI : 
-                    selectedCategory === "Aile" ? AILE_UYELERI : 
-                    ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
-                </Select>
-              </Form.Item>
-            )}
-          </div>
-          <NumericNumpad value={amount} onChange={setAmount} />
-          {showNote ? (
-            <Form.Item name="not" className="mt-2 mb-0">
-              <Input.TextArea rows={2} placeholder="Not ekleyin..." autoFocus className="bg-slate-800 border-slate-700 text-white rounded-xl" style={{ color: '#ffffff', backgroundColor: '#1e293b' }} />
-            </Form.Item>
-          ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
-          )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
-        </Form>
-      </Modal>
+        {/* İlk koddaki saf haliyle bıraktık, sadece hizalama için items-end ekledik */}
+        <CustomDayPicker />
+      </Form.Item>
 
-      <Modal 
+      {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) && (
+        <Form.Item 
+          name="altKategori" 
+          label={<span className="text-gray-400 text-xs">Detay</span>} 
+          rules={[{ required: true, message: "Seç" }]} 
+          className="mb-0"
+        >
+          <Select 
+            placeholder="Seç" 
+            className="w-full"
+            style={{ height: '38px' }} // CustomDayPicker'ın standart yüksekliğine eşitledik
+            dropdownStyle={{ borderRadius: '12px' }}
+          >
+            {(selectedCategory === "Market" ? MARKETLER : 
+              selectedCategory === "Giyim" ? GIYIM_KISILERI : 
+              selectedCategory === "Aile" ? AILE_UYELERI : 
+              ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
+          </Select>
+        </Form.Item>
+      )}
+    </div>
+    
+    <NumericNumpad value={amount} onChange={setAmount} />
+
+    {showNote ? (
+      <Form.Item name="not" className="mt-2 mb-0">
+        <Input.TextArea 
+          rows={2} 
+          placeholder="Not ekleyin..."
+          autoFocus
+          className="bg-slate-800 border-slate-700 text-white rounded-xl placeholder:text-slate-500"
+          style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
+        />
+      </Form.Item>
+    ) : (
+      <Button 
+        type="text" 
+        onClick={() => setShowNote(true)} 
+        icon={<MessageCircle size={14} />} 
+        className="w-full mt-2 text-slate-400 text-xs"
+      >
+        Not Ekle
+      </Button>
+    )}
+    <Button 
+      type="primary" 
+      htmlType="submit" 
+      block 
+      loading={harcamaMutation.isPending} 
+      className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
+    >
+      KAYDET
+    </Button>
+  </Form>
+</Modal>
+
+<Modal 
         title={<div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={380}
         className="space-modal"
@@ -479,7 +598,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <CustomDayPicker isIncome={true} />
             </Form.Item>
             <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
-              <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
+              <Select 
+                className="w-full" 
+                style={{ height: '38px' }}
+                dropdownStyle={{ borderRadius: '12px' }}
+              >
                 <Option value="gelir">Normal Gelir</Option>
                 <Option value="tasarruf">Birikim</Option>
                 <Option value="diğer">Ekstra</Option>
@@ -489,7 +612,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
             <Form.Item name="not" className="mt-2 mb-0">
-              <Input placeholder="Not ekleyin..." autoFocus className="bg-slate-800 border-slate-700 text-white rounded-xl h-10" style={{ color: '#ffffff', backgroundColor: '#1e293b' }} />
+              <Input 
+                placeholder="Not ekleyin..." 
+                autoFocus
+                className="bg-slate-800 border-slate-700 text-white rounded-xl h-10 placeholder:text-slate-500"
+                style={{ color: '#ffffff', backgroundColor: '#1e293b' }}
+              />
             </Form.Item>
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
