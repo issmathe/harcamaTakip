@@ -56,7 +56,6 @@ const RaporlarContent = () => {
   const [yillikSubTab, setYillikSubTab] = useState("Market");
   const [timeRange, setTimeRange] = useState("YTD");
 
-  // Trend verisindeki virgülleri Math.round ile kökten temizledim
   const trendCalculation = useMemo(() => {
     const last6Months = [];
     for (let i = 5; i >= 0; i--) last6Months.push(dayjs().subtract(i, "month"));
@@ -71,19 +70,49 @@ const RaporlarContent = () => {
     };
   }, [harcamalar]);
 
+  // ─── DÜZELTİLMİŞ KISIM BAŞLANGICI ───────────────────────────────────────────
   useEffect(() => {
+    // Yıllık veya diğer sekmeler açıkken trend grafiği görünmüyor, çalıştırmaya gerek yok
     if (activeTab !== null) return;
-    const chart = lineChartRef.current;
-    if (!chart || trendCalculation.data.length === 0) return;
-    const ctx = chart.ctx;
-    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, "rgba(59, 130, 246, 0.5)");
-    gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
-    setLineChartData({
-      labels: trendCalculation.labels,
-      datasets: [{ data: trendCalculation.data, fill: true, backgroundColor: gradient, borderColor: "#3b82f6", borderWidth: 3, tension: 0.4 }],
-    });
+
+    // Chart henüz DOM'a mount olmamış olabilir; kısa bir timeout ile bekle
+    const timer = setTimeout(() => {
+      const chart = lineChartRef.current;
+
+      // Chart ref ya da veri hazır değilse çık
+      if (!chart || !chart.ctx || trendCalculation.data.length === 0) return;
+
+      const ctx = chart.ctx;
+      const chartHeight = chart.height || 200;
+
+      // Gradient'i chart'ın gerçek yüksekliğine göre oluştur
+      const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+      gradient.addColorStop(0, "rgba(59, 130, 246, 0.45)");
+      gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
+
+      setLineChartData({
+        labels: trendCalculation.labels,
+        datasets: [
+          {
+            data: trendCalculation.data,
+            fill: true,
+            backgroundColor: gradient,
+            borderColor: "#3b82f6",
+            borderWidth: 2.5,
+            tension: 0.25,          // 0.4'ten düşürdük — daha doğal eğri
+            pointRadius: 4,
+            pointBackgroundColor: "#ffffff",
+            pointBorderColor: "#3b82f6",
+            pointBorderWidth: 2,
+            pointHoverRadius: 6,
+          },
+        ],
+      });
+    }, 50); // Chart'ın mount tamamlanmasını beklemek için 50ms yeterli
+
+    return () => clearTimeout(timer);
   }, [trendCalculation, activeTab]);
+  // ─── DÜZELTİLMİŞ KISIM SONU ─────────────────────────────────────────────────
 
   const globalMax = useMemo(() => {
     const totals = {};
@@ -115,11 +144,10 @@ const RaporlarContent = () => {
     plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'end', offset: 4, formatter: (val) => val > 0 ? `${Math.round(val)}€` : '', font: { weight: 'bold', size: 10 }, color: '#374151' } }
   }), []);
 
- const yillikAnalizVeri = useMemo(() => {
+  const yillikAnalizVeri = useMemo(() => {
     const baslangicTarihi = timeRange === "YTD" ? dayjs().startOf('year') : dayjs().subtract(12, 'month');
     const aralikHarcamalar = harcamalar.filter(h => dayjs(h.createdAt).isAfter(baslangicTarihi));
 
-    // Kategoriye göre süzüp sonra alt kategori toplamlarını alan geliştirilmiş fonksiyon
     const calculateDetailed = (list, categoryName) => list.map(item => ({
         name: item,
         total: aralikHarcamalar
@@ -134,97 +162,92 @@ const RaporlarContent = () => {
     };
   }, [harcamalar, timeRange]);
 
-const renderYillikContent = () => {
-  let currentData = [];
-  let color = "#3b82f6";
-  
-  if (yillikSubTab === "Market") { currentData = yillikAnalizVeri.market; color = "#3b82f6"; }
-  else if (yillikSubTab === "Giyim") { currentData = yillikAnalizVeri.giyim; color = "#FF6384"; }
-  else { currentData = yillikAnalizVeri.aile; color = "#AF52DE"; }
+  const renderYillikContent = () => {
+    let currentData = [];
+    let color = "#3b82f6";
+    
+    if (yillikSubTab === "Market") { currentData = yillikAnalizVeri.market; color = "#3b82f6"; }
+    else if (yillikSubTab === "Giyim") { currentData = yillikAnalizVeri.giyim; color = "#FF6384"; }
+    else { currentData = yillikAnalizVeri.aile; color = "#AF52DE"; }
 
-  const genelToplam = currentData.reduce((sum, item) => sum + item.total, 0);
+    const genelToplam = currentData.reduce((sum, item) => sum + item.total, 0);
 
-  if (currentData.length === 0) return <Empty description="Veri bulunamadı" />;
+    if (currentData.length === 0) return <Empty description="Veri bulunamadı" />;
 
-  return (
-    <div className="space-y-6">
-      {/* Üst Bar: Zaman Seçici ve Toplam Tutarı Aynı Hizada Tutan Yapı */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200/50">
-          {/* Sol Taraf: Zaman Seçici */}
-          <div className="flex-grow max-w-[65%]">
-            <Segmented
-              value={timeRange}
-              onChange={setTimeRange}
-              block
-              options={[
-                { label: 'YTD', value: 'YTD' },
-                { label: '12 Ay', value: '12AY' }
-              ]}
-              className="bg-transparent custom-segmented"
-            />
-          </div>
-
-          {/* Sağ Taraf: Şık Toplam Göstergesi */}
-          <div className="flex flex-col items-end pr-2 min-w-[30%]">
-            <Text className="text-[8px] uppercase font-black text-gray-400 leading-none mb-1">Toplam</Text>
-            <div className="flex items-baseline gap-0.5">
-              <Text className="text-sm font-black tracking-tight" style={{ color: color }}>
-                {Math.round(genelToplam).toLocaleString('tr-TR')}
-              </Text>
-              <Text className="text-[10px] font-bold" style={{ color: color }}>€</Text>
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200/50">
+            <div className="flex-grow max-w-[65%]">
+              <Segmented
+                value={timeRange}
+                onChange={setTimeRange}
+                block
+                options={[
+                  { label: 'YTD', value: 'YTD' },
+                  { label: '12 Ay', value: '12AY' }
+                ]}
+                className="bg-transparent custom-segmented"
+              />
+            </div>
+            <div className="flex flex-col items-end pr-2 min-w-[30%]">
+              <Text className="text-[8px] uppercase font-black text-gray-400 leading-none mb-1">Toplam</Text>
+              <div className="flex items-baseline gap-0.5">
+                <Text className="text-sm font-black tracking-tight" style={{ color: color }}>
+                  {Math.round(genelToplam).toLocaleString('tr-TR')}
+                </Text>
+                <Text className="text-[10px] font-bold" style={{ color: color }}>€</Text>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Grafik Alanı */}
-      <div style={{ height: '320px' }} className="relative">
-        <Bar 
-          data={{
-            labels: currentData.map(d => d.name),
-            datasets: [{ 
-              data: currentData.map(d => d.total), 
-              backgroundColor: color, 
-              borderRadius: 6, 
-              barThickness: currentData.length > 5 ? 14 : 28 
-            }]
-          }}
-          options={{
-            responsive: true, 
-            maintainAspectRatio: false,
-            plugins: { 
-              legend: { display: false }, 
-              datalabels: { 
-                anchor: 'end', 
-                align: 'top', 
-                formatter: (v) => v > 0 ? `${Math.round(v)}€` : '', 
-                font: { size: 9, weight: '900' }, 
-                color: '#64748b', 
-                offset: 2 
-              } 
-            },
-            scales: { 
-              y: { display: false, beginAtZero: true }, 
-              x: { 
-                grid: { display: false }, 
-                border: { display: false },
-                ticks: { 
-                  font: { size: 10, weight: '700' }, 
-                  color: '#94a3b8',
-                  autoSkip: false, 
-                  maxRotation: 45, 
-                  minRotation: 45 
+        <div style={{ height: '320px' }} className="relative">
+          <Bar 
+            data={{
+              labels: currentData.map(d => d.name),
+              datasets: [{ 
+                data: currentData.map(d => d.total), 
+                backgroundColor: color, 
+                borderRadius: 6, 
+                barThickness: currentData.length > 5 ? 14 : 28 
+              }]
+            }}
+            options={{
+              responsive: true, 
+              maintainAspectRatio: false,
+              plugins: { 
+                legend: { display: false }, 
+                datalabels: { 
+                  anchor: 'end', 
+                  align: 'top', 
+                  formatter: (v) => v > 0 ? `${Math.round(v)}€` : '', 
+                  font: { size: 9, weight: '900' }, 
+                  color: '#64748b', 
+                  offset: 2 
                 } 
-              } 
-            },
-            layout: { padding: { top: 25, bottom: 10 } }
-          }}
-        />
+              },
+              scales: { 
+                y: { display: false, beginAtZero: true }, 
+                x: { 
+                  grid: { display: false }, 
+                  border: { display: false },
+                  ticks: { 
+                    font: { size: 10, weight: '700' }, 
+                    color: '#94a3b8',
+                    autoSkip: false, 
+                    maxRotation: 45, 
+                    minRotation: 45 
+                  } 
+                } 
+              },
+              layout: { padding: { top: 25, bottom: 10 } }
+            }}
+          />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
 
@@ -266,16 +289,29 @@ const renderYillikContent = () => {
             <Card className="rounded-3xl shadow-sm border-none bg-white mb-4" bodyStyle={{ padding: '20px' }}>
               <div className="mb-4"><Text strong className="text-gray-400 text-[10px] uppercase tracking-wider">6 Aylık Harcama Trendi</Text></div>
               <div style={{ height: "200px" }}>
-                <Line ref={lineChartRef} data={lineChartData} options={{ 
-                  responsive: true, 
-                  maintainAspectRatio: false, 
-                  plugins: { 
-                    legend: { display: false }, 
-                    datalabels: { align: "top", offset: 10, formatter: (v) => `${Math.round(v)}€`, font: { weight: "bold", size: 10 }, color: "#1e40af" } 
-                  }, 
-                  scales: { y: { display: false }, x: { grid: { display: false } } }, 
-                  layout: { padding: { top: 25, left: 10, right: 10 } } 
-                }} />
+                <Line
+                  ref={lineChartRef}
+                  data={lineChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      datalabels: {
+                        align: "top",
+                        offset: 10,
+                        formatter: (v) => `${Math.round(v)}€`,
+                        font: { weight: "bold", size: 10 },
+                        color: "#1e40af",
+                      },
+                    },
+                    scales: {
+                      y: { display: false },
+                      x: { grid: { display: false } },
+                    },
+                    layout: { padding: { top: 30, left: 10, right: 10 } }, // top: 25 → 30
+                  }}
+                />
               </div>
             </Card>
           ) : activeTab === "Yillik" ? (
@@ -305,4 +341,4 @@ const Raporlar = () => (
     </ConfigProvider>
 );
 
-export default Raporlar; 
+export default Raporlar;
