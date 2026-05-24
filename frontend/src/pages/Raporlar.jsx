@@ -8,6 +8,9 @@ import {
   UserOutlined,
   HistoryOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined
 } from "@ant-design/icons";
 import { useTotalsContext } from "../context/TotalsContext";
 import BottomNav from "../components/Home/BottomNav";
@@ -44,7 +47,7 @@ const categoryColors = {
 };
 
 const RaporlarContent = () => {
-  const { harcamalar = [], isLoading } = useTotalsContext();
+  const { harcamalar = [], gelirler = [], isLoading } = useTotalsContext();
   const lineChartRef = useRef(null);
   const now = dayjs();
   
@@ -56,9 +59,27 @@ const RaporlarContent = () => {
   const [yillikSubTab, setYillikSubTab] = useState("Market");
   const [timeRange, setTimeRange] = useState("YTD");
 
+  // Genel 6 aylık trend için
+  const last6Months = useMemo(() => {
+    const months = [];
+    for (let i = 5; i >= 0; i--) months.push(dayjs().subtract(i, "month"));
+    return months;
+  }, []);
+
+  // Kalan tablosu için: Kasım 2025'ten günümüze kadarki aylar
+  const kalanMonths = useMemo(() => {
+    const startMonth = dayjs("2025-11-01");
+    const currentMonth = dayjs();
+    const months = [];
+    let current = startMonth;
+    while (current.isBefore(currentMonth, 'month') || current.isSame(currentMonth, 'month')) {
+      months.push(current);
+      current = current.add(1, 'month');
+    }
+    return months;
+  }, []);
+
   const trendCalculation = useMemo(() => {
-    const last6Months = [];
-    for (let i = 5; i >= 0; i--) last6Months.push(dayjs().subtract(i, "month"));
     return {
       labels: last6Months.map((m) => m.format("MMM")),
       data: last6Months.map((month) => {
@@ -68,51 +89,60 @@ const RaporlarContent = () => {
         return Math.round(total); 
       })
     };
-  }, [harcamalar]);
+  }, [harcamalar, last6Months]);
 
-  // ─── DÜZELTİLMİŞ KISIM BAŞLANGICI ───────────────────────────────────────────
+  // Kalan (Net Bakiye) Tablo Verisi
+  const kalanTableData = useMemo(() => {
+    return kalanMonths.map((month) => {
+      const monthlyIncome = gelirler
+        .filter((g) => dayjs(g.createdAt).month() === month.month() && dayjs(g.createdAt).year() === month.year())
+        .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+
+      const monthlyExpense = harcamalar
+        .filter((h) => dayjs(h.createdAt).month() === month.month() && dayjs(h.createdAt).year() === month.year() && h.kategori?.toLowerCase() !== "tasarruf")
+        .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+      return {
+        id: month.format("YYYY-MM"),
+        label: month.format("MMMM YYYY"),
+        gelir: Math.round(monthlyIncome),
+        gider: Math.round(monthlyExpense),
+        net: Math.round(monthlyIncome - monthlyExpense)
+      };
+    }).reverse(); // En yeni ay en üstte olsun
+  }, [harcamalar, gelirler, kalanMonths]);
+
+  // 6 Aylık Harcama Trendi Gradient Tetikleyici
   useEffect(() => {
-    // Yıllık veya diğer sekmeler açıkken trend grafiği görünmüyor, çalıştırmaya gerek yok
     if (activeTab !== null) return;
-
-    // Chart henüz DOM'a mount olmamış olabilir; kısa bir timeout ile bekle
     const timer = setTimeout(() => {
       const chart = lineChartRef.current;
-
-      // Chart ref ya da veri hazır değilse çık
       if (!chart || !chart.ctx || trendCalculation.data.length === 0) return;
-
       const ctx = chart.ctx;
       const chartHeight = chart.height || 200;
-
-      // Gradient'i chart'ın gerçek yüksekliğine göre oluştur
       const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
       gradient.addColorStop(0, "rgba(59, 130, 246, 0.45)");
       gradient.addColorStop(1, "rgba(59, 130, 246, 0.01)");
 
       setLineChartData({
         labels: trendCalculation.labels,
-        datasets: [
-          {
-            data: trendCalculation.data,
-            fill: true,
-            backgroundColor: gradient,
-            borderColor: "#3b82f6",
-            borderWidth: 2.5,
-            tension: 0.25,          // 0.4'ten düşürdük — daha doğal eğri
-            pointRadius: 4,
-            pointBackgroundColor: "#ffffff",
-            pointBorderColor: "#3b82f6",
-            pointBorderWidth: 2,
-            pointHoverRadius: 6,
-          },
-        ],
+        datasets: [{
+          data: trendCalculation.data,
+          fill: true,
+          backgroundColor: gradient,
+          borderColor: "#3b82f6",
+          borderWidth: 2.5,
+          tension: 0.25,
+          pointRadius: 4,
+          pointBackgroundColor: "#ffffff",
+          pointBorderColor: "#3b82f6",
+          pointBorderWidth: 2,
+          pointHoverRadius: 6,
+        }],
       });
-    }, 50); // Chart'ın mount tamamlanmasını beklemek için 50ms yeterli
-
+    }, 50);
     return () => clearTimeout(timer);
   }, [trendCalculation, activeTab]);
-  // ─── DÜZELTİLMİŞ KISIM SONU ─────────────────────────────────────────────────
 
   const globalMax = useMemo(() => {
     const totals = {};
@@ -265,14 +295,21 @@ const RaporlarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="flex bg-gray-200/50 p-1 rounded-2xl gap-1">
+        <div className="flex bg-gray-200/50 p-1 rounded-2xl gap-0.5 overflow-x-auto no-scrollbar">
           {[
             { id: 'Genel', label: 'Genel', icon: <BarChartOutlined /> },
             { id: 'Market', label: 'Market', icon: <ShopOutlined /> },
             { id: 'Detay', label: 'Kişisel', icon: <UserOutlined /> },
-            { id: 'Yillik', label: 'Yıllık', icon: <HistoryOutlined /> }
+            { id: 'Yillik', label: 'Yıllık', icon: <HistoryOutlined /> },
+            { id: 'Kalan', label: 'Kalan', icon: <ThunderboltOutlined /> }
           ].map((item) => (
-            <button key={item.id} onClick={() => setActiveTab(prev => prev === item.id ? null : item.id)} className={`flex flex-1 items-center justify-center gap-2 py-2 text-[12px] font-bold rounded-xl transition-all duration-200 ${activeTab === item.id ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}>{item.icon} {item.label}</button>
+            <button 
+              key={item.id} 
+              onClick={() => setActiveTab(prev => prev === item.id ? null : item.id)} 
+              className={`flex flex-1 items-center justify-center gap-1.5 py-2 px-1 text-[11px] font-bold rounded-xl transition-all duration-200 white-space-nowrap ${activeTab === item.id ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+            >
+              {item.icon} {item.label}
+            </button>
           ))}
         </div>
 
@@ -309,13 +346,43 @@ const RaporlarContent = () => {
                       y: { display: false },
                       x: { grid: { display: false } },
                     },
-                    layout: { padding: { top: 30, left: 10, right: 10 } }, // top: 25 → 30
+                    layout: { padding: { top: 30, left: 10, right: 10 } },
                   }}
                 />
               </div>
             </Card>
           ) : activeTab === "Yillik" ? (
             <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}>{renderYillikContent()}</Card>
+          ) : activeTab === "Kalan" ? (
+            <div className="space-y-3">
+              {kalanTableData.length === 0 ? (
+                <Empty description="Kayıt yok" className="bg-white rounded-3xl p-12 shadow-sm border border-gray-50" />
+              ) : (
+                kalanTableData.map((row) => (
+                  <div key={row.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div className="flex flex-col w-1/3">
+                      <Text className="text-sm font-bold text-gray-800 capitalize">{row.label}</Text>
+                    </div>
+                    
+                    <div className="flex flex-col items-end w-1/3 space-y-1 pr-2 border-r border-gray-100">
+                      <div className="flex items-center text-[11px] font-semibold text-emerald-600">
+                        <ArrowUpOutlined className="text-[9px] mr-1" /> {row.gelir}€
+                      </div>
+                      <div className="flex items-center text-[11px] font-semibold text-rose-500">
+                        <ArrowDownOutlined className="text-[9px] mr-1" /> {row.gider}€
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end w-1/3 pl-2">
+                      <Text className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Net</Text>
+                      <Text className={`text-base font-black ${row.net >= 0 ? 'text-emerald-500' : 'text-rose-600'}`}>
+                        {row.net > 0 ? '+' : ''}{row.net}€
+                      </Text>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           ) : filteredHarcamalar.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-50"><Empty description="Kayıt yok" /></div>
           ) : activeTab === "Genel" ? (

@@ -53,3 +53,5 @@ src/
 └─ index.css / tailwind.css # Global stiller ve Tailwind ayarları
 
 
+
+bu proje mern projesi ve bu proje backend mangodb ve render.com. frontend ise vercel.com ile hepside ücretsiz versiyonlar ile iphone 15 için özel kullanılıyor. kişiye özel bir uygulama.
