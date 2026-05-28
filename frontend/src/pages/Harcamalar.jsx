@@ -12,7 +12,9 @@ import {
   SearchOutlined,
   ClockCircleOutlined,
   DownOutlined,
-  UpOutlined
+  UpOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -76,6 +78,7 @@ const HarcamalarContent = () => {
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
   const [searchTerm, setSearchTerm] = useState("");
   const [showFuture, setShowFuture] = useState(false); // Katlanabilir bölüm kontrolü
+  const [sortByAmount, setSortByAmount] = useState("date"); // "date", "desc", "asc"
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
@@ -120,6 +123,14 @@ const HarcamalarContent = () => {
     deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
   };
 
+  const toggleSort = () => {
+    setSortByAmount((prev) => {
+      if (prev === "date") return "desc";
+      if (prev === "desc") return "asc";
+      return "date";
+    });
+  };
+
   const { normalHarcamalar, futureHarcamalar } = useMemo(() => {
     const filtered = harcamalar.filter((h) => {
       const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
@@ -143,11 +154,20 @@ const HarcamalarContent = () => {
       }
     });
 
+    // Sıralama mantığı
+    if (sortByAmount === "desc") {
+      normal.sort((a, b) => Number(b.miktar || 0) - Number(a.miktar || 0));
+    } else if (sortByAmount === "asc") {
+      normal.sort((a, b) => Number(a.miktar || 0) - Number(b.miktar || 0));
+    } else {
+      normal.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
+    }
+
     return {
-      normalHarcamalar: normal.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()),
+      normalHarcamalar: normal,
       futureHarcamalar: future.sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf())
     };
-  }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now]);
+  }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now, sortByAmount]);
 
   const kategoriToplam = useMemo(
     () => normalHarcamalar
@@ -211,6 +231,18 @@ const HarcamalarContent = () => {
                 -{kategoriToplam.toFixed(2).replace('.', ',')}€
               </Text>
             </div>
+            
+            {/* Sıralama Butonu */}
+            <Button 
+              type={sortByAmount !== "date" ? "primary" : "default"}
+              shape="circle" 
+              size="middle"
+              onClick={toggleSort}
+              className="flex items-center justify-center border-gray-200"
+              icon={sortByAmount === "asc" ? <SortAscendingOutlined /> : <SortDescendingOutlined />}
+              title={sortByAmount === "date" ? "Tarihe Göre" : sortByAmount === "desc" ? "Büyükten Küçüğe" : "Küçükten Büyüğe"}
+            />
+
             <Select value={selectedCategory} onChange={setSelectedCategory} size="middle" variant="filled" className="w-40" style={{ borderRadius: '12px' }}>
               <Option value="Tümü">Tümü</Option>
               {ALL_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
