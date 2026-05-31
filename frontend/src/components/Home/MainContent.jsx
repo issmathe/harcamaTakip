@@ -6,6 +6,7 @@ import {
   Button,
   message,
   Select,
+  Checkbox,
 } from "antd";
 
 import dayjs from "dayjs";
@@ -74,7 +75,7 @@ const CategoryIcon = ({ type, isTop }) => {
   );
 
   return (
-    <div className={`relative w-full h-full flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl 
+    <div className={`relative w-full h-full flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl  
       ${isTop ? 'scale-125' : 'scale-100 opacity-60'}`}
       style={{ 
         backgroundColor: isTop ? config.bg : 'rgba(255,255,255,0.05)',
@@ -191,6 +192,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [amount, setAmount] = useState("");
+  const [isTaksitli, setIsTaksitli] = useState(false);
+  const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
 
   const [form] = Form.useForm();
   const [gelirForm] = Form.useForm();
@@ -310,6 +313,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setSelectedCategory(category);
     setIsModalVisible(true);
     setAmount("");
+    setIsTaksitli(false);
+    setCurrentTaksitSayisi("2");
     form.resetFields();
     form.setFieldsValue({ tarih: dayjs().toDate() });
     setShowNote(false);
@@ -319,6 +324,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setIsModalVisible(false);
     setSelectedCategory(null);
     setAmount("");
+    setIsTaksitli(false);
+    setCurrentTaksitSayisi("2");
     form.resetFields();
     setShowNote(false);
   };
@@ -339,14 +346,29 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   };
 
   const onHarcamaFinish = (values) => {
-    const num = parseFloat(amount.replace(",", "."));
-    if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
+    const totalAmount = parseFloat(amount.replace(",", "."));
+    if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
+
+    let finalAmount = totalAmount;
+    let taksitSayisi = 1;
+    let customNote = values.not || "";
+
+    if (isTaksitli && values.taksitSayisi) {
+      taksitSayisi = parseInt(values.taksitSayisi, 10);
+      finalAmount = parseFloat((totalAmount / taksitSayisi).toFixed(2));
+      
+      // Çıktı ekranlarında ve veritabanı kayıtlarında doğrudan gözükmesi için nota ekleme yapıyoruz
+      const taksitIbaresi = `[1/${taksitSayisi} Taksit]`;
+      customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
+    }
 
     harcamaMutation.mutate({
-      miktar: num,
+      miktar: finalAmount,
+      toplamMiktar: totalAmount,
+      taksitSayisi: taksitSayisi,
       kategori: selectedCategory || "Diğer",
       altKategori: ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) ? values.altKategori : "",
-      not: values.not || "",
+      not: customNote,
       createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
   };
@@ -433,6 +455,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           <div className="text-4xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
           </div>
+          {isTaksitli && (
+            <div className="text-xs text-slate-400 mt-1 font-semibold flex flex-col gap-0.5">
+              <div>Aylık Ödeme: {(parseFloat(amount.replace(",", ".")) / parseInt(currentTaksitSayisi || 1, 10) || 0).toFixed(2).replace(".", ",")} €</div>
+              <div className="text-blue-400 text-[11px]">Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan: {parseInt(currentTaksitSayisi, 10) - 1})</div>
+            </div>
+          )}
         </div>
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
           <div className="grid grid-cols-2 gap-3 items-end"> 
@@ -450,6 +478,36 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               </Form.Item>
             )}
           </div>
+
+          <div className="flex items-center justify-between mt-3 px-1">
+            <Checkbox 
+              checked={isTaksitli} 
+              onChange={(e) => {
+                setIsTaksitli(e.target.checked);
+                if(e.target.checked) {
+                  form.setFieldsValue({ taksitSayisi: "2" });
+                  setCurrentTaksitSayisi("2");
+                }
+              }}
+              className="text-gray-300 text-xs font-medium"
+            >
+              Taksitli Alışveriş
+            </Checkbox>
+            {isTaksitli && (
+              <Form.Item name="taksitSayisi" className="mb-0" rules={[{ required: true, message: "Seç" }]}>
+                <Select 
+                  style={{ width: 100, height: '32px' }} 
+                  dropdownStyle={{ borderRadius: '8px' }}
+                  onChange={(val) => setCurrentTaksitSayisi(val)}
+                >
+                  {[2, 3, 4, 5, 6, 9, 12].map(m => (
+                    <Option key={m} value={m.toString()}>{m} Taksit</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            )}
+          </div>
+
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
             <Form.Item name="not" className="mt-2 mb-0">
