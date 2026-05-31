@@ -32,6 +32,7 @@ import {
   Users,
   GraduationCap,
   Plus,
+  XCircle,
 } from "lucide-react";
 
 import axios from "axios";
@@ -194,6 +195,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [amount, setAmount] = useState("");
   const [isTaksitli, setIsTaksitli] = useState(false);
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
+  const [isAbonelik, setIsAbonelik] = useState(false);
+
+  // Mevcut aktif lokal abonelikleri component seviyesinde izlemek için state
+  const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
   const [form] = Form.useForm();
   const [gelirForm] = Form.useForm();
@@ -202,6 +207,14 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [lastAngle, setLastAngle] = useState(0);
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
+
+  // İlk yüklemede lokal abonelikleri çek
+  useEffect(() => {
+    const stored = localStorage.getItem("active_subscriptions");
+    if (stored) {
+      setActiveSubscriptions(JSON.parse(stored));
+    }
+  }, [isModalVisible]);
 
   const harcamaMutation = useMutation({
     mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
@@ -222,6 +235,65 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
+
+  // Otomatik Abonelik Kontrolü ve Tetikleme
+  useEffect(() => {
+    const checkAndTriggerSubscriptions = async () => {
+      const stored = localStorage.getItem("active_subscriptions");
+      if (!stored) return;
+
+      try {
+        const subscriptions = JSON.parse(stored);
+        const currentMonthStr = dayjs().format("YYYY-MM");
+        let hasNewTrigger = false;
+
+        for (const subId in subscriptions) {
+          const sub = subscriptions[subId];
+          if (!sub.triggeredMonths.includes(currentMonthStr)) {
+            await axios.post(`${API_URL}/harcama`, {
+              miktar: sub.miktar,
+              toplamMiktar: sub.miktar,
+              taksitSayisi: 1,
+              kategori: sub.kategori,
+              altKategori: sub.altKategori || "",
+              not: sub.not,
+              createdAt: dayjs().toISOString(),
+            });
+
+            sub.triggeredMonths.push(currentMonthStr);
+            hasNewTrigger = true;
+          }
+        }
+
+        if (hasNewTrigger) {
+          localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
+          setActiveSubscriptions(subscriptions);
+          await refetch();
+          message.info("Aylık düzenli ödemeleriniz otomatik olarak sisteme işlendi.");
+        }
+      } catch (err) {
+        console.error("Abonelik tetikleme hatası:", err);
+      }
+    };
+
+    if (harcamalar && harcamalar.length > 0) {
+      checkAndTriggerSubscriptions();
+    }
+  }, [harcamalar, refetch]);
+
+  // Abonelik İptal Etme Fonksiyonu
+  const handleCancelSubscription = (subId) => {
+    const stored = localStorage.getItem("active_subscriptions");
+    if (stored) {
+      const subscriptions = JSON.parse(stored);
+      if (subscriptions[subId]) {
+        delete subscriptions[subId];
+        localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
+        setActiveSubscriptions(subscriptions);
+        message.success("Aylık düzenli ödeme aboneliği başarıyla iptal edildi.");
+      }
+    }
+  };
 
   const monthlyCategoryTotals = useMemo(() => {
     const startOfMonth = dayjs().startOf('month');
@@ -314,6 +386,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setIsModalVisible(true);
     setAmount("");
     setIsTaksitli(false);
+    setIsAbonelik(false);
     setCurrentTaksitSayisi("2");
     form.resetFields();
     form.setFieldsValue({ tarih: dayjs().toDate() });
@@ -325,6 +398,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setSelectedCategory(null);
     setAmount("");
     setIsTaksitli(false);
+    setIsAbonelik(false);
     setCurrentTaksitSayisi("2");
     form.resetFields();
     setShowNote(false);
@@ -357,9 +431,29 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       taksitSayisi = parseInt(values.taksitSayisi, 10);
       finalAmount = parseFloat((totalAmount / taksitSayisi).toFixed(2));
       
-      // Çıktı ekranlarında ve veritabanı kayıtlarında doğrudan gözükmesi için nota ekleme yapıyoruz
       const taksitIbaresi = `[1/${taksitSayisi} Taksit]`;
       customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
+    }
+
+    // Eğer Düzenli Aylık Ödeme (Abonelik) Seçildiyse
+    if (selectedCategory === "Fatura" && isAbonelik) {
+      const subId = "SUB_" + Date.now();
+      const currentMonthStr = dayjs(values.tarih || new Date()).format("YYYY-MM");
+      
+      const aboIbaresi = `[Abonelik ID: ${subId}]`;
+      customNote = customNote ? `${aboIbaresi} ${customNote}` : aboIbaresi;
+
+      const currentSubs = localStorage.getItem("active_subscriptions") ? JSON.parse(localStorage.getItem("active_subscriptions")) : {};
+      currentSubs[subId] = {
+        id: subId,
+        miktar: finalAmount,
+        kategori: selectedCategory,
+        altKategori: values.altKategori || "",
+        not: customNote,
+        triggeredMonths: [currentMonthStr]
+      };
+      localStorage.setItem("active_subscriptions", JSON.stringify(currentSubs));
+      setActiveSubscriptions(currentSubs);
     }
 
     harcamaMutation.mutate({
@@ -461,7 +555,35 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <div className="text-blue-400 text-[11px]">Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan: {parseInt(currentTaksitSayisi, 10) - 1})</div>
             </div>
           )}
+          {selectedCategory === "Fatura" && isAbonelik && (
+            <div className="text-xs text-emerald-400 mt-1 font-semibold">
+              🔄 Her ay otomatik olarak tekrarlanacak.
+            </div>
+          )}
         </div>
+
+        {/* Aktif Abonelikleri Listeleme ve İptal Etme Bölümü */}
+        {selectedCategory === "Fatura" && Object.keys(activeSubscriptions).length > 0 && (
+          <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
+            <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
+            {Object.values(activeSubscriptions).map((sub) => (
+              <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
+                <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
+                <Button 
+                  type="text" 
+                  danger 
+                  size="small" 
+                  onClick={() => handleCancelSubscription(sub.id)}
+                  icon={<XCircle size={14} />}
+                  className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
+                >
+                  İptal Et
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
           <div className="grid grid-cols-2 gap-3 items-end"> 
             <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
@@ -480,20 +602,36 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
 
           <div className="flex items-center justify-between mt-3 px-1">
-            <Checkbox 
-              checked={isTaksitli} 
-              onChange={(e) => {
-                setIsTaksitli(e.target.checked);
-                if(e.target.checked) {
-                  form.setFieldsValue({ taksitSayisi: "2" });
-                  setCurrentTaksitSayisi("2");
-                }
-              }}
-              className="text-gray-300 text-xs font-medium"
-            >
-              Taksitli Alışveriş
-            </Checkbox>
-            {isTaksitli && (
+            {selectedCategory === "Fatura" ? (
+              <Checkbox 
+                checked={isAbonelik} 
+                onChange={(e) => {
+                  setIsAbonelik(e.target.checked);
+                  if(e.target.checked) {
+                    setIsTaksitli(false);
+                  }
+                }}
+                className="text-gray-300 text-xs font-medium"
+              >
+                Aylık Düzenli Ödeme (Otomatik)
+              </Checkbox>
+            ) : (
+              <Checkbox 
+                checked={isTaksitli} 
+                onChange={(e) => {
+                  setIsTaksitli(e.target.checked);
+                  if(e.target.checked) {
+                    form.setFieldsValue({ taksitSayisi: "2" });
+                    setCurrentTaksitSayisi("2");
+                  }
+                }}
+                className="text-gray-300 text-xs font-medium"
+              >
+                Taksitli Alışveriş
+              </Checkbox>
+            )}
+            
+            {isTaksitli && selectedCategory !== "Fatura" && (
               <Form.Item name="taksitSayisi" className="mb-0" rules={[{ required: true, message: "Seç" }]}>
                 <Select 
                   style={{ width: 100, height: '32px' }} 
