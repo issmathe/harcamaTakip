@@ -44,7 +44,6 @@ dayjs.extend(isSameOrAfter);
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
 const { Option } = Select;
 
-// Kategori - İkon - Renk Eşleşmesi
 const CATEGORY_CONFIG = {
   Market: { icon: ShoppingCart, color: "#10b981", bg: "rgba(16, 185, 129, 0.2)" },
   Giyim: { icon: Shirt, color: "#ec4899", bg: "rgba(236, 72, 153, 0.2)" },
@@ -197,7 +196,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
   const [isAbonelik, setIsAbonelik] = useState(false);
 
-  // Mevcut aktif lokal abonelikleri component seviyesinde izlemek için state
   const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
   const [form] = Form.useForm();
@@ -208,7 +206,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
-  // İlk yüklemede lokal abonelikleri çek
   useEffect(() => {
     const stored = localStorage.getItem("active_subscriptions");
     if (stored) {
@@ -236,7 +233,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  // Otomatik Abonelik Kontrolü ve Tetikleme
+  // Otomatik Abonelik Kontrolü ve Tetikleme (Düzeltilmiş Bölüm)
   useEffect(() => {
     const checkAndTriggerSubscriptions = async () => {
       const stored = localStorage.getItem("active_subscriptions");
@@ -244,12 +241,23 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
       try {
         const subscriptions = JSON.parse(stored);
-        const currentMonthStr = dayjs().format("YYYY-MM");
+        const today = dayjs();
+        const currentMonthStr = today.format("YYYY-MM");
+        const currentDay = today.date();
+        const daysInMonth = today.daysInMonth();
         let hasNewTrigger = false;
 
         for (const subId in subscriptions) {
           const sub = subscriptions[subId];
-          if (!sub.triggeredMonths.includes(currentMonthStr)) {
+          
+          // Eğer bu ay için zaten kayıt atılmışsa pas geç
+          if (sub.triggeredMonths.includes(currentMonthStr)) continue;
+
+          // Ayın son günü kontrolü mantığı (Örn: 31 Mayıs'ta başlayan abonelik için Haziran'da 30. gün tetiklenmeli)
+          const targetDay = Math.min(sub.kayitGunu, daysInMonth);
+
+          // Eğer bugün, olması gereken ödeme günü ise ya da (gün geçildiyse ve acil tetikleme gerekiyorsa)
+          if (currentDay === targetDay) {
             await axios.post(`${API_URL}/harcama`, {
               miktar: sub.miktar,
               toplamMiktar: sub.miktar,
@@ -257,7 +265,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               kategori: sub.kategori,
               altKategori: sub.altKategori || "",
               not: sub.not,
-              createdAt: dayjs().toISOString(),
+              createdAt: today.toISOString(),
             });
 
             sub.triggeredMonths.push(currentMonthStr);
@@ -281,7 +289,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   }, [harcamalar, refetch]);
 
-  // Abonelik İptal Etme Fonksiyonu
   const handleCancelSubscription = (subId) => {
     const stored = localStorage.getItem("active_subscriptions");
     if (stored) {
@@ -435,10 +442,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
     }
 
-    // Eğer Düzenli Aylık Ödeme (Abonelik) Seçildiyse
+    // Düzenli Aylık Ödeme Kayıt Mantığı (Düzeltilmiş Bölüm)
     if (selectedCategory === "Fatura" && isAbonelik) {
       const subId = "SUB_" + Date.now();
-      const currentMonthStr = dayjs(values.tarih || new Date()).format("YYYY-MM");
+      const chosenDate = dayjs(values.tarih || new Date());
+      const currentMonthStr = chosenDate.format("YYYY-MM");
+      const kayitGunu = chosenDate.date(); // Kaydedilen günün numarasını (Örn: 31) saklıyoruz
       
       const aboIbaresi = `[Abonelik ID: ${subId}]`;
       customNote = customNote ? `${aboIbaresi} ${customNote}` : aboIbaresi;
@@ -450,6 +459,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         kategori: selectedCategory,
         altKategori: values.altKategori || "",
         not: customNote,
+        kayitGunu: kayitGunu, // İlerleyen aylarda bugünün tarihiyle eşleştirmek üzere state'e ekledik
         triggeredMonths: [currentMonthStr]
       };
       localStorage.setItem("active_subscriptions", JSON.stringify(currentSubs));
@@ -562,7 +572,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           )}
         </div>
 
-        {/* Aktif Abonelikleri Listeleme ve İptal Etme Bölümü */}
         {selectedCategory === "Fatura" && Object.keys(activeSubscriptions).length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
@@ -654,7 +663,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYRET</Button>
         </Form>
       </Modal>
 
