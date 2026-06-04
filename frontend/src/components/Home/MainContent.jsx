@@ -233,7 +233,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     onError: () => message.error("Gelir eklenirken hata oluştu."),
   });
 
-  // Otomatik Abonelik Kontrolü ve Tetikleme (Düzeltilmiş Bölüm)
   useEffect(() => {
     const checkAndTriggerSubscriptions = async () => {
       const stored = localStorage.getItem("active_subscriptions");
@@ -250,13 +249,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         for (const subId in subscriptions) {
           const sub = subscriptions[subId];
           
-          // Eğer bu ay için zaten kayıt atılmışsa pas geç
           if (sub.triggeredMonths.includes(currentMonthStr)) continue;
 
-          // Ayın son günü kontrolü mantığı (Örn: 31 Mayıs'ta başlayan abonelik için Haziran'da 30. gün tetiklenmeli)
           const targetDay = Math.min(sub.kayitGunu, daysInMonth);
 
-          // Eğer bugün, olması gereken ödeme günü ise ya da (gün geçildiyse ve acil tetikleme gerekiyorsa)
           if (currentDay === targetDay) {
             await axios.post(`${API_URL}/harcama`, {
               miktar: sub.miktar,
@@ -442,7 +438,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
     }
 
-    // Düzenli Aylık Ödeme Kayıt Mantığı (Fatura veya İletisim Kategorisi İçin)
     if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
       const subId = "SUB_" + Date.now();
       const chosenDate = dayjs(values.tarih || new Date());
@@ -488,6 +483,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
   };
+
+  // Aktif kategorinin aboneliklerini filtreliyoruz
+  const filteredSubscriptions = useMemo(() => {
+    return Object.values(activeSubscriptions).filter(sub => sub.kategori === selectedCategory);
+  }, [activeSubscriptions, selectedCategory]);
 
   return (
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
@@ -572,10 +572,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           )}
         </div>
 
-        {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && Object.keys(activeSubscriptions).length > 0 && (
+        {/* Sadece ilgili kategoriye ait abonelikler varsa listelenecek alan */}
+        {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && filteredSubscriptions.length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
-            {Object.values(activeSubscriptions).map((sub) => (
+            {filteredSubscriptions.map((sub) => (
               <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
                 <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
                 <Button 
@@ -692,7 +693,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYRET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
         </Form>
       </Modal>
 
