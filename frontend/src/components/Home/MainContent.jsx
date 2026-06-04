@@ -442,12 +442,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
     }
 
-    // Düzenli Aylık Ödeme Kayıt Mantığı (Düzeltilmiş Bölüm)
-    if (selectedCategory === "Fatura" && isAbonelik) {
+    // Düzenli Aylık Ödeme Kayıt Mantığı (Fatura veya İletisim Kategorisi İçin)
+    if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
       const subId = "SUB_" + Date.now();
       const chosenDate = dayjs(values.tarih || new Date());
       const currentMonthStr = chosenDate.format("YYYY-MM");
-      const kayitGunu = chosenDate.date(); // Kaydedilen günün numarasını (Örn: 31) saklıyoruz
+      const kayitGunu = chosenDate.date(); 
       
       const aboIbaresi = `[Abonelik ID: ${subId}]`;
       customNote = customNote ? `${aboIbaresi} ${customNote}` : aboIbaresi;
@@ -459,7 +459,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         kategori: selectedCategory,
         altKategori: values.altKategori || "",
         not: customNote,
-        kayitGunu: kayitGunu, // İlerleyen aylarda bugünün tarihiyle eşleştirmek üzere state'e ekledik
+        kayitGunu: kayitGunu, 
         triggeredMonths: [currentMonthStr]
       };
       localStorage.setItem("active_subscriptions", JSON.stringify(currentSubs));
@@ -565,14 +565,14 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <div className="text-blue-400 text-[11px]">Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan: {parseInt(currentTaksitSayisi, 10) - 1})</div>
             </div>
           )}
-          {selectedCategory === "Fatura" && isAbonelik && (
+          {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik && (
             <div className="text-xs text-emerald-400 mt-1 font-semibold">
               🔄 Her ay otomatik olarak tekrarlanacak.
             </div>
           )}
         </div>
 
-        {selectedCategory === "Fatura" && Object.keys(activeSubscriptions).length > 0 && (
+        {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && Object.keys(activeSubscriptions).length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
             {Object.values(activeSubscriptions).map((sub) => (
@@ -610,8 +610,37 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between mt-3 px-1">
-            {selectedCategory === "Fatura" ? (
+          <div className="flex items-center justify-between mt-3 px-1 gap-2">
+            {selectedCategory === "İletisim" ? (
+              <>
+                <Checkbox 
+                  checked={isTaksitli} 
+                  onChange={(e) => {
+                    setIsTaksitli(e.target.checked);
+                    if(e.target.checked) {
+                      setIsAbonelik(false);
+                      form.setFieldsValue({ taksitSayisi: "2" });
+                      setCurrentTaksitSayisi("2");
+                    }
+                  }}
+                  className="text-gray-300 text-xs font-medium"
+                >
+                  Taksitli Alışveriş
+                </Checkbox>
+                <Checkbox 
+                  checked={isAbonelik} 
+                  onChange={(e) => {
+                    setIsAbonelik(e.target.checked);
+                    if(e.target.checked) {
+                      setIsTaksitli(false);
+                    }
+                  }}
+                  className="text-gray-300 text-xs font-medium"
+                >
+                  Aylık Düzenli Ödeme (Otomatik)
+                </Checkbox>
+              </>
+            ) : selectedCategory === "Fatura" ? (
               <Checkbox 
                 checked={isAbonelik} 
                 onChange={(e) => {
