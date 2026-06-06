@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const Gelir = require("../models/Gelir");
 const Harcama = require("../models/Harcama"); // Bakiye kontrolü için harcamalar da gerekiyor
-const mongoose = require("mongoose");
+const mongoose = require("mongoose"); // Transaction için eklendi
 
-// 🔄 Kategoriler Arası Para Transferi (Bakiye Kontrollü Versiyon)
+// 🔄 Kategoriler Arası Para Transferi (Akıllı Bakiye Kontrollü)
 router.post("/transfer", async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -21,28 +21,51 @@ router.post("/transfer", async (req, res) => {
     }
 
     const transferMiktari = Math.abs(Number(miktar));
+    let anlikBakiye = 0;
 
-    // --- BAKİYE KONTROLÜ ---
-    // 1. Kaynak kategoriye ait tüm geçmiş gelirleri (veya pozitif transferleri) getir
-    const kaynakGelirler = await Gelir.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
-    
-    // 2. Kaynak kategoriye ait tüm harcamaları getir
-    const kaynakHarcamalar = await Harcama.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+    const isGelirKategorisi = kaynakKategori.toLowerCase() === "gelir";
 
-    // 3. Kaynak kategorinin anlık toplam bakiyesini hesapla
-    const toplamGelir = kaynakGelirler.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
-    const toplamGider = kaynakHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-    const anlikBakiye = toplamGelir - toplamGider;
+    // --- AKILLI BAKİYE KONTROLÜ ---
+    if (isGelirKategorisi) {
+      // 1. Senaryo: Kaynak ana nakit havuzu "gelir" ise (Gerçek Banka Bakiyesi Kontrolü)
+      const tumGercekGelirler = await Gelir.find({ kategori: { $regex: /^gelir$/i } }).session(session);
+      
+      // Saf ana gelirler (Daha önceki transfer girişlerini hariç tutuyoruz)
+      const toplamBankIncome = tumGercekGelirler
+        .filter(g => !g.not || !g.not.includes("[Transfer"))
+        .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 4. Eğer transfer edilmek istenen miktar mevcut bakiyeden büyükse işlemi iptal et
+      // Bankadan çıkan tüm harcamalar
+      const tumHarcamalar = await Harcama.find().session(session);
+      const totalBankExit = tumHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+      // Daha önce "gelir"den diğer kutulara aktarılan (eksi işaretli) transferler
+      const eskiTransferler = tumGercekGelirler
+        .filter(g => g.not && g.not.includes("[Transfer ->") && g.miktar < 0)
+        .reduce((sum, g) => sum + Math.abs(g.miktar), 0);
+
+      // Bankada harcanabilir net bakiye
+      anlikBakiye = toplamBankIncome - totalBankExit - eskiTransferler;
+    } else {
+      // 2. Senaryo: Kaynak "tasarruf", "birikim" gibi alt kutulardan biriyse
+      const kutuGelirleri = await Gelir.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+      const kutuHarcamalari = await Harcama.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+
+      const toplamGelir = kutuGelirleri.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+      const toplamGider = kutuHarcamalari.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+      
+      anlikBakiye = toplamGelir - toplamGider;
+    }
+
+    // Yetersiz bakiye durumunda işlemi kilitle ve iptal et
     if (anlikBakiye < transferMiktari) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ 
-        message: `Yetersiz bakiye! ${kaynakKategori} kategorisinde sadece €${anlikBakiye.toFixed(2)} var. Transfer edilmek istenen: €${transferMiktari.toFixed(2)}` 
+        message: `Yetersiz bakiye! ${kaynakKategori} havuzunda sadece €${anlikBakiye.toFixed(2)} var. Transfer edilmek istenen: €${transferMiktari.toFixed(2)}` 
       });
     }
-    // ------------------------
+    // ------------------------------
 
     const islemTarihi = createdAt ? new Date(createdAt) : new Date();
     const ortakTransferId = "TRF_" + Date.now();

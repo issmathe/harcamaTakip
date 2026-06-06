@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef } from "react";
 import { Typography, Button, Modal, Input, Select, message, Spin, Empty, ConfigProvider } from "antd";
 import { 
   EditOutlined, DeleteOutlined, 
-  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined
+  LeftOutlined, RightOutlined, BankOutlined, SaveOutlined, EuroCircleOutlined, SwapOutlined
 } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
@@ -31,7 +31,8 @@ const MESSAGE_KEY = 'silmeIslemi';
 
 const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
 
-const getCategoryDetails = (kategori) => {
+const getCategoryDetails = (kategori, isTransfer) => {
+  if (isTransfer) return { icon: <SwapOutlined />, color: 'bg-blue-50 text-blue-500' };
   const cat = kategori?.toLowerCase();
   if (cat === 'gelir') return { icon: <BankOutlined />, color: 'bg-emerald-50 text-emerald-500' };
   if (cat === 'tasarruf') return { icon: <SaveOutlined />, color: 'bg-blue-50 text-blue-500' };
@@ -63,20 +64,81 @@ const GelirlerContent = () => {
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format('MMMM YYYY');
   const isFutureMonth = dayjs().year(selectedYear).month(selectedMonth).isAfter(now, 'month');
 
+  // 🔄 AKILLI TRANSFER BİRLEŞTİRME SÜZGECİ
   const filteredGelirler = useMemo(() => {
+    const filtered = (gelirler || []).filter((g) => {
+      const t = dayjs(g.createdAt);
+      return t.month() === selectedMonth && t.year() === selectedYear;
+    });
+
+    const birlesikListe = [];
+    const islenenTransferler = new Set();
+
+    filtered.forEach((kayit) => {
+      const transferIdMatch = kayit.not && kayit.not.match(/\| ID:(TRF_\d+)/);
+
+      if (transferIdMatch) {
+        const transferId = transferIdMatch[1];
+        
+        if (!islenenTransferler.has(transferId)) {
+          islenenTransferler.add(transferId);
+
+          // Eşleşen diğer bacağı bul (Biri pozitif miktar diğeri negatif miktardır)
+          const esKayit = filtered.find(x => x._id !== kayit._id && x.not && x.not.includes(transferId));
+
+          let kaynak = kayit.kategori;
+          let hedef = kayit.kategori;
+          let temizNot = kayit.not.split(" | ID:")[0];
+
+          if (esKayit) {
+            if (kayit.miktar < 0) {
+              kaynak = kayit.kategori;
+              hedef = esKayit.kategori;
+            } else {
+              kaynak = esKayit.kategori;
+              hedef = kayit.kategori;
+            }
+          }
+
+          // Temiz not alanından teknik transfer yönlendirmelerini temizle
+          temizNot = temizNot.replace(/\[Transfer -> [^\]]+\]\s*/g, "").replace(/\[Transfer <- [^\]]+\]\s*/g, "").trim();
+
+          // Tek bir sanal transfer objesi oluşturuyoruz
+          birlesikListe.push({
+            ...kayit,
+            _id: kayit._id, // Silme işlemi tetiklendiğinde backend regex ile ikisini de silecek
+            isTransfer: true,
+            kaynakKategori: kaynak,
+            hedefKategori: hedef,
+            miktar: Math.abs(kayit.miktar), // Ekranda sadece net transfer miktarını göster
+            temizNot: temizNot
+          });
+        }
+      } else {
+        // Düz normal gelir kaydıysa dokunmadan listeye ekle
+        birlesikListe.push({ ...kayit, isTransfer: false });
+      }
+    });
+
+    // Tarihe göre yeniden sırala
+    return birlesikListe.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
+  }, [gelirler, selectedMonth, selectedYear]);
+
+  // Dönem toplamında transferlerin birbirini ezmesini engellemek için sadece gerçek gelirleri topluyoruz
+  const aylikToplam = useMemo(() => {
     return (gelirler || [])
       .filter((g) => {
         const t = dayjs(g.createdAt);
-        return t.month() === selectedMonth && t.year() === selectedYear;
+        const transferIdMatch = g.not && g.not.match(/\| ID:(TRF_\d+)/);
+        return t.month() === selectedMonth && t.year() === selectedYear && !transferIdMatch;
       })
-      .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
   }, [gelirler, selectedMonth, selectedYear]);
 
-  const aylikToplam = useMemo(() => {
-    return filteredGelirler.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
-  }, [filteredGelirler]);
-
   const openEditModal = (gelir) => {
+    if (gelir.isTransfer) {
+      return message.warning("Transfer işlemleri doğrudan düzenlenemez. Silip yeniden ekleyebilirsiniz.");
+    }
     setEditingGelir(gelir);
     setFormData({
       miktar: gelir.miktar,
@@ -179,7 +241,7 @@ const GelirlerContent = () => {
           <div className="space-y-3 transition-all">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {filteredGelirler.map((gelir) => {
-                const { icon, color } = getCategoryDetails(gelir.kategori);
+                const { icon, color } = getCategoryDetails(gelir.kategori, gelir.isTransfer);
                 const isToday = dayjs(gelir.createdAt).isSame(now, 'day');
 
                 return (
@@ -188,27 +250,49 @@ const GelirlerContent = () => {
                     leadingActions={leadingActions(gelir)} 
                     trailingActions={trailingActions(gelir)}
                   >
-                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-gray-50'}`}>
+                    <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${
+                      gelir.isTransfer 
+                        ? 'bg-blue-50/20 border-blue-100' 
+                        : isToday ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-gray-50'
+                    }`}>
                       <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg`}>
                         {icon}
                       </div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className={`text-xs uppercase tracking-wide ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>{gelir.kategori}</Text>
-                          <Text className="text-base font-black text-emerald-600">+{gelir.miktar}€</Text>
+                          {gelir.isTransfer ? (
+                            <Text strong className="text-xs uppercase tracking-wide text-blue-500">
+                              {gelir.kaynakKategori} ➔ {gelir.hedefKategori}
+                            </Text>
+                          ) : (
+                            <Text strong className={`text-xs uppercase tracking-wide ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>{gelir.kategori}</Text>
+                          )}
+                          <Text className={`text-base font-black ${gelir.isTransfer ? 'text-blue-500' : 'text-emerald-600'}`}>
+                            {gelir.isTransfer ? "" : "+"}{gelir.miktar}€
+                          </Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
                           <div className="flex flex-col">
-                            <Text className={`text-[10px] font-medium ${isToday ? 'text-emerald-400' : 'text-gray-400'}`}>
+                            <Text className={`text-[10px] font-medium ${gelir.isTransfer ? 'text-blue-400' : isToday ? 'text-emerald-400' : 'text-gray-400'}`}>
                                 {isToday ? "Bugün, " : ""}{dayjs(gelir.createdAt).format('DD MMMM, HH:mm')}
                             </Text>
-                            {gelir.not && (
+                            {gelir.isTransfer ? (
+                              <Text className="text-[11px] text-gray-400 italic truncate max-w-[180px] mt-0.5">
+                                🔄 Transfer {gelir.temizNot ? `| ${gelir.temizNot}` : ""}
+                              </Text>
+                            ) : (
+                              gelir.not && (
                                 <Text className="text-[11px] text-gray-400 italic truncate max-w-[150px] mt-0.5">
                                     {gelir.not}
                                 </Text>
+                              )
                             )}
                           </div>
-                          {isToday && <div className="bg-emerald-100 px-2 py-0.5 rounded-md"><Text className="text-[9px] text-emerald-600 uppercase font-bold">Yeni</Text></div>}
+                          {isToday && (
+                            <div className={`px-2 py-0.5 rounded-md ${gelir.isTransfer ? 'bg-blue-100' : 'bg-emerald-100'}`}>
+                              <Text className={`text-[9px] uppercase font-bold ${gelir.isTransfer ? 'text-blue-600' : 'text-emerald-600'}`}>Yeni</Text>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
