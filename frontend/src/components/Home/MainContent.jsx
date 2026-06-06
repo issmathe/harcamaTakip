@@ -7,6 +7,7 @@ import {
   message,
   Select,
   Checkbox,
+  Radio,
 } from "antd";
 
 import dayjs from "dayjs";
@@ -33,6 +34,7 @@ import {
   GraduationCap,
   Plus,
   XCircle,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import axios from "axios";
@@ -195,6 +197,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [isTaksitli, setIsTaksitli] = useState(false);
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
   const [isAbonelik, setIsAbonelik] = useState(false);
+  const [gelirIslemTuru, setGelirIslemTuru] = useState("gelir"); // "gelir" veya "transfer"
 
   const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
@@ -231,6 +234,19 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       handleGelirCancel();
     },
     onError: () => message.error("Gelir eklenirken hata oluştu."),
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: (data) => axios.post(`${API_URL}/gelir/transfer`, data),
+    onSuccess: async () => {
+      message.success("Transfer başarıyla gerçekleşti!");
+      await refetch();
+      handleGelirCancel();
+    },
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || "Transfer sırasında hata oluştu.";
+      message.error(errMsg);
+    },
   });
 
   useEffect(() => {
@@ -410,14 +426,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const handleGelirClick = () => {
     setIsGelirModalVisible(true);
     setAmount("");
+    setGelirIslemTuru("gelir");
     gelirForm.resetFields();
-    gelirForm.setFieldsValue({ tarih: dayjs().toDate(), kategori: "gelir" });
+    gelirForm.setFieldsValue({ tarih: dayjs().toDate(), kategori: "gelir", kaynakKategori: "gelir", hedefKategori: "tasarruf" });
     setShowNote(false);
   };
 
   const handleGelirCancel = () => {
     setIsGelirModalVisible(false);
     setAmount("");
+    setGelirIslemTuru("gelir");
     gelirForm.resetFields();
     setShowNote(false);
   };
@@ -476,15 +494,27 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     const num = parseFloat(amount.replace(",", "."));
     if (isNaN(num) || num <= 0) return message.warning("Miktar girin.");
 
-    gelirMutation.mutate({
-      miktar: num,
-      kategori: values.kategori || "gelir",
-      not: values.not || "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
-    });
+    if (gelirIslemTuru === "transfer") {
+      if (values.kaynakKategori === values.hedefKategori) {
+        return message.error("Aynı kategoriler arası transfer yapamazsınız.");
+      }
+      transferMutation.mutate({
+        kaynakKategori: values.kaynakKategori,
+        hedefKategori: values.hedefKategori,
+        miktar: num,
+        not: values.not || "",
+        createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
+      });
+    } else {
+      gelirMutation.mutate({
+        miktar: num,
+        kategori: values.kategori || "gelir",
+        not: values.not || "",
+        createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
+      });
+    }
   };
 
-  // Aktif kategorinin aboneliklerini filtreliyoruz
   const filteredSubscriptions = useMemo(() => {
     return Object.values(activeSubscriptions).filter(sub => sub.kategori === selectedCategory);
   }, [activeSubscriptions, selectedCategory]);
@@ -572,7 +602,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           )}
         </div>
 
-        {/* Sadece ilgili kategoriye ait abonelikler varsa listelenecek alan */}
         {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && filteredSubscriptions.length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
@@ -693,12 +722,27 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYRET</Button>
         </Form>
       </Modal>
 
       <Modal 
-        title={<div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">Gelir Kaynağı</div>}
+        title={
+          <div className="flex flex-col gap-2">
+            <div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">
+              {gelirIslemTuru === "transfer" ? "Kategoriler Arası Transfer" : "Gelir Kaynağı"}
+            </div>
+            <Radio.Group 
+              value={gelirIslemTuru} 
+              onChange={(e) => setGelirIslemTuru(e.target.value)}
+              size="small"
+              className="mt-1"
+            >
+              <Radio.Button value="gelir" className="text-xs">Gelir Ekle</Radio.Button>
+              <Radio.Button value="transfer" className="text-xs">Transfer Et</Radio.Button>
+            </Radio.Group>
+          </div>
+        }
         open={isGelirModalVisible} onCancel={handleGelirCancel} footer={null} centered width={380}
         className="space-modal"
         styles={{ body: { padding: '12px 16px' } }}
@@ -707,21 +751,50 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           <div className="text-4xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-xl ml-2 text-orange-500/50">€</span>
           </div>
+          {gelirIslemTuru === "transfer" && (
+            <div className="text-xs text-amber-400 mt-1 font-semibold flex items-center justify-center gap-1">
+              <ArrowRightLeft size={12} /> Hesaplar arası bakiye yer değişimi
+            </div>
+          )}
         </div>
         <Form form={gelirForm} layout="vertical" onFinish={onGelirFinish}>
-          <div className="grid grid-cols-2 gap-3 items-end">
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
-              <CustomDayPicker isIncome={true} />
-            </Form.Item>
-            <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
-              <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
-                <Option value="gelir">Normal Gelir</Option>
-                <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ekstra</Option>
-              </Select>
-            </Form.Item>
-          </div>
+          {gelirIslemTuru === "transfer" ? (
+            <div className="grid grid-cols-3 gap-2 items-end mb-2">
+              <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0 col-span-1">
+                <CustomDayPicker isIncome={true} />
+              </Form.Item>
+              <Form.Item name="kaynakKategori" label={<span className="text-gray-400 text-xs">Nereden</span>} className="mb-0 col-span-1">
+                <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
+                  <Option value="gelir">Normal</Option>
+                  <Option value="tasarruf">Birikim</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="hedefKategori" label={<span className="text-gray-400 text-xs">Nereye</span>} className="mb-0 col-span-1">
+                <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
+                  <Option value="gelir">Normal</Option>
+                  <Option value="tasarruf">Birikim</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 items-end mb-2">
+              <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
+                <CustomDayPicker isIncome={true} />
+              </Form.Item>
+              <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
+                <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
+                  <Option value="gelir">Normal Gelir</Option>
+                  <Option value="tasarruf">Birikim</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+            </div>
+          )}
+
           <NumericNumpad value={amount} onChange={setAmount} />
+          
           {showNote ? (
             <Form.Item name="not" className="mt-2 mb-0">
               <Input placeholder="Not ekleyin..." autoFocus className="bg-slate-800 border-slate-700 text-white rounded-xl h-10" style={{ color: '#ffffff', backgroundColor: '#1e293b' }} />
@@ -729,7 +802,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={gelirMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase">Gelir Ekle</Button>
+          
+          <Button 
+            type="primary" 
+            htmlType="submit" 
+            block 
+            loading={gelirIslemTuru === "transfer" ? transferMutation.isPending : gelirMutation.isPending} 
+            className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase"
+          >
+            {gelirIslemTuru === "transfer" ? "Transferi Tamamla" : "Gelir Ekle"}
+          </Button>
         </Form>
       </Modal>
     </main>

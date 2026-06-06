@@ -24,13 +24,13 @@ export const fetchTotalsFromAPI = async () => {
 
     // --- 1. KÜMÜLATİF HESAPLAMALAR ---
     
-    // Banka Bakiyesi Hesaplama
+    // Banka Bakiyesi Hesaplama: Sadece ana gelir kaynağı eklenir, transferler banka öz sermayesini değiştirmez
     const totalBankIncome = allGelirler
         .filter(i => i.kategori?.toLowerCase() === 'gelir')
         .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
     
     const totalBankExit = allHarcamalar
-        .reduce((sum, i) => sum + Number(i.miktar || 0), 0); // Tasarruflar dahil her şey bankadan çıkar
+        .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
     const bankBalance = totalBankIncome - totalBankExit;
 
@@ -42,17 +42,17 @@ export const fetchTotalsFromAPI = async () => {
 
     // --- 2. AYLIK VE GÜNLÜK TOPLAMLAR ---
 
-    // Aylık Gider (Tasarruf kutuya yansımaz)
+    // Aylık Gider
     const monthlyExpense = allHarcamalar
       .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && i.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // Aylık Gelir
+    // Aylık Gelir (Sadece gerçek gelir, transferler aylık bütçe kazancı sayılmaz)
     const monthlyIncome = allGelirler
       .filter(i => i.createdAt?.startsWith(currentMonthPrefix) && i.kategori?.toLowerCase() === "gelir")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
 
-    // Günlük Harcama (Tasarruf kutuya yansımaz)
+    // Günlük Harcama
     const totalToday = allHarcamalar
       .filter(i => i.createdAt?.startsWith(todayStr) && i.kategori?.toLowerCase() !== "tasarruf")
       .reduce((sum, i) => sum + Number(i.miktar || 0), 0);

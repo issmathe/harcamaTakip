@@ -29,10 +29,9 @@ export const TotalsProvider = ({ children }) => {
     const now = dayjs();
     const startOfToday = now.startOf("day");
 
-    // Yardımcı fonksiyon: Gelecek tarihli işlemleri filtreler
     const isPastOrPresent = (date) => !dayjs(date).isAfter(now);
 
-    // 1. Bu Ayın Gelirleri (Sadece 'gelir' kategorisi ve tarihi gelmiş olanlar)
+    // 1. Bu Ayın Gelirleri (Sadece gerçek 'gelir' kategorisi, 'transfer' hariç)
     const totalIncome = (totals.gelirler || [])
       .filter(g => {
         const d = dayjs(g.createdAt);
@@ -42,7 +41,7 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Tasarruf HARİÇ ve tarihi gelmiş olanlar)
+    // 2. Bu Ayın Giderleri (Tasarruf HARİÇ)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -64,30 +63,25 @@ export const TotalsProvider = ({ children }) => {
 
     // 4. Kümülatif Hesaplamalar
 
-    // Sadece gerçek harcamalar (Gider kutusu için - Tarihi gelmiş olanlar)
     const cumulativeExpense = (totals.harcamalar || [])
       .filter(h => h.kategori?.toLowerCase() !== "tasarruf" && isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankadan çıkan her şey (Normal Harcamalar + Tasarruflar - Tarihi gelmiş olanlar)
     const totalExitFromBank = (totals.harcamalar || [])
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankaya giren sadece gerçek gelirler (Tarihi gelmiş olanlar)
+    // Bankaya giren para sadece gerçek gelirlerdir ('transfer' veya 'tasarruf' girişleri banka bakiyesini yapay şişirmesin)
     const cumulativeOnlyIncome = (totals.gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "gelir" && isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Tüm zamanların tüm gelirleri (Portföy için: Gelir + Tasarruf Gelirleri - Tarihi gelmiş olanlar)
+    // Tüm zamanların tüm gelirleri (Gelir + Tasarruf + Transferlerin net etkisi sıfırdır)
     const cumulativeTotalIncome = (totals.gelirler || [])
       .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Banka Bakiyesi: Sadece bugüne kadar gerçekleşmiş işlemler
     const bankBalance = cumulativeOnlyIncome - totalExitFromBank;
-    
-    // Kümülatif Bakiye (Portföy): Gerçekleşmiş Tüm Gelirler - Gerçekleşmiş Giderler
     const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {

@@ -1,5 +1,3 @@
-// backend/models/Gelir.js (GÜNCELLENMİŞ VERSİYON)
-
 const mongoose = require("mongoose");
 
 const GelirSchema = new mongoose.Schema(
@@ -10,8 +8,8 @@ const GelirSchema = new mongoose.Schema(
     },
     kategori: {
       type: String,
-      // Frontend'deki "nakit" seçeneği buradaki enum listesine eklendi
-      enum: ["gelir", "tasarruf", "diğer"], 
+      // Geçmiş raporlarda transferleri ayırt edebilmek için "transfer" eklendi
+      enum: ["gelir", "tasarruf", "diğer", "transfer"], 
       required: true,
     },
     not: {
