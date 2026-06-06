@@ -12,14 +12,13 @@ import {
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import CustomDayPicker from "../Forms/CustomDayPicker";
-import GelirEkleModal from "../Forms/GelirEkleModal"; // Yeni modal bileşenini ekledik
+import GelirEkleModal from "../Forms/GelirEkleModal";
 
 import {
   MessageCircle,
   Delete,
   ShoppingCart,
   Shirt,
-  PiggyBank,
   Home,
   FileText,
   MoreHorizontal,
@@ -48,7 +47,6 @@ const { Option } = Select;
 const CATEGORY_CONFIG = {
   Market: { icon: ShoppingCart, color: "#10b981", bg: "rgba(16, 185, 129, 0.2)" },
   Giyim: { icon: Shirt, color: "#ec4899", bg: "rgba(236, 72, 153, 0.2)" },
-  Tasarruf: { icon: PiggyBank, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.2)" },
   Kira: { icon: Home, color: "#6366f1", bg: "rgba(99, 102, 241, 0.2)" },
   Fatura: { icon: FileText, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.2)" },
   Diğer: { icon: MoreHorizontal, color: "#94a3b8", bg: "rgba(148, 163, 184, 0.2)" },
@@ -223,15 +221,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     onError: () => message.error("Harcama eklenirken hata oluştu."),
   });
 
-  // Gelir ve Transfer isteklerini üstlenen akıllı kaydetme fonksiyonu
   const handleGelirOrTransferSave = async (payload) => {
     try {
       if (payload.kaynakKategori) {
-        // Eğer payload içinde kaynakKategori varsa bu bir transfer işlemidir
         await axios.post(`${API_URL}/gelir/transfer`, payload);
         message.success("Transfer başarıyla gerçekleşti!");
       } else {
-        // Yoksa düz gelir eklemedir
         await axios.post(`${API_URL}/gelir`, payload);
         message.success("Gelir eklendi!");
       }
@@ -239,7 +234,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     } catch (err) {
       const errMsg = err.response?.data?.message || "İşlem sırasında sunucu hatası oluştu.";
       message.error(errMsg);
-      throw err; // Modalı açık tutmak için hatayı fırlatıyoruz
+      throw err;
     }
   };
 
@@ -483,7 +478,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       </div>
 
       <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
-        {/* Ortadaki Artı (+) Butonu */}
         <div 
           onClick={() => setIsGelirModalVisible(true)} 
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
@@ -532,7 +526,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      {/* HARCAMA MODALI */}
       <Modal 
         title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
@@ -676,11 +669,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYBET</Button>
         </Form>
       </Modal>
 
-      {/* YENİ DIŞARI ALDIĞIMIZ AKILLI GELİR VE TRANSFER MODALI */}
       <GelirEkleModal 
         open={isGelirModalVisible}
         onClose={() => setIsGelirModalVisible(false)}

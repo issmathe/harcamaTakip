@@ -41,42 +41,36 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Tasarruf HARİÇ)
+    // 2. Bu Ayın Giderleri (Artık tüm harcamalar gerçektir, Tasarruf kontrolü kaldırıldı)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
-        const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf";
         return d.isSame(now, "month") && d.isSame(now, "year") && 
-               isNotSavings && 
                isPastOrPresent(h.createdAt);
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 3. Bugünün Toplam Harcaması (Tasarruf hariç)
+    // 3. Bugünün Toplam Harcaması (Tasarruf kontrolü kaldırıldı)
     const totalToday = (totals.harcamalar || [])
-      .filter(h => {
-        const isToday = dayjs(h.createdAt).isSame(startOfToday, "day");
-        const isNotSavings = h.kategori?.toLowerCase() !== "tasarruf";
-        return isToday && isNotSavings;
-      })
+      .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     // 4. Kümülatif Hesaplamalar
 
+    // Tüm zamanların harcamaları
     const cumulativeExpense = (totals.harcamalar || [])
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf" && isPastOrPresent(h.createdAt))
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-
-    const totalExitFromBank = (totals.harcamalar || [])
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankaya giren para sadece gerçek gelirlerdir ('transfer' veya 'tasarruf' girişleri banka bakiyesini yapay şişirmesin)
+    // Bankadan çıkan para (Tasarruf harcama olmadığı için direkt tüm harcamalara eşittir)
+    const totalExitFromBank = cumulativeExpense;
+
+    // Bankaya giren para sadece gerçek gelirlerdir
     const cumulativeOnlyIncome = (totals.gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "gelir" && isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Tüm zamanların tüm gelirleri (Gelir + Tasarruf + Transferlerin net etkisi sıfırdır)
+    // Tüm zamanların tüm gelirleri
     const cumulativeTotalIncome = (totals.gelirler || [])
       .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
