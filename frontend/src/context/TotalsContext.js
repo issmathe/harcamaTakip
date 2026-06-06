@@ -41,7 +41,7 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Artık tüm harcamalar gerçektir, Tasarruf kontrolü kaldırıldı)
+    // 2. Bu Ayın Giderleri (Kaynağından bağımsız olarak tüm harcamalar)
     const totalExpense = (totals.harcamalar || [])
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -50,7 +50,7 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 3. Bugünün Toplam Harcaması (Tasarruf kontrolü kaldırıldı)
+    // 3. Bugünün Toplam Harcaması
     const totalToday = (totals.harcamalar || [])
       .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
@@ -62,8 +62,10 @@ export const TotalsProvider = ({ children }) => {
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankadan çıkan para (Tasarruf harcama olmadığı için direkt tüm harcamalara eşittir)
-    const totalExitFromBank = cumulativeExpense;
+    // BANKADAN ÇIKAN PARA: Sadece harcama kaynağı boş olan (eski kayıtlar) veya "Gelir" olan harcamalar bankadan düşer
+    const totalExitFromBank = (totals.harcamalar || [])
+      .filter(h => isPastOrPresent(h.createdAt) && (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir"))
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
     // Bankaya giren para sadece gerçek gelirlerdir
     const cumulativeOnlyIncome = (totals.gelirler || [])

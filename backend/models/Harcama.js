@@ -33,13 +33,20 @@ const HarcamaSchema = new mongoose.Schema(
     not: {
       type: String,
     },
+    // Yeni eklenen alan: Harcamanın hangi hesaptan/kasadan karşılandığı
+    harcamaKaynagi: {
+      type: String,
+      enum: ["Gelir", "Ekstra Gelir", "Birikim"],
+      default: "Gelir", // Eski ve kaynaksız harcamalar otomatik olarak "Gelir" sayılacak
+      required: true
+    },
     createdAt: {
         type: Date,
-        default: () => dayjs().toDate(), // ✅ DOĞRUSU: Her kayıt atıldığında anlık tarihi üretir
+        default: () => dayjs().toDate(), 
     },
     updatedAt: {
         type: Date,
-        default: () => dayjs().toDate(), // ✅ DOĞRUSU: Ok fonksiyonu ile sarmallandı
+        default: () => dayjs().toDate(), 
     },
   }
 );

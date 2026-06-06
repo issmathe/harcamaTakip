@@ -35,9 +35,11 @@ router.post("/transfer", async (req, res) => {
         .filter(g => !g.not || !g.not.includes("[Transfer"))
         .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-      // Bankadan çıkan tüm harcamalar
+      // Sadece harcama kaynağı "Gelir" olan (yani ana banka hesabını etkileyen) harcamaları filtreliyoruz
       const tumHarcamalar = await Harcama.find().session(session);
-      const totalBankExit = tumHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+      const totalBankExit = tumHarcamalar
+        .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir")
+        .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
       // Daha önce "gelir"den diğer kutulara aktarılan (eksi işaretli) transferler
       const eskiTransferler = tumGercekGelirler
@@ -47,9 +49,11 @@ router.post("/transfer", async (req, res) => {
       // Bankada harcanabilir net bakiye
       anlikBakiye = toplamBankIncome - totalBankExit - eskiTransferler;
     } else {
-      // 2. Senaryo: Kaynak "tasarruf", "birikim" gibi alt kutulardan biriyse
+      // 2. Senaryo: Kaynak "Ekstra Gelir", "Birikim" gibi alt kutulardan biriyse
       const kutuGelirleri = await Gelir.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
-      const kutuHarcamalari = await Harcama.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+      
+      // Bu kutudan doğrudan yapılan harcamaları yakala (harcamaKaynagi eşleşenler)
+      const kutuHarcamalari = await Harcama.find({ harcamaKaynagi: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
 
       const toplamGelir = kutuGelirleri.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
       const toplamGider = kutuHarcamalari.reduce((sum, h) => sum + Number(h.miktar || 0), 0);

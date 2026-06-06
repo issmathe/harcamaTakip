@@ -29,16 +29,19 @@ const Header = () => {
   const [activeState, setActiveState] = useState({ id: null, mode: 1 });
   const [isHidden, setIsHidden] = useState(false); // Gizleme durumu
 
+  // Birikim kutusunun bakiyesini akıllıca hesaplar
   const totalSavings = useMemo(() => {
-    const harcamaTasarruf = (harcamalar || [])
-      .filter(h => h.kategori?.toLowerCase() === "tasarruf")
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
-    
+    // 1. Kategorisi direkt "tasarruf" veya "birikim" olan eski/yeni gelir ve transfer kayıtları
     const gelirTasarruf = (gelirler || [])
-      .filter(g => g.kategori?.toLowerCase() === "tasarruf")
+      .filter(g => g.kategori?.toLowerCase() === "tasarruf" || g.kategori?.toLowerCase() === "birikim")
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    return harcamaTasarruf + gelirTasarruf;
+    // 2. Harcama kaynağı olarak "Birikim" seçilmiş harcamalar (Bu kutudan harcananlar)
+    const harcananTasarruf = (harcamalar || [])
+      .filter(h => h.harcamaKaynagi === "Birikim" || h.kategori?.toLowerCase() === "tasarruf")
+      .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+
+    return gelirTasarruf - harcananTasarruf;
   }, [harcamalar, gelirler]);
 
   const totalAssets = (cumulativeIncome || 0) - (cumulativeExpense || 0);
