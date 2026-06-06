@@ -104,8 +104,8 @@ const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 
-// Kullanıcının seçeceği 3 adet harcama kaynağı
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
+const BIRIKIM_HESAPLARI = ["Ev", "Wise", "Trade Republic"];
 
 const SpaceBackground = () => {
   const canvasRef = useRef(null);
@@ -201,6 +201,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
   const [form] = Form.useForm();
+  const watchHarcamaKaynagi = Form.useWatch("harcamaKaynagi", form);
+
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [lastAngle, setLastAngle] = useState(0);
@@ -269,7 +271,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               kategori: sub.kategori,
               altKategori: sub.altKategori || "",
               not: sub.not,
-              harcamaKaynagi: sub.harcamaKaynagi || "Gelir", // Abonelik otomatik tetiklenirken de kaynak korunur
+              harcamaKaynagi: sub.harcamaKaynagi || "Gelir",
               createdAt: today.toISOString(),
             });
 
@@ -403,7 +405,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     form.resetFields();
     form.setFieldsValue({ 
       tarih: dayjs().toDate(),
-      harcamaKaynagi: "Gelir" // Modal her açıldığında varsayılan olarak "Gelir" seçilsin
+      harcamaKaynagi: "Gelir"
     });
     setShowNote(false);
   };
@@ -466,7 +468,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       kategori: selectedCategory || "Diğer",
       altKategori: ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) ? values.altKategori : "",
       not: customNote,
-      harcamaKaynagi: values.harcamaKaynagi || "Gelir", // Backend'e giden payload'a eklendi
+      harcamaKaynagi: values.harcamaKaynagi || "Gelir",
+      birikimHesabi: values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
       createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
     });
   };
@@ -474,6 +477,14 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const filteredSubscriptions = useMemo(() => {
     return Object.values(activeSubscriptions).filter(sub => sub.kategori === selectedCategory);
   }, [activeSubscriptions, selectedCategory]);
+
+  const isAltKategoriRequired = ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory);
+  const isBirikimSelected = watchHarcamaKaynagi === "Birikim";
+
+  // Grid kolon sayısı: Tarih (1) + Kaynak (1) + (Birikim mi? 1) + (Alt Kategori mi? 1)
+  let gridCols = 2;
+  if (isBirikimSelected) gridCols += 1;
+  if (isAltKategoriRequired) gridCols += 1;
 
   return (
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
@@ -580,21 +591,30 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         )}
 
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          {/* Tarih, Detay ve Ödeme Kaynağı Alanları */}
-          <div className="grid grid-cols-3 gap-2 items-end"> 
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Tarih</span>} className="mb-0">
+          <div 
+            className="grid gap-1.5 items-end"
+            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+          > 
+            <Form.Item name="tarih" label={<span className="text-gray-400 text-[10px]">Tarih</span>} className="mb-0">
               <CustomDayPicker />
             </Form.Item>
             
-            {/* ÖDEME KAYNAĞI SEÇİM KUTUSU */}
-            <Form.Item name="harcamaKaynagi" label={<span className="text-gray-400 text-xs">Ödeme Hesabı</span>} rules={[{ required: true }]} className="mb-0">
+            <Form.Item name="harcamaKaynagi" label={<span className="text-gray-400 text-[10px]">Ödeme Hesabı</span>} rules={[{ required: true }]} className="mb-0">
               <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
                 {HARCAMA_KAYNAKLARI.map(i => <Option key={i} value={i}>{i}</Option>)}
               </Select>
             </Form.Item>
 
-            {["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) ? (
-              <Form.Item name="altKategori" label={<span className="text-gray-400 text-xs">Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
+            {isBirikimSelected && (
+              <Form.Item name="birikimHesabi" label={<span className="text-gray-400 text-[10px]">Hesap Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
+                <Select placeholder="Hesap" className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
+                  {BIRIKIM_HESAPLARI.map(i => <Option key={i} value={i}>{i}</Option>)}
+                </Select>
+              </Form.Item>
+            )}
+
+            {isAltKategoriRequired && (
+              <Form.Item name="altKategori" label={<span className="text-gray-400 text-[10px]">Kategori Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
                 <Select placeholder="Seç" className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
                   {(selectedCategory === "Market" ? MARKETLER : 
                     selectedCategory === "Giyim" ? GIYIM_KISILERI : 
@@ -602,8 +622,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                     ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
-            ) : (
-              <div className="h-[38px]" /> // Grid yapısının bozulmaması için boş alan tutucu
             )}
           </div>
 

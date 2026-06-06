@@ -28,12 +28,14 @@ const BirikimContent = () => {
 
   // Birikim (tasarruf) ile ilgili tüm ham listeyi oluşturma
   const birikimListesi = useMemo(() => {
+    // Gelirler içinden kategorisi tasarruf olanlar (eski veriler veya transferler)
     const gTasarruf = (gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "tasarruf")
       .map(s => ({ ...s, tip: "ARTIŞ", renk: "text-emerald-500", iconColor: "bg-emerald-50 text-emerald-500" }));
 
+    // Harcamalar içinden kategorisi tasarruf olanlar VEYA harcama kaynağı "Birikim" olanlar!
     const hTasarruf = (harcamalar || [])
-      .filter(h => h.kategori?.toLowerCase() === "tasarruf")
+      .filter(h => h.kategori?.toLowerCase() === "tasarruf" || h.harcamaKaynagi === "Birikim")
       .map(s => ({ ...s, tip: "AZALIŞ", renk: "text-blue-500", iconColor: "bg-blue-50 text-blue-500" }));
 
     return [...gTasarruf, ...hTasarruf]
@@ -52,18 +54,17 @@ const BirikimContent = () => {
 
       if (item.tip === "ARTIŞ") {
         netVarlik += miktarNum;
-        // Doğrudan giriş veya transfer hedefi kontrolü
         const hedef = item.altKategori || item.hedefAltKategori;
         if (hedef === "Trade Republic") tradeRepublic += miktarNum;
         else if (hedef === "Wise") wise += miktarNum;
-        else if (hedef === "Nakit") nakit += miktarNum;
+        else if (hedef === "Nakit" || hedef === "Ev") nakit += miktarNum;
       } else {
         netVarlik -= miktarNum;
-        // Harcama çıkışı veya transfer kaynak kontrolü
-        const kaynak = item.altKategori || item.kaynakAltKategori;
+        // Yeni mimaride birikimHesabi alanını, eski mimaride altKategori veya kaynakAltKategori alanını kontrol et
+        const kaynak = item.birikimHesabi || item.altKategori || item.kaynakAltKategori;
         if (kaynak === "Trade Republic") tradeRepublic -= miktarNum;
         else if (kaynak === "Wise") wise -= miktarNum;
-        else if (kaynak === "Nakit") nakit -= miktarNum;
+        else if (kaynak === "Nakit" || kaynak === "Ev") nakit -= miktarNum;
       }
     });
 
@@ -153,8 +154,9 @@ const BirikimContent = () => {
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {birikimListesi.map((item) => {
                 const isToday = dayjs(item.createdAt).isSame(dayjs(), 'day');
-                // Kayıttaki aktif hesabı belirleme
-                const aktifHesap = item.altKategori || (item.tip === "ARTIŞ" ? item.hedefAltKategori : item.kaynakAltKategori);
+                
+                // Ekrandaki etiketi belirleme lojiği
+                const aktifHesap = item.birikimHesabi || item.altKategori || (item.tip === "ARTIŞ" ? item.hedefAltKategori : item.kaynakAltKategori);
 
                 return (
                   <SwipeableListItem 
@@ -173,7 +175,12 @@ const BirikimContent = () => {
                             </Text>
                             {aktifHesap && (
                               <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] text-gray-500 font-medium">
-                                {aktifHesap}
+                                {aktifHesap === "Ev" ? "Nakit" : aktifHesap}
+                              </span>
+                            )}
+                            {item.kategori && item.kategori.toLowerCase() !== "tasarruf" && (
+                              <span className="bg-blue-100 px-1.5 py-0.5 rounded text-[9px] text-blue-600 font-medium uppercase">
+                                {item.kategori}
                               </span>
                             )}
                           </div>
