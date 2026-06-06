@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Gelir = require("../models/Gelir");
-const Harcama = require("../models/Harcama"); // Bakiye kontrolü için harcamalar da gerekiyor
-const mongoose = require("mongoose"); // Transaction için eklendi
+const Harcama = require("../models/Harcama");
+const mongoose = require("mongoose");
 
-// 🔄 Kategoriler Arası Para Transferi (Akıllı Bakiye Kontrollü)
+// 🔄 Kategoriler Arası Para Transferi
 router.post("/transfer", async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -33,32 +33,24 @@ router.post("/transfer", async (req, res) => {
 
     const isGelirKategorisi = kaynakKategori.toLowerCase() === "gelir";
 
-    // --- AKILLI BAKİYE KONTROLÜ ---
     if (isGelirKategorisi) {
-      // 1. Senaryo: Kaynak ana nakit havuzu "gelir" ise (Gerçek Banka Bakiyesi Kontrolü)
       const tumGercekGelirler = await Gelir.find({ kategori: { $regex: /^gelir$/i } }).session(session);
       
-      // Saf ana gelirler (Daha önceki transfer girişlerini hariç tutuyoruz)
       const toplamBankIncome = tumGercekGelirler
         .filter(g => !g.not || !g.not.includes("[Transfer"))
         .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-      // Sadece harcama kaynağı "Gelir" olan (yani ana banka hesabını etkileyen) harcamaları filtreliyoruz
       const tumHarcamalar = await Harcama.find().session(session);
       const totalBankExit = tumHarcamalar
         .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir")
         .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-      // Daha önce "gelir"den diğer kutulara aktarılan (eksi işaretli) transferler
       const eskiTransferler = tumGercekGelirler
         .filter(g => g.not && g.not.includes("[Transfer ->") && g.miktar < 0)
         .reduce((sum, g) => sum + Math.abs(g.miktar), 0);
 
-      // Bankada harcanabilir net bakiye
       anlikBakiye = toplamBankIncome - totalBankExit - eskiTransferler;
     } else {
-      // 2. Senaryo: Kaynak "Ekstra Gelir", "Birikim" gibi alt kutulardan biriyse
-      // Eğer birikim ise ve alt hesap (Trade Republic vb.) seçildiyse spesifik bakiye kontrolü yap
       let query = { kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
       if (kaynakKategori.toLowerCase() === "tasarruf" && kaynakAltKategori) {
         query.altKategori = kaynakAltKategori;
@@ -66,7 +58,6 @@ router.post("/transfer", async (req, res) => {
       
       const kutuGelirleri = await Gelir.find(query).session(session);
       
-      // Harcamalar tarafında da aynı eşleşmeyi yakala (Şimdilik harcama tarafında alt hesap yoksa genel düşer)
       let harcamaQuery = { harcamaKaynagi: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
       const kutuHarcamalari = await Harcama.find(harcamaQuery).session(session);
 
@@ -76,39 +67,42 @@ router.post("/transfer", async (req, res) => {
       anlikBakiye = toplamGelir - toplamGider;
     }
 
-    // Yetersiz bakiye durumunda işlemi kilitle ve iptal et
     if (anlikBakiye < transferMiktari) {
       await session.abortTransaction();
       session.endSession();
       const hesapIsmi = kaynakAltKategori ? `${kaynakKategori} (${kaynakAltKategori})` : kaynakKategori;
       return res.status(400).json({ 
-        message: `Yetersiz bakiye! ${hesapIsmi} havuzunda sadece €${anlikBakiye.toFixed(2)} var. Transfer edilmek istenen: €${transferMiktari.toFixed(2)}` 
+        message: `Yetersiz bakiye! ${hesapIsmi} havuzunda sadece EUR ${anlikBakiye.toFixed(2)} var.` 
       });
     }
-    // ------------------------------
 
     const islemTarihi = createdAt ? new Date(createdAt) : new Date();
     const ortakTransferId = "TRF_" + Date.now();
 
-    // 1. Kayıt: Kaynak kategoriden parayı azalt (Eksi miktar)
+    // Not alanlarını temiz dize birleştirmeyle oluşturuyoruz
+    const kaynakNotEki = hedefAltKategori ? ` (${hedefAltKategori})` : "";
+    const kaynakNotu = not ? `[Transfer -> ${hedefKategori}${kaynakNotEki}] ${not} | ID:${ortakTransferId}` : `[Transfer -> ${hedefKategori}${kaynakNotEki}] | ID:${ortakTransferId}`;
+
+    const hedefNotEki = kaynakAltKategori ? ` (${kaynakAltKategori})` : "";
+    const hedefNotu = not ? `[Transfer <- ${kaynakKategori}${hedefNotEki}] ${not} | ID:${ortakTransferId}` : `[Transfer <- ${kaynakKategori}${hedefNotEki}] | ID:${ortakTransferId}`;
+
     const kaynakKayit = new Gelir({
       miktar: -transferMiktari,
       kategori: kaynakKategori,
       altKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
       kaynakAltKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
       hedefAltKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
-      not: not ? `[Transfer -> ${hedefKategori}${hedefAltKategori ? ' (' + hedefAltKategori + ')' : ''}] ${not} | ID:${ortakTransferId}` : `[Transfer -> ${hedefKategori}${hedefAltKategori ? ' (' +毀edefAltKategori + ')' : ''}] | ID:${ortakTransferId}`,
+      not: kaynakNotu,
       createdAt: islemTarihi
     });
 
-    // 2. Kayıt: Hedef kategoriye parayı ekle (Artı miktar)
     const hedefKayit = new Gelir({
       miktar: transferMiktari,
       kategori: hedefKategori,
       altKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
       kaynakAltKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
       hedefAltKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
-      not: not ? `[Transfer <- ${kaynakKategori}${kaynakAltKategori ? ' (' + kaynakAltKategori + ')' : ''}] ${not} | ID:${ortakTransferId}` : `[Transfer <- ${kaynakKategori}${kaynakAltKategori ? ' (' + kaynakAltKategori + ')' : ''}] | ID:${ortakTransferId}`,
+      not: hedefNotu,
       createdAt: islemTarihi
     });
 
