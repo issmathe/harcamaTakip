@@ -12,6 +12,22 @@ const GelirSchema = new mongoose.Schema(
       enum: ["gelir", "tasarruf", "diğer", "transfer"], 
       required: true,
     },
+    // Birikim alt hesap kırılımları için eklenen alanlar
+    altKategori: {
+      type: String,
+      enum: ["Trade Republic", "Wise", "Nakit", ""],
+      default: "",
+    },
+    kaynakAltKategori: {
+      type: String,
+      enum: ["Trade Republic", "Wise", "Nakit", ""],
+      default: "",
+    },
+    hedefAltKategori: {
+      type: String,
+      enum: ["Trade Republic", "Wise", "Nakit", ""],
+      default: "",
+    },
     not: {
       type: String,
       default: "",

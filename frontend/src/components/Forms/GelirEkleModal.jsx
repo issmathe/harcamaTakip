@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, Button, Radio, Select } from "antd";
-import { MessageCircle, Delete, ArrowRightLeft } from "lucide-react";
-import dayjs from "dayjs";
+import { MessageCircle, Delete } from "lucide-react";import dayjs from "dayjs";
 import CustomDayPicker from "./CustomDayPicker";
 
 const { Option } = Select;
@@ -46,7 +45,11 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
   const [showNote, setShowNote] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Modal açılıp kapandığında formu sıfırla
+  // Dinamik olarak alt kategorileri göstermek için state takipleri
+  const kategoriWatch = Form.useWatch("kategori", gelirForm);
+  const kaynakWatch = Form.useWatch("kaynakKategori", gelirForm);
+  const hedefWatch = Form.useWatch("hedefKategori", gelirForm);
+
   useEffect(() => {
     if (open) {
       setAmount("");
@@ -58,6 +61,9 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
         kategori: "gelir",
         kaynakKategori: "gelir",
         hedefKategori: "tasarruf",
+        altKategori: "Trade Republic",
+        kaynakAltKategori: "Nakit",
+        hedefAltKategori: "Trade Republic"
       });
     }
   }, [open, gelirForm]);
@@ -75,19 +81,26 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
       };
 
       if (gelirIslemTuru === "transfer") {
-        if (values.kaynakKategori === values.hedefKategori) {
-          return; 
+        if (values.kaynakKategori === values.hedefKategori && values.kaynakAltKategori === values.hedefAltKategori) {
+          return; // Aynı hesaba transferi engelle
         }
         payload.kaynakKategori = values.kaynakKategori;
         payload.hedefKategori = values.hedefKategori;
+        
+        if (values.kaynakKategori === "tasarruf") payload.kaynakAltKategori = values.kaynakAltKategori;
+        if (values.hedefKategori === "tasarruf") payload.hedefAltKategori = values.hedefAltKategori;
+        
       } else {
         payload.kategori = values.kategori || "gelir";
+        if (values.kategori === "tasarruf") {
+          payload.altKategori = values.altKategori; // Trade Republic, Wise veya Nakit
+        }
       }
 
       await onSave(payload);
       onClose();
     } catch (err) {
-      // Hata yönetimi MainContent'teki try-catch'te basılıyor
+      // Hata yönetimi üst bileşende
     } finally {
       setLoading(false);
     }
@@ -100,12 +113,7 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
           <div className="text-lg font-bold text-orange-400 font-mono tracking-widest uppercase">
             {gelirIslemTuru === "transfer" ? "Kategoriler Arası Transfer" : "Gelir Kaynağı"}
           </div>
-          <Radio.Group
-            value={gelirIslemTuru}
-            onChange={(e) => setGelirIslemTuru(e.target.value)}
-            size="small"
-            className="mt-1"
-          >
+          <Radio.Group value={gelirIslemTuru} onChange={(e) => setGelirIslemTuru(e.target.value)} size="small" className="mt-1">
             <Radio.Button value="gelir" className="text-xs">Gelir Ekle</Radio.Button>
             <Radio.Button value="transfer" className="text-xs">Transfer Et</Radio.Button>
           </Radio.Group>
@@ -116,54 +124,84 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
       footer={null}
       centered
       width={380}
-      className="space-modal"
       styles={{ body: { padding: "12px 16px" } }}
     >
       <div className="bg-orange-950/40 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-orange-500/20">
         <div className="text-4xl font-black text-white tracking-tight">
-          {amount || "0"}
-          <span className="text-xl ml-2 text-orange-500/50">€</span>
+          {amount || "0"}<span className="text-xl ml-2 text-orange-500/50">€</span>
         </div>
-        {gelirIslemTuru === "transfer" && (
-          <div className="text-xs text-amber-400 mt-1 font-semibold flex items-center justify-center gap-1">
-            <ArrowRightLeft size={12} /> Hesaplar arası bakiye yer değişimi
-          </div>
-        )}
       </div>
 
       <Form form={gelirForm} layout="vertical" onFinish={handleFormFinish}>
         {gelirIslemTuru === "transfer" ? (
-          <div className="grid grid-cols-3 gap-2 items-end mb-2">
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0 col-span-1">
-              <CustomDayPicker isIncome={true} />
-            </Form.Item>
-            <Form.Item name="kaynakKategori" label={<span className="text-gray-400 text-xs">Nereden</span>} className="mb-0 col-span-1">
-              <Select className="w-full" style={{ height: "38px" }} dropdownStyle={{ borderRadius: "12px" }}>
-                <Option value="gelir">Normal</Option>
-                <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ekstra</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="hedefKategori" label={<span className="text-gray-400 text-xs">Nereye</span>} className="mb-0 col-span-1">
-              <Select className="w-full" style={{ height: "38px" }} dropdownStyle={{ borderRadius: "12px" }}>
-                <Option value="gelir">Normal</Option>
-                <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ekstra</Option>
-              </Select>
-            </Form.Item>
+          <div className="space-y-2 mb-2">
+            <div className="grid grid-cols-3 gap-2 items-end">
+              <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
+                <CustomDayPicker isIncome={true} />
+              </Form.Item>
+              <Form.Item name="kaynakKategori" label={<span className="text-gray-400 text-xs">Nereden</span>} className="mb-0">
+                <Select className="w-full" style={{ height: "38px" }}>
+                  <Option value="gelir">Normal</Option>
+                  <Option value="tasarruf">Birikim</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="hedefKategori" label={<span className="text-gray-400 text-xs">Nereye</span>} className="mb-0">
+                <Select className="w-full" style={{ height: "38px" }}>
+                  <Option value="gelir">Normal</Option>
+                  <Option value="tasarruf">Birikim</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+            </div>
+
+            {/* Transfer alt hesap kırılımları */}
+            <div className="grid grid-cols-2 gap-2">
+              {kaynakWatch === "tasarruf" && (
+                <Form.Item name="kaynakAltKategori" label={<span className="text-orange-400 text-[10px] uppercase font-bold">Kaynak Hesap</span>} className="mb-0">
+                  <Select className="w-full" style={{ height: "38px" }}>
+                    <Option value="Trade Republic">Trade Republic</Option>
+                    <Option value="Wise">Wise</Option>
+                    <Option value="Nakit">Evdeki Nakit</Option>
+                  </Select>
+                </Form.Item>
+              )}
+              {hedefWatch === "tasarruf" && (
+                <Form.Item name="hedefAltKategori" label={<span className="text-emerald-400 text-[10px] uppercase font-bold">Hedef Hesap</span>} className="mb-0">
+                  <Select className="w-full" style={{ height: "38px" }}>
+                    <Option value="Trade Republic">Trade Republic</Option>
+                    <Option value="Wise">Wise</Option>
+                    <Option value="Nakit">Evdeki Nakit</Option>
+                  </Select>
+                </Form.Item>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 items-end mb-2">
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
-              <CustomDayPicker isIncome={true} />
-            </Form.Item>
-            <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
-              <Select className="w-full" style={{ height: "38px" }} dropdownStyle={{ borderRadius: "12px" }}>
-                <Option value="gelir">Normal Gelir</Option>
-                <Option value="tasarruf">Birikim</Option>
-                <Option value="diğer">Ekstra</Option>
-              </Select>
-            </Form.Item>
+          <div className="space-y-2 mb-2">
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <Form.Item name="tarih" label={<span className="text-gray-400 text-xs">Zaman</span>} className="mb-0">
+                <CustomDayPicker isIncome={true} />
+              </Form.Item>
+              <Form.Item name="kategori" label={<span className="text-gray-400 text-xs">Tür</span>} className="mb-0">
+                <Select className="w-full" style={{ height: "38px" }}>
+                  <Option value="gelir">Normal Gelir</Option>
+                  <Option value="tasarruf">Birikim (Tasarruf)</Option>
+                  <Option value="diğer">Ekstra</Option>
+                </Select>
+              </Form.Item>
+            </div>
+
+            {/* Normal Gelir eklerken eğer Birikim seçildiyse hesap türü sor */}
+            {kategoriWatch === "tasarruf" && (
+              <Form.Item name="altKategori" label={<span className="text-emerald-400 text-[10px] uppercase font-bold">Hangi Birikim Hesabı?</span>} className="mb-0">
+                <Select className="w-full" style={{ height: "38px" }}>
+                  <Option value="Trade Republic">Trade Republic</Option>
+                  <Option value="Wise">Wise</Option>
+                  <Option value="Nakit">Evdeki Nakit</Option>
+                </Select>
+              </Form.Item>
+            )}
           </div>
         )}
 
@@ -171,31 +209,13 @@ const GelirEkleModal = ({ open, onClose, onSave }) => {
 
         {showNote ? (
           <Form.Item name="not" className="mt-2 mb-0">
-            <Input
-              placeholder="Not ekleyin..."
-              autoFocus
-              className="bg-slate-800 border-slate-700 text-white rounded-xl h-10"
-              style={{ color: "#ffffff", backgroundColor: "#1e293b" }}
-            />
+            <Input placeholder="Not ekleyin..." autoFocus className="bg-slate-800 border-slate-700 text-white rounded-xl h-10" style={{ color: "#ffffff", backgroundColor: "#1e293b" }} />
           </Form.Item>
         ) : (
-          <Button
-            type="text"
-            onClick={() => setShowNote(true)}
-            icon={<MessageCircle size={14} />}
-            className="w-full mt-2 text-slate-400 text-xs"
-          >
-            Not Ekle
-          </Button>
+          <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
         )}
 
-        <Button
-          type="primary"
-          htmlType="submit"
-          block
-          loading={loading}
-          className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase"
-        >
+        <Button type="primary" htmlType="submit" block loading={loading} className="mt-4 h-12 text-lg font-bold bg-orange-600 hover:bg-orange-500 border-none rounded-xl uppercase">
           {gelirIslemTuru === "transfer" ? "Transferi Tamamla" : "Gelir Ekle"}
         </Button>
       </Form>

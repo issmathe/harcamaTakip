@@ -1,23 +1,17 @@
-import React, { useState, useMemo, useRef } from "react";
-import { Typography, Button, Modal, Input, message, Spin, Empty, ConfigProvider } from "antd";
-import { 
-  EditOutlined, DeleteOutlined, 
-  GoldOutlined
-} from '@ant-design/icons';
+import React, { useMemo, useRef } from "react";
+import { Typography, Button, message, Spin, Empty, ConfigProvider } from "antd";
+import { DeleteOutlined, GoldOutlined } from '@ant-design/icons';
 import BottomNav from "../components/Home/BottomNav.jsx";
 import { useTotalsContext } from "../context/TotalsContext"; 
 import axios from "axios";
 import dayjs from 'dayjs';
 import tr from 'dayjs/locale/tr';
 
-import CustomDayPicker from "../components/Forms/CustomDayPicker";
-
 import {
   SwipeableList,
   SwipeableListItem,
   SwipeAction,
   TrailingActions, 
-  LeadingActions,  
   Type as ListType,
 } from "react-swipeable-list";
 import "react-swipeable-list/dist/styles.css";
@@ -32,12 +26,7 @@ const BirikimContent = () => {
   const { harcamalar = [], gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null); 
 
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({ 
-    miktar: "", kategori: "tasarruf", not: "", tarih: dayjs().toDate(), tip: "" 
-  });
-
+  // Birikim (tasarruf) ile ilgili tüm ham listeyi oluşturma
   const birikimListesi = useMemo(() => {
     const gTasarruf = (gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "tasarruf")
@@ -51,42 +40,35 @@ const BirikimContent = () => {
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [gelirler, harcamalar]);
 
-  const netBirikim = useMemo(() => {
-    return birikimListesi.reduce((sum, item) => 
-      item.tip === "ARTIŞ" ? sum + Number(item.miktar) : sum - Number(item.miktar), 0
-    );
-  }, [birikimListesi]);
+  // Alt hesapların ve genel varlığın hesaplanması
+  const hesapOzetleri = useMemo(() => {
+    let tradeRepublic = 0;
+    let wise = 0;
+    let nakit = 0;
+    let netVarlik = 0;
 
-  const openEditModal = (item) => {
-    setEditingItem(item);
-    setFormData({
-      miktar: item.miktar,
-      kategori: item.kategori,
-      not: item.not || "",
-      tarih: dayjs(item.createdAt).toDate(),
-      tip: item.tip
+    birikimListesi.forEach((item) => {
+      const miktarNum = Number(item.miktar || 0);
+
+      if (item.tip === "ARTIŞ") {
+        netVarlik += miktarNum;
+        // Doğrudan giriş veya transfer hedefi kontrolü
+        const hedef = item.altKategori || item.hedefAltKategori;
+        if (hedef === "Trade Republic") tradeRepublic += miktarNum;
+        else if (hedef === "Wise") wise += miktarNum;
+        else if (hedef === "Nakit") nakit += miktarNum;
+      } else {
+        netVarlik -= miktarNum;
+        // Harcama çıkışı veya transfer kaynak kontrolü
+        const kaynak = item.altKategori || item.kaynakAltKategori;
+        if (kaynak === "Trade Republic") tradeRepublic -= miktarNum;
+        else if (kaynak === "Wise") wise -= miktarNum;
+        else if (kaynak === "Nakit") nakit -= miktarNum;
+      }
     });
-    setEditModalVisible(true);
-  };
 
-  const handleEditSave = async () => {
-    if (!formData.miktar) return message.error("Miktar boş olamaz!");
-    try {
-      const endpoint = editingItem.tip === "ARTIŞ" ? "gelir" : "harcama";
-      const payload = { 
-        miktar: parseFloat(formData.miktar), 
-        kategori: "tasarruf", 
-        not: formData.not, 
-        createdAt: dayjs(formData.tarih).toISOString() 
-      };
-      await axios.put(`${API_URL}/${endpoint}/${editingItem._id}`, payload); 
-      message.success("Güncellendi");
-      setEditModalVisible(false);
-      refetch(); 
-    } catch (err) {
-      message.error("Hata oluştu");
-    }
-  };
+    return { tradeRepublic, wise, nakit, netVarlik };
+  }, [birikimListesi]);
 
   const startDeleteProcess = (item) => {
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
@@ -110,16 +92,6 @@ const BirikimContent = () => {
     }, 3000);
   };
 
-  const leadingActions = (item) => (
-    <LeadingActions>
-      <SwipeAction onClick={() => openEditModal(item)}>
-        <div className="bg-blue-500 text-white flex justify-center items-center h-full w-20 rounded-l-3xl">
-          <EditOutlined className="text-xl" />
-        </div>
-      </SwipeAction>
-    </LeadingActions>
-  );
-
   const trailingActions = (item) => (
     <TrailingActions>
       <SwipeAction destructive onClick={() => startDeleteProcess(item)}>
@@ -140,16 +112,37 @@ const BirikimContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-<div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
-  <div className="flex justify-center items-center gap-2">
-    <Text className="text-[11px] font-bold uppercase text-gray-400">Net Varlık:</Text>
-    {/* Rengi dinamik yapmak istersen: netBirikim >= 0 ? 'text-emerald-600' : 'text-red-500' */}
-    <Text className="text-base font-black text-emerald-600 font-mono">
-      {/* Math.abs başındaki - işaretini kaldırır */}
-      {Math.abs(netBirikim).toFixed(2).replace('.', ',')}€
-    </Text>
-  </div>
-</div>
+        {/* Net Varlık Ana Kartı */}
+        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
+          <div className="flex justify-center items-center gap-2">
+            <Text className="text-[11px] font-bold uppercase text-gray-400">Net Varlık:</Text>
+            <Text className={`text-base font-black font-mono ${hesapOzetleri.netVarlik >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+              {hesapOzetleri.netVarlik.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+        </div>
+
+        {/* 📊 Üçlü Alt Hesap Kırılım Kartları */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-white p-2.5 rounded-2xl border border-gray-100 text-center shadow-sm">
+            <Text className="block text-[9px] uppercase tracking-tight text-gray-400 font-bold">Trade Rep.</Text>
+            <Text className={`text-xs font-bold font-mono block mt-0.5 ${hesapOzetleri.tradeRepublic >= 0 ? 'text-slate-700' : 'text-rose-500'}`}>
+              {hesapOzetleri.tradeRepublic.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+          <div className="bg-white p-2.5 rounded-2xl border border-gray-100 text-center shadow-sm">
+            <Text className="block text-[9px] uppercase tracking-tight text-gray-400 font-bold">Wise</Text>
+            <Text className={`text-xs font-bold font-mono block mt-0.5 ${hesapOzetleri.wise >= 0 ? 'text-slate-700' : 'text-rose-500'}`}>
+              {hesapOzetleri.wise.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+          <div className="bg-white p-2.5 rounded-2xl border border-gray-100 text-center shadow-sm">
+            <Text className="block text-[9px] uppercase tracking-tight text-gray-400 font-bold">Evde Nakit</Text>
+            <Text className={`text-xs font-bold font-mono block mt-0.5 ${hesapOzetleri.nakit >= 0 ? 'text-slate-700' : 'text-rose-500'}`}>
+              {hesapOzetleri.nakit.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+        </div>
 
         {birikimListesi.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
@@ -160,10 +153,12 @@ const BirikimContent = () => {
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {birikimListesi.map((item) => {
                 const isToday = dayjs(item.createdAt).isSame(dayjs(), 'day');
+                // Kayıttaki aktif hesabı belirleme
+                const aktifHesap = item.altKategori || (item.tip === "ARTIŞ" ? item.hedefAltKategori : item.kaynakAltKategori);
+
                 return (
                   <SwipeableListItem 
                     key={item._id} 
-                    leadingActions={leadingActions(item)} 
                     trailingActions={trailingActions(item)}
                   >
                     <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-gray-50'}`}>
@@ -172,9 +167,16 @@ const BirikimContent = () => {
                       </div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className={`text-[10px] uppercase tracking-wide ${item.renk === 'text-emerald-500' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                            {item.tip === 'ARTIŞ' ? 'Giriş' : 'Çıkış'}
-                          </Text>
+                          <div className="flex items-center gap-1.5">
+                            <Text strong className={`text-[10px] uppercase tracking-wide ${item.renk === 'text-emerald-500' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                              {item.tip === 'ARTIŞ' ? 'Giriş' : 'Çıkış'}
+                            </Text>
+                            {aktifHesap && (
+                              <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] text-gray-500 font-medium">
+                                {aktifHesap}
+                              </span>
+                            )}
+                          </div>
                           <Text className={`text-base font-black font-mono ${item.renk}`}>
                              {Number(item.miktar).toFixed(2).replace('.', ',')}€
                           </Text>
@@ -201,59 +203,6 @@ const BirikimContent = () => {
           </div>
         )}
       </div>
-
-      <Modal
-        title={<div className="text-lg font-bold text-emerald-600 font-mono tracking-widest uppercase text-center">Düzenle</div>}
-        open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
-        footer={null}
-        centered
-        width={380}
-        styles={{ body: { padding: '12px 16px' } }}
-      >
-        <div className="space-y-4">
-          <div className="bg-emerald-50/50 py-2 px-4 rounded-2xl text-center border border-emerald-100">
-            <Text strong className="text-[10px] text-emerald-400 uppercase block mb-0">Miktar</Text>
-            <Input 
-              variant="borderless" 
-              type="number" 
-              inputMode="decimal" 
-              className="p-0 text-3xl font-black text-emerald-600 text-center leading-tight font-mono" 
-              value={formData.miktar} 
-              suffix={<span className="text-emerald-300 text-lg">€</span>}
-              onFocus={(e) => e.target.select()}
-              onChange={e => setFormData({...formData, miktar: e.target.value})} 
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
-              <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Tarih</Text>
-              <CustomDayPicker value={formData.tarih} onChange={d => setFormData({...formData, tarih: d})} isIncome={formData.tip === "ARTIŞ"} />
-            </div>
-            <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 flex flex-col justify-center items-center">
-              <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5">Tür</Text>
-              <Text className={`font-bold text-xs uppercase ${formData.tip === 'ARTIŞ' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                {formData.tip === 'ARTIŞ' ? 'Giriş' : 'Çıkış'}
-              </Text>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-            <Text strong className="text-[10px] text-gray-400 uppercase block mb-1">Not</Text>
-            <Input.TextArea variant="borderless" rows={2} className="p-0 text-sm" value={formData.not} onChange={e => setFormData({...formData, not: e.target.value})} placeholder="Detaylar..." />
-          </div>
-
-          <Button 
-            type="primary" 
-            block 
-            onClick={handleEditSave}
-            className="h-12 text-lg font-bold bg-emerald-600 hover:bg-emerald-500 border-none rounded-xl uppercase tracking-widest mt-2"
-          >
-            Güncelle
-          </Button>
-        </div>
-      </Modal>
     </div>
   );
 };

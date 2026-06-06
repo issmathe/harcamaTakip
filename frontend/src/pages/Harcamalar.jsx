@@ -14,7 +14,8 @@ import {
   DownOutlined,
   UpOutlined,
   SortAscendingOutlined,
-  SortDescendingOutlined
+  SortDescendingOutlined,
+  WalletOutlined
 } from "@ant-design/icons";
 
 import CustomDayPicker from "../components/Forms/CustomDayPicker";
@@ -53,6 +54,7 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
+const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toLowerCase();
@@ -68,6 +70,12 @@ const getCategoryDetails = (kategori) => {
   }
 };
 
+const getSourceBadgeClass = (source) => {
+  if (source === "Birikim") return "bg-blue-100 text-blue-700";
+  if (source === "Ekstra Gelir") return "bg-purple-100 text-purple-700";
+  return "bg-gray-100 text-gray-600";
+};
+
 const HarcamalarContent = () => {
   const { harcamalar = [], refetch, isLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null);
@@ -77,14 +85,14 @@ const HarcamalarContent = () => {
   const [selectedYear, setSelectedYear] = useState(now.year());
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFuture, setShowFuture] = useState(false); // Katlanabilir bölüm kontrolü
-  const [sortByAmount, setSortByAmount] = useState("date"); // "date", "desc", "asc"
+  const [showFuture, setShowFuture] = useState(false); 
+  const [sortByAmount, setSortByAmount] = useState("date"); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingHarcama, setEditingHarcama] = useState(null);
 
   const [formData, setFormData] = useState({
-    miktar: "", kategori: "", altKategori: "", not: "", tarih: dayjs().toDate(),
+    miktar: "", kategori: "", altKategori: "", not: "", harcamaKaynagi: "Gelir", tarih: dayjs().toDate(),
   });
 
   const handleEditSave = async () => {
@@ -105,8 +113,12 @@ const HarcamalarContent = () => {
   };
 
   const definitiveDelete = async (id) => {
-    await axios.delete(`${API_URL}/harcama/${id}`);
-    refetch();
+    try {
+      await axios.delete(`${API_URL}/harcama/${id}`);
+      refetch();
+    } catch (err) {
+      message.error("Silme işlemi sunucuda başarısız oldu");
+    }
   };
 
   const startDeleteProcess = (id) => {
@@ -136,6 +148,7 @@ const HarcamalarContent = () => {
       const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
       const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         h.harcamaKaynagi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          h.not?.toLowerCase().includes(searchTerm.toLowerCase());
       return categoryMatch && searchMatch;
     });
@@ -154,7 +167,6 @@ const HarcamalarContent = () => {
       }
     });
 
-    // Sıralama mantığı
     if (sortByAmount === "desc") {
       normal.sort((a, b) => Number(b.miktar || 0) - Number(a.miktar || 0));
     } else if (sortByAmount === "asc") {
@@ -171,7 +183,7 @@ const HarcamalarContent = () => {
 
   const kategoriToplam = useMemo(
     () => normalHarcamalar
-      .filter(h => h.kategori?.toLowerCase() !== "tasarruf") 
+      .filter(h => (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir") && h.kategori?.toLowerCase() !== "tasarruf") 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
     [normalHarcamalar]
   );
@@ -193,6 +205,7 @@ const HarcamalarContent = () => {
       kategori: harcama.kategori,
       altKategori: harcama.altKategori || "",
       not: harcama.not || "",
+      harcamaKaynagi: harcama.harcamaKaynagi || "Gelir",
       tarih: dayjs(harcama.createdAt).toDate(),
     });
     setEditModalVisible(true);
@@ -227,12 +240,12 @@ const HarcamalarContent = () => {
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
               <Text className="text-[10px] font-bold uppercase text-gray-400">Dönem Toplamı</Text>
+              {/* DÜZELTİLEN YER: Manuel eksi işareti kaldırıldı, standart yerelleştirilmiş format getirildi */}
               <Text className="text-lg font-black text-red-500">
-                -{kategoriToplam.toFixed(2).replace('.', ',')}€
+                €{kategoriToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             </div>
             
-            {/* Sıralama Butonu */}
             <Button 
               type={sortByAmount !== "date" ? "primary" : "default"}
               shape="circle" 
@@ -249,11 +262,11 @@ const HarcamalarContent = () => {
             </Select>
           </div>
           <div className="pt-2 border-t border-gray-50">
-            <Input placeholder="Ara..." variant="filled" className="rounded-2xl h-10 border-none bg-gray-50" prefix={<SearchOutlined className="text-gray-400" />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} allowClear />
+            <Input placeholder="Ara (Kategori, alt kategori veya kaynak)..." variant="filled" className="rounded-2xl h-10 border-none bg-gray-50" prefix={<SearchOutlined className="text-gray-400" />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} allowClear />
           </div>
         </div>
 
-        {/* Bekleyen İşlemler - Akordiyon Yapısı */}
+        {/* Bekleyen İşlemler */}
         {futureHarcamalar.length > 0 && (
           <div className="bg-orange-50/50 rounded-3xl border border-orange-100 overflow-hidden transition-all">
             <div 
@@ -276,7 +289,12 @@ const HarcamalarContent = () => {
                     <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                       <div className="bg-white/80 p-3 mb-2 rounded-2xl border border-orange-100 flex justify-between items-center w-full shadow-sm">
                         <div className="min-w-0">
-                          <Text strong className="text-[9px] block text-orange-400 uppercase leading-none mb-1">{h.kategori}</Text>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Text strong className="text-[9px] block text-orange-400 uppercase leading-none">{h.kategori}</Text>
+                            <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(h.harcamaKaynagi)}`}>
+                              {h.harcamaKaynagi || "Gelir"}
+                            </span>
+                          </div>
                           <Text className="text-[11px] font-bold block leading-none truncate max-w-[150px]">{h.altKategori || h.kategori}</Text>
                           <Text className="text-[9px] text-gray-400 block mt-1">{dayjs(h.createdAt).format('DD MMM, HH:mm')}</Text>
                         </div>
@@ -299,13 +317,21 @@ const HarcamalarContent = () => {
               {normalHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
+                const kaynakStr = h.harcamaKaynagi || "Gelir";
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                     <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
                       <div className={`p-3 rounded-2xl mr-4 ${color} flex items-center justify-center text-lg shadow-sm`}>{icon}</div>
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center">
-                          <Text strong className="text-xs uppercase tracking-wide truncate max-w-[120px] text-gray-500">{h.altKategori || h.kategori}</Text>
+                          <div className="flex flex-col min-w-0">
+                            <Text strong className="text-xs uppercase tracking-wide truncate max-w-[120px] text-gray-500">{h.altKategori || h.kategori}</Text>
+                            <div className="mt-0.5">
+                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${getSourceBadgeClass(kaynakStr)}`}>
+                                {kaynakStr}
+                              </span>
+                            </div>
+                          </div>
                           <Text className="text-base font-black text-red-500">-{h.miktar}€</Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
@@ -340,6 +366,16 @@ const HarcamalarContent = () => {
             <Text strong className="text-[10px] text-red-400 uppercase block mb-0">Miktar</Text>
             <Input variant="borderless" type="number" inputMode="decimal" className="p-0 text-3xl font-black text-red-500 text-center leading-tight" value={formData.miktar} suffix={<span className="text-red-300 text-lg">€</span>} onFocus={(e) => e.target.select()} onChange={e => setFormData({...formData, miktar: e.target.value})} />
           </div>
+
+          <div className="bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
+            <Text strong className="text-[9px] text-gray-400 uppercase block mb-1 ml-1 flex items-center gap-1">
+              <WalletOutlined /> Harcama Yapılan Grup (Kasa)
+            </Text>
+            <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({...formData, harcamaKaynagi: v})}>
+              {HARCAMA_KAYNAKLARI.map(src => <Option key={src} value={src}>{src}</Option>)}
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-50 p-2 rounded-2xl border border-gray-100 min-w-0">
               <Text strong className="text-[9px] text-gray-400 uppercase block mb-0.5 ml-1">Tarih</Text>

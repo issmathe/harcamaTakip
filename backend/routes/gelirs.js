@@ -10,14 +10,22 @@ router.post("/transfer", async (req, res) => {
   session.startTransaction();
 
   try {
-    const { kaynakKategori, hedefKategori, miktar, not, createdAt } = req.body;
+    const { 
+      kaynakKategori, 
+      hedefKategori, 
+      miktar, 
+      not, 
+      createdAt,
+      kaynakAltKategori,
+      hedefAltKategori
+    } = req.body;
 
     if (!kaynakKategori || !hedefKategori || !miktar) {
       return res.status(400).json({ message: "Kaynak, hedef kategori ve miktar zorunludur" });
     }
 
-    if (kaynakKategori === hedefKategori) {
-      return res.status(400).json({ message: "Aynı kategoriye transfer yapılamaz" });
+    if (kaynakKategori === hedefKategori && kaynakAltKategori === hedefAltKategori) {
+      return res.status(400).json({ message: "Aynı kategori ve hesaba transfer yapılamaz" });
     }
 
     const transferMiktari = Math.abs(Number(miktar));
@@ -50,10 +58,17 @@ router.post("/transfer", async (req, res) => {
       anlikBakiye = toplamBankIncome - totalBankExit - eskiTransferler;
     } else {
       // 2. Senaryo: Kaynak "Ekstra Gelir", "Birikim" gibi alt kutulardan biriyse
-      const kutuGelirleri = await Gelir.find({ kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+      // Eğer birikim ise ve alt hesap (Trade Republic vb.) seçildiyse spesifik bakiye kontrolü yap
+      let query = { kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
+      if (kaynakKategori.toLowerCase() === "tasarruf" && kaynakAltKategori) {
+        query.altKategori = kaynakAltKategori;
+      }
       
-      // Bu kutudan doğrudan yapılan harcamaları yakala (harcamaKaynagi eşleşenler)
-      const kutuHarcamalari = await Harcama.find({ harcamaKaynagi: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } }).session(session);
+      const kutuGelirleri = await Gelir.find(query).session(session);
+      
+      // Harcamalar tarafında da aynı eşleşmeyi yakala (Şimdilik harcama tarafında alt hesap yoksa genel düşer)
+      let harcamaQuery = { harcamaKaynagi: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
+      const kutuHarcamalari = await Harcama.find(harcamaQuery).session(session);
 
       const toplamGelir = kutuGelirleri.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
       const toplamGider = kutuHarcamalari.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
@@ -65,8 +80,9 @@ router.post("/transfer", async (req, res) => {
     if (anlikBakiye < transferMiktari) {
       await session.abortTransaction();
       session.endSession();
+      const hesapIsmi = kaynakAltKategori ? `${kaynakKategori} (${kaynakAltKategori})` : kaynakKategori;
       return res.status(400).json({ 
-        message: `Yetersiz bakiye! ${kaynakKategori} havuzunda sadece €${anlikBakiye.toFixed(2)} var. Transfer edilmek istenen: €${transferMiktari.toFixed(2)}` 
+        message: `Yetersiz bakiye! ${hesapIsmi} havuzunda sadece €${anlikBakiye.toFixed(2)} var. Transfer edilmek istenen: €${transferMiktari.toFixed(2)}` 
       });
     }
     // ------------------------------
@@ -78,7 +94,10 @@ router.post("/transfer", async (req, res) => {
     const kaynakKayit = new Gelir({
       miktar: -transferMiktari,
       kategori: kaynakKategori,
-      not: not ? `[Transfer -> ${hedefKategori}] ${not} | ID:${ortakTransferId}` : `[Transfer -> ${hedefKategori}] | ID:${ortakTransferId}`,
+      altKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
+      kaynakAltKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
+      hedefAltKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
+      not: not ? `[Transfer -> ${hedefKategori}${hedefAltKategori ? ' (' + hedefAltKategori + ')' : ''}] ${not} | ID:${ortakTransferId}` : `[Transfer -> ${hedefKategori}${hedefAltKategori ? ' (' +毀edefAltKategori + ')' : ''}] | ID:${ortakTransferId}`,
       createdAt: islemTarihi
     });
 
@@ -86,7 +105,10 @@ router.post("/transfer", async (req, res) => {
     const hedefKayit = new Gelir({
       miktar: transferMiktari,
       kategori: hedefKategori,
-      not: not ? `[Transfer <- ${kaynakKategori}] ${not} | ID:${ortakTransferId}` : `[Transfer <- ${kaynakKategori}] | ID:${ortakTransferId}`,
+      altKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
+      kaynakAltKategori: kaynakKategori.toLowerCase() === "tasarruf" ? kaynakAltKategori : "",
+      hedefAltKategori: hedefKategori.toLowerCase() === "tasarruf" ? hedefAltKategori : "",
+      not: not ? `[Transfer <- ${kaynakKategori}${kaynakAltKategori ? ' (' + kaynakAltKategori + ')' : ''}] ${not} | ID:${ortakTransferId}` : `[Transfer <- ${kaynakKategori}${kaynakAltKategori ? ' (' + kaynakAltKategori + ')' : ''}] | ID:${ortakTransferId}`,
       createdAt: islemTarihi
     });
 
@@ -107,7 +129,7 @@ router.post("/transfer", async (req, res) => {
 // ➕ Yeni gelir ekle
 router.post("/", async (req, res) => {
   try {
-    const { miktar, kategori, not, createdAt } = req.body; 
+    const { miktar, kategori, altKategori, not, createdAt } = req.body; 
 
     if (!miktar || !kategori) {
       return res.status(400).json({ message: "Miktar ve kategori zorunludur" });
@@ -116,6 +138,7 @@ router.post("/", async (req, res) => {
     const yeniGelir = new Gelir({
       miktar,
       kategori,
+      altKategori: kategori.toLowerCase() === "tasarruf" ? altKategori : "",
       not,
       ...(createdAt && { createdAt: createdAt }), 
     });
@@ -143,8 +166,8 @@ router.get("/", async (req, res) => {
 // 🔄 Tek geliri güncelle
 router.put("/:id", async (req, res) => {
   try {
-    const { miktar, kategori, not, createdAt } = req.body; 
-    const updates = { miktar, kategori, not };
+    const { miktar, kategori, altKategori, not, createdAt } = req.body; 
+    const updates = { miktar, kategori, altKategori, not };
     
     if (createdAt) {
       updates.createdAt = createdAt; 
