@@ -134,7 +134,7 @@ const HarcamalarContent = () => {
     message.success({ 
       content: (
         <span className="flex items-center space-x-2">
-          <Text strong>🗑️ Silindi</Text>
+          <Text strong>🗑️ Silindi mi</Text>
           <Button type="link" size="small" onClick={() => { clearTimeout(deleteTimerRef.current); message.destroy(MESSAGE_KEY); }}>Geri Al</Button>
         </span>
       ), 
