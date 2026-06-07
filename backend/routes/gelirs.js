@@ -31,13 +31,15 @@ router.post("/transfer", async (req, res) => {
     const transferMiktari = Math.abs(Number(miktar));
     let anlikBakiye = 0;
 
+    // DÜZELTME: Dil birliği sağlandığı için doğrudan güvenli string kontrolü
     const isGelirKategorisi = kaynakKategori.toLowerCase() === "gelir";
 
     if (isGelirKategorisi) {
-      const tumGercekGelirler = await Gelir.find({ kategori: { $regex: /^gelir$/i } }).session(session);
+      // Banka (Ana Gelir) bakiyesini hesapla
+      const tumGelirler = await Gelir.find().session(session);
       
-      const toplamBankIncome = tumGercekGelirler
-        .filter(g => !g.not || !g.not.includes("[Transfer"))
+      const toplamBankIncome = tumGelirler
+        .filter(g => g.kategori === "Gelir" && (!g.not || !g.not.includes("TRF_")))
         .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
       const tumHarcamalar = await Harcama.find().session(session);
@@ -45,24 +47,42 @@ router.post("/transfer", async (req, res) => {
         .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir")
         .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-      const eskiTransferler = tumGercekGelirler
-        .filter(g => g.not && g.not.includes("[Transfer ->") && g.miktar < 0)
+      // Bankadan dışarı giden transfer bacakları
+      const eskiTransferlerGiden = tumGelirler
+        .filter(g => g.kategori === "Gelir" && g.not && g.not.includes("TRF_") && g.miktar < 0)
         .reduce((sum, g) => sum + Math.abs(g.miktar), 0);
 
-      anlikBakiye = toplamBankIncome - totalBankExit - eskiTransferler;
-    } else {
-      let query = { kategori: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
-      if (kaynakKategori.toLowerCase() === "tasarruf" && kaynakAltKategori) {
-        query.altKategori = kaynakAltKategori;
-      }
-      
-      const kutuGelirleri = await Gelir.find(query).session(session);
-      
-      let harcamaQuery = { harcamaKaynagi: { $regex: new RegExp(`^${kaynakKategori}$`, "i") } };
-      const kutuHarcamalari = await Harcama.find(harcamaQuery).session(session);
+      // Diğer havuzlardan bankaya geri dönen transfer bacakları
+      const eskiTransferlerGelen = tumGelirler
+        .filter(g => g.kategori === "Gelir" && g.not && g.not.includes("TRF_") && g.miktar > 0)
+        .reduce((sum, g) => sum + Number(g.miktar), 0);
 
-      const toplamGelir = kutuGelirleri.reduce((sum, g) => sum + Number(g.miktar || 0), 0);
-      const toplamGider = kutuHarcamalari.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+      anlikBakiye = (toplamBankIncome + eskiTransferlerGelen) - totalBankExit - eskiTransferlerGiden;
+    } else {
+      // DÜZELTME: Dinamik alt havuz bakiyelerini hatasız hesaplama motoru
+      const havuzGelirleri = await Gelir.find({ kategori: kaynakKategori }).session(session);
+      
+      const filtrelenmişGelirler = havuzGelirleri.filter(g => {
+        if (kaynakKategori.toLowerCase() === "tasarruf") {
+          return g.altKategori === kaynakAltKategori || g.kaynakAltKategori === kaynakAltKategori;
+        }
+        return true;
+      });
+
+      const toplamGelir = filtrelenmişGelirler.reduce((sum, g) => {
+        // Eğer bu havuzdan başka yere giden bir transferse miktar zaten eksidir, doğrudan ekle
+        return sum + Number(g.miktar || 0);
+      }, 0);
+
+      const havuzHarcamalari = await Harcama.find({ harcamaKaynagi: kaynakKategori }).session(session);
+      const filtrelenmişHarcamalar = havuzHarcamalari.filter(h => {
+        if (kaynakKategori.toLowerCase() === "tasarruf") {
+          return h.altKategori === kaynakAltKategori;
+        }
+        return true;
+      });
+
+      const toplamGider = filtrelenmişHarcamalar.reduce((sum, h) => sum + Number(h.miktar || 0), 0);
       
       anlikBakiye = toplamGelir - toplamGider;
     }
@@ -72,14 +92,13 @@ router.post("/transfer", async (req, res) => {
       session.endSession();
       const hesapIsmi = kaynakAltKategori ? `${kaynakKategori} (${kaynakAltKategori})` : kaynakKategori;
       return res.status(400).json({ 
-        message: `Yetersiz bakiye! ${hesapIsmi} havuzunda sadece EUR ${anlikBakiye.toFixed(2)} var.` 
+        message: `Yetersiz bakiye! ${hesapIsmi} havuzunda sadece EUR ${anlikBakiye.toFixed(2).replace('.', ',')} var.` 
       });
     }
 
     const islemTarihi = createdAt ? new Date(createdAt) : new Date();
     const ortakTransferId = "TRF_" + Date.now();
 
-    // Not alanlarını temiz dize birleştirmeyle oluşturuyoruz
     const kaynakNotEki = hedefAltKategori ? ` (${hedefAltKategori})` : "";
     const kaynakNotu = not ? `[Transfer -> ${hedefKategori}${kaynakNotEki}] ${not} | ID:${ortakTransferId}` : `[Transfer -> ${hedefKategori}${kaynakNotEki}] | ID:${ortakTransferId}`;
 
@@ -112,7 +131,7 @@ router.post("/transfer", async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({ message: "Transfer başarıyla gerçekleşti", kaynakKayit, hedefKayit });
+    res.status(201).json({ message: "Transfer başarıyla gerçekleşti", kaynakKayit, Residential: hedefKayit });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
@@ -130,7 +149,7 @@ router.post("/", async (req, res) => {
     }
 
     const yeniGelir = new Gelir({
-      miktar,
+      miktar: Number(miktar),
       kategori,
       altKategori: kategori.toLowerCase() === "tasarruf" ? altKategori : "",
       not,
@@ -161,7 +180,7 @@ router.get("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { miktar, kategori, altKategori, not, createdAt } = req.body; 
-    const updates = { miktar, kategori, altKategori, not };
+    const updates = { miktar: Number(miktar), kategori, altKategori, not };
     
     if (createdAt) {
       updates.createdAt = createdAt; 

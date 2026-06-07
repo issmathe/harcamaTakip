@@ -33,12 +33,17 @@ const HarcamaSchema = new mongoose.Schema(
     not: {
       type: String,
     },
-    // Yeni eklenen alan: Harcamanın hangi hesaptan/kasadan karşılandığı
+    // Harcamanın hangi hesaptan/kasadan karşılandığı
     harcamaKaynagi: {
       type: String,
       enum: ["Gelir", "Ekstra Gelir", "Birikim"],
-      default: "Gelir", // Eski ve kaynaksız harcamalar otomatik olarak "Gelir" sayılacak
+      default: "Gelir", 
       required: true
+    },
+    // KRİTİK EKSİK ALAN: Birikim seçildiğinde alt hesabı (Wise, Trade Republic, Ev vb.) tutar
+    birikimHesabi: {
+      type: String,
+      default: ""
     },
     createdAt: {
         type: Date,

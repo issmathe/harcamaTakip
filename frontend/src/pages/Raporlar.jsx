@@ -91,15 +91,25 @@ const RaporlarContent = () => {
     };
   }, [harcamalar, last6Months]);
 
-  // Kalan (Net Bakiye) Tablo Verisi
+  // DÜZELTME: Kalan (Net Bakiye) hesaplanırken transfer bacakları ve tasarruflar ayıklandı
   const kalanTableData = useMemo(() => {
     return kalanMonths.map((month) => {
       const monthlyIncome = gelirler
-        .filter((g) => dayjs(g.createdAt).month() === month.month() && dayjs(g.createdAt).year() === month.year())
+        .filter((g) => {
+          const t = dayjs(g.createdAt);
+          const isTargetMonth = t.month() === month.month() && t.year() === month.year();
+          const isTransfer = g.not && g.not.includes("TRF_");
+          return isTargetMonth && !isTransfer;
+        })
         .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
       const monthlyExpense = harcamalar
-        .filter((h) => dayjs(h.createdAt).month() === month.month() && dayjs(h.createdAt).year() === month.year() && h.kategori?.toLowerCase() !== "tasarruf")
+        .filter((h) => {
+          const t = dayjs(h.createdAt);
+          const isTargetMonth = t.month() === month.month() && t.year() === month.year();
+          const isTasarruf = h.kategori?.toLowerCase() === "tasarruf";
+          return isTargetMonth && !isTasarruf;
+        })
         .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
       return {
@@ -109,7 +119,7 @@ const RaporlarContent = () => {
         gider: Math.round(monthlyExpense),
         net: Math.round(monthlyIncome - monthlyExpense)
       };
-    }).reverse(); // En yeni ay en üstte olsun
+    }).reverse(); 
   }, [harcamalar, gelirler, kalanMonths]);
 
   // 6 Aylık Harcama Trendi Gradient Tetikleyici
@@ -146,13 +156,21 @@ const RaporlarContent = () => {
 
   const globalMax = useMemo(() => {
     const totals = {};
-    harcamalar.forEach(h => { if (h.kategori?.toLowerCase() !== "tasarruf") { const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.kategori}`; totals[key] = (totals[key] || 0) + Number(h.miktar); } });
+    harcamalar.forEach(h => { 
+      if (h.kategori?.toLowerCase() !== "tasarruf") { 
+        const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.kategori}`; 
+        totals[key] = (totals[key] || 0) + Number(h.miktar); 
+      } 
+    });
     return Math.max(...Object.values(totals), 100) * 1.2;
   }, [harcamalar]);
 
   const globalMarketMax = useMemo(() => {
     const totals = {};
-    harcamalar.filter(h => h.kategori === "Market").forEach(h => { const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.altKategori || "Diğer"}`; totals[key] = (totals[key] || 0) + Number(h.miktar); });
+    harcamalar.filter(h => h.kategori?.toLowerCase() === "market").forEach(h => { 
+      const key = `${dayjs(h.createdAt).format("YYYY-MM")}-${h.altKategori || "Diğer"}`; 
+      totals[key] = (totals[key] || 0) + Number(h.miktar); 
+    });
     return Math.max(...Object.values(totals), 50) * 1.2;
   }, [harcamalar]);
 
@@ -181,7 +199,7 @@ const RaporlarContent = () => {
     const calculateDetailed = (list, categoryName) => list.map(item => ({
         name: item,
         total: aralikHarcamalar
-          .filter(h => h.kategori === categoryName && h.altKategori === item)
+          .filter(h => h.kategori?.toLowerCase() === categoryName.toLowerCase() && h.altKategori === item)
           .reduce((s, h) => s + Number(h.miktar), 0)
     })).filter(i => i.total > 0).sort((a, b) => b.total - a.total);
 
@@ -386,13 +404,13 @@ const RaporlarContent = () => {
           ) : filteredHarcamalar.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-50"><Empty description="Kayıt yok" /></div>
           ) : activeTab === "Genel" ? (
-            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '400px' }}><Bar data={{ labels: ALL_CATEGORIES, datasets: [{ data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori === cat).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]), borderRadius: 4, barThickness: 10 }] }} options={getBarOptions(globalMax)} /></div></Card>
+            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '400px' }}><Bar data={{ labels: ALL_CATEGORIES, datasets: [{ data: ALL_CATEGORIES.map(cat => filteredHarcamalar.filter(h => h.kategori?.toLowerCase() === cat.toLowerCase()).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: ALL_CATEGORIES.map(cat => categoryColors[cat]), borderRadius: 4, barThickness: 10 }] }} options={getBarOptions(globalMax)} /></div></Card>
           ) : activeTab === "Market" ? (
-            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '450px' }}><Bar data={{ labels: MARKETLER, datasets: [{ data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori === "Market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#3b82f6", borderRadius: 4, barThickness: 10 }] }} options={getBarOptions(globalMarketMax)} /></div></Card>
+            <Card className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '450px' }}><Bar data={{ labels: MARKETLER, datasets: [{ data: MARKETLER.map(m => filteredHarcamalar.filter(h => h.kategori?.toLowerCase() === "market" && h.altKategori === m).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#3b82f6", borderRadius: 4, barThickness: 10 }] }} options={getBarOptions(globalMarketMax)} /></div></Card>
           ) : activeTab === "Detay" ? (
             <div className="space-y-4">
-              <Card title={<Text strong className="text-[11px] uppercase text-gray-400 tracking-wider">Giyim Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '180px' }}><Bar data={{ labels: GIYIM_KISILERI, datasets: [{ data: GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori === "Giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#FF6384", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(globalMax)} /></div></Card>
-              <Card title={<Text strong className="text-[11px] uppercase text-gray-400 tracking-wider">Aile Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '150px' }}><Bar data={{ labels: AILE_UYELERI, datasets: [{ data: AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori === "Aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(globalMax)} /></div></Card>
+              <Card title={<Text strong className="text-[11px] uppercase text-gray-400 tracking-wider">Giyim Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '180px' }}><Bar data={{ labels: GIYIM_KISILERI, datasets: [{ data: GIYIM_KISILERI.map(k => filteredHarcamalar.filter(h => h.kategori?.toLowerCase() === "giyim" && h.altKategori === k).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#FF6384", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(globalMax)} /></div></Card>
+              <Card title={<Text strong className="text-[11px] uppercase text-gray-400 tracking-wider">Aile Detay</Text>} className="rounded-3xl border-none shadow-sm" bodyStyle={{ padding: '16px' }}><div style={{ height: '150px' }}><Bar data={{ labels: AILE_UYELERI, datasets: [{ data: AILE_UYELERI.map(u => filteredHarcamalar.filter(h => h.kategori?.toLowerCase() === "aile" && h.altKategori === u).reduce((s, h) => s + Number(h.miktar), 0)), backgroundColor: "#AF52DE", borderRadius: 4, barThickness: 12 }] }} options={getBarOptions(globalMax)} /></div></Card>
             </div>
           ) : null}
         </div>

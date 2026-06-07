@@ -29,6 +29,7 @@ const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = 'silmeIslemi'; 
 
+// DÜZELTME: Standart kelime yapısına uyması için baş harfler büyük tanımlandı
 const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
 
 const getCategoryDetails = (kategori, isTransfer) => {
@@ -83,7 +84,6 @@ const GelirlerContent = () => {
         if (!islenenTransferler.has(transferId)) {
           islenenTransferler.add(transferId);
 
-          // Eşleşen diğer bacağı bul (Biri pozitif miktar diğeri negatif miktardır)
           const esKayit = filtered.find(x => x._id !== kayit._id && x.not && x.not.includes(transferId));
 
           let kaynak = kayit.kategori;
@@ -100,31 +100,26 @@ const GelirlerContent = () => {
             }
           }
 
-          // Temiz not alanından teknik transfer yönlendirmelerini temizle
           temizNot = temizNot.replace(/\[Transfer -> [^\]]+\]\s*/g, "").replace(/\[Transfer <- [^\]]+\]\s*/g, "").trim();
 
-          // Tek bir sanal transfer objesi oluşturuyoruz
           birlesikListe.push({
             ...kayit,
-            _id: kayit._id, // Silme işlemi tetiklendiğinde backend regex ile ikisini de silecek
+            _id: kayit._id, 
             isTransfer: true,
             kaynakKategori: kaynak,
             hedefKategori: hedef,
-            miktar: Math.abs(kayit.miktar), // Ekranda sadece net transfer miktarını göster
+            miktar: Math.abs(kayit.miktar), 
             temizNot: temizNot
           });
         }
       } else {
-        // Düz normal gelir kaydıysa dokunmadan listeye ekle
         birlesikListe.push({ ...kayit, isTransfer: false });
       }
     });
 
-    // Tarihe göre yeniden sırala
     return birlesikListe.sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [gelirler, selectedMonth, selectedYear]);
 
-  // Dönem toplamında transferlerin birbirini ezmesini engellemek için sadece gerçek gelirleri topluyoruz
   const aylikToplam = useMemo(() => {
     return (gelirler || [])
       .filter((g) => {
@@ -268,7 +263,7 @@ const GelirlerContent = () => {
                             <Text strong className={`text-xs uppercase tracking-wide ${isToday ? 'text-emerald-600' : 'text-gray-500'}`}>{gelir.kategori}</Text>
                           )}
                           <Text className={`text-base font-black ${gelir.isTransfer ? 'text-blue-500' : 'text-emerald-600'}`}>
-                            {gelir.isTransfer ? "" : "+"}{gelir.miktar}€
+                            {gelir.isTransfer ? "" : "+"}{Number(gelir.miktar).toFixed(2).replace('.', ',')}€
                           </Text>
                         </div>
                         <div className="flex justify-between items-end mt-1">
@@ -345,7 +340,8 @@ const GelirlerContent = () => {
                 value={formData.kategori} 
                 onChange={v => setFormData({...formData, kategori: v})}
               >
-                {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat.toLowerCase()}>{cat}</Option>)}
+                {/* DÜZELTME: Veritabanında dil birliği sağlamak adına value değeri küçük harfe zorlanmaktan kurtarıldı */}
+                {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
               </Select>
             </div>
           </div>

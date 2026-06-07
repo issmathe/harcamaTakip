@@ -26,23 +26,21 @@ const BirikimContent = () => {
   const { harcamalar = [], gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null); 
 
-  // Birikim (tasarruf) ile ilgili tüm ham listeyi oluşturma
+  // Birikim ile ilgili tüm ham listeyi oluşturma
   const birikimListesi = useMemo(() => {
-    // Gelirler içinden kategorisi tasarruf olanlar (eski veriler veya transferler)
     const gTasarruf = (gelirler || [])
-      .filter(g => g.kategori?.toLowerCase() === "tasarruf")
+      .filter(g => g && g.kategori?.toLowerCase() === "tasarruf")
       .map(s => ({ ...s, tip: "ARTIŞ", renk: "text-emerald-500", iconColor: "bg-emerald-50 text-emerald-500" }));
 
-    // Harcamalar içinden kategorisi tasarruf olanlar VEYA harcama kaynağı "Birikim" olanlar!
     const hTasarruf = (harcamalar || [])
-      .filter(h => h.kategori?.toLowerCase() === "tasarruf" || h.harcamaKaynagi === "Birikim")
+      .filter(h => h && (h.kategori?.toLowerCase() === "tasarruf" || h.harcamaKaynagi === "Birikim"))
       .map(s => ({ ...s, tip: "AZALIŞ", renk: "text-blue-500", iconColor: "bg-blue-50 text-blue-500" }));
 
     return [...gTasarruf, ...hTasarruf]
       .sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf());
   }, [gelirler, harcamalar]);
 
-  // Alt hesapların ve genel varlığın hesaplanması
+  // Zırhlı Alt Hesap Hesaplama Mantığı
   const hesapOzetleri = useMemo(() => {
     let tradeRepublic = 0;
     let wise = 0;
@@ -50,21 +48,28 @@ const BirikimContent = () => {
     let netVarlik = 0;
 
     birikimListesi.forEach((item) => {
-      const miktarNum = Number(item.miktar || 0);
+      if (!item) return;
+      
+      // Miktarı güvenli sayı tipine çevir, NaN kontrolü yap
+      let miktarNum = Number(item.miktar);
+      if (isNaN(miktarNum)) miktarNum = 0;
 
       if (item.tip === "ARTIŞ") {
         netVarlik += miktarNum;
-        const hedef = item.altKategori || item.hedefAltKategori;
-        if (hedef === "Trade Republic") tradeRepublic += miktarNum;
-        else if (hedef === "Wise") wise += miktarNum;
-        else if (hedef === "Nakit" || hedef === "Ev") nakit += miktarNum;
+        const hedefRaw = item.altKategori || item.hedefAltKategori || "";
+        const hedef = hedefRaw.toString().trim().toLowerCase();
+        
+        if (hedef === "trade republic") tradeRepublic += miktarNum;
+        else if (hedef === "wise") wise += miktarNum;
+        else if (hedef === "nakit" || hedef === "ev") nakit += miktarNum;
       } else {
         netVarlik -= miktarNum;
-        // Yeni mimaride birikimHesabi alanını, eski mimaride altKategori veya kaynakAltKategori alanını kontrol et
-        const kaynak = item.birikimHesabi || item.altKategori || item.kaynakAltKategori;
-        if (kaynak === "Trade Republic") tradeRepublic -= miktarNum;
-        else if (kaynak === "Wise") wise -= miktarNum;
-        else if (kaynak === "Nakit" || kaynak === "Ev") nakit -= miktarNum;
+        const kaynakRaw = item.birikimHesabi || item.altKategori || item.kaynakAltKategori || "";
+        const kaynak = kaynakRaw.toString().trim().toLowerCase();
+        
+        if (kaynak === "trade republic") tradeRepublic -= miktarNum;
+        else if (kaynak === "wise") wise -= miktarNum;
+        else if (kaynak === "nakit" || kaynak === "ev") nakit -= miktarNum;
       }
     });
 
@@ -153,10 +158,19 @@ const BirikimContent = () => {
           <div className="space-y-3 transition-all">
             <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
               {birikimListesi.map((item) => {
+                if (!item) return null;
                 const isToday = dayjs(item.createdAt).isSame(dayjs(), 'day');
+                const rawHesap = item.birikimHesabi || item.altKategori || (item.tip === "ARTIŞ" ? item.hedefAltKategori : item.kaynakAltKategori || "");
                 
-                // Ekrandaki etiketi belirleme lojiği
-                const aktifHesap = item.birikimHesabi || item.altKategori || (item.tip === "ARTIŞ" ? item.hedefAltKategori : item.kaynakAltKategori);
+                const temizHesap = rawHesap.toString().trim().toLowerCase();
+                let aktifHesap = rawHesap;
+                if (temizHesap === "ev" || temizHesap === "nakit") {
+                  aktifHesap = "Nakit";
+                } else if (temizHesap === "trade republic") {
+                  aktifHesap = "Trade Republic";
+                } else if (temizHesap === "wise") {
+                  aktifHesap = "Wise";
+                }
 
                 return (
                   <SwipeableListItem 
@@ -175,7 +189,7 @@ const BirikimContent = () => {
                             </Text>
                             {aktifHesap && (
                               <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] text-gray-500 font-medium">
-                                {aktifHesap === "Ev" ? "Nakit" : aktifHesap}
+                                {aktifHesap}
                               </span>
                             )}
                             {item.kategori && item.kategori.toLowerCase() !== "tasarruf" && (
