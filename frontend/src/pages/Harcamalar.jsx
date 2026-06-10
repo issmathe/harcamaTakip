@@ -45,9 +45,10 @@ const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = "harcamaSilmeIslemi";
 
+// DÜZELTME: Tasarruf bu listeden tamamen kaldırıldı
 const ALL_CATEGORIES = [
-  "Market", "Giyim", "Tasarruf", "Kira", "Fatura", "Eğitim",
-  "Sağlık", "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
+  "Market", "Giyim", "Kira", "Fatura", "Eğitim", "Sağlık", 
+  "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
   "Restoran", "Aile", "Diğer",
 ];
 
@@ -55,13 +56,15 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
-const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
+
+// DÜZELTME: Harcama kaynakları (Kasa grupları) yeni mimariye uygun olarak güncellendi
+const HARCAMA_KAYNAKLARI = ["Gelir", "Tasarruf"];
 const BIRIKIM_HESAPLARI = ["Trade Republic", "Wise", "Nakit"];
 
 const getCategoryDetails = (kategori) => {
   const normalizedKategori = kategori?.toLowerCase();
   switch (normalizedKategori) {
-    case "tasarruf": case "market": case "restoran": case "aile": 
+    case "market": case "restoran": case "aile": 
       return { icon: <DollarCircleOutlined />, color: "bg-red-50 text-red-500" };
     case "kira": case "fatura":
       return { icon: <TagOutlined />, color: "bg-blue-50 text-blue-500" };
@@ -73,8 +76,7 @@ const getCategoryDetails = (kategori) => {
 };
 
 const getSourceBadgeClass = (source) => {
-  if (source === "Birikim") return "bg-blue-100 text-blue-700";
-  if (source === "Ekstra Gelir") return "bg-purple-100 text-purple-700";
+  if (source === "Tasarruf") return "bg-blue-100 text-blue-700";
   return "bg-gray-100 text-gray-600";
 };
 
@@ -99,7 +101,7 @@ const HarcamalarContent = () => {
 
   const handleEditSave = async () => {
     if (!formData.miktar) return message.error("Miktar giriniz");
-    if (formData.harcamaKaynagi === "Birikim" && !formData.birikimHesabi) {
+    if (formData.harcamaKaynagi === "Tasarruf" && !formData.birikimHesabi) {
       return message.error("Lütfen bir birikim hesabı seçin");
     }
     
@@ -107,8 +109,7 @@ const HarcamalarContent = () => {
       const payload = {
         ...formData,
         miktar: parseFloat(formData.miktar),
-        // Eğer kaynak Birikim değilse veritabanındaki alanı temizle
-        birikimHesabi: formData.harcamaKaynagi === "Birikim" ? formData.birikimHesabi : "",
+        birikimHesabi: formData.harcamaKaynagi === "Tasarruf" ? formData.birikimHesabi : "",
         createdAt: dayjs(formData.tarih).toISOString(),
       };
       await axios.put(`${API_URL}/harcama/${editingHarcama._id}`, payload);
@@ -190,9 +191,10 @@ const HarcamalarContent = () => {
     };
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now, sortByAmount]);
 
+  // DÜZELTME: Tasarruf filtresi artık gereksizleştiği için sadeleştirildi
   const kategoriToplam = useMemo(
     () => normalHarcamalar
-      .filter(h => (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir") && h.kategori?.toLowerCase() !== "tasarruf") 
+      .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir") 
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
     [normalHarcamalar]
   );
@@ -245,7 +247,6 @@ const HarcamalarContent = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Özet ve Arama Kartı */}
         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 space-y-3">
           <div className="flex justify-between items-center">
             <div className="flex flex-col">
@@ -262,7 +263,6 @@ const HarcamalarContent = () => {
               onClick={toggleSort}
               className="flex items-center justify-center border-gray-200"
               icon={sortByAmount === "asc" ? <SortAscendingOutlined /> : <SortDescendingOutlined />}
-              title={sortByAmount === "date" ? "Tarihe Göre" : sortByAmount === "desc" ? "Büyükten Küçüğe" : "Küçükten Büyüğe"}
             />
 
             <Select value={selectedCategory} onChange={setSelectedCategory} size="middle" variant="filled" className="w-40" style={{ borderRadius: '12px' }}>
@@ -275,7 +275,6 @@ const HarcamalarContent = () => {
           </div>
         </div>
 
-        {/* Bekleyen İşlemler */}
         {futureHarcamalar.length > 0 && (
           <div className="bg-orange-50/50 rounded-3xl border border-orange-100 overflow-hidden transition-all">
             <div 
@@ -295,7 +294,7 @@ const HarcamalarContent = () => {
               <div className="px-3 pb-3 space-y-2">
                 <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
                   {futureHarcamalar.map((h) => {
-                    const inlineKaynak = h.harcamaKaynagi === "Birikim" && h.birikimHesabi ? `Birikim (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                    const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
                     return (
                       <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                         <div className="bg-white/80 p-3 mb-2 rounded-2xl border border-orange-100 flex justify-between items-center w-full shadow-sm">
@@ -320,7 +319,6 @@ const HarcamalarContent = () => {
           </div>
         )}
 
-        {/* Ana Liste */}
         {normalHarcamalar.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center shadow-sm"><Empty description="Kayıt yok" /></div>
         ) : (
@@ -329,7 +327,7 @@ const HarcamalarContent = () => {
               {normalHarcamalar.map((h) => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
-                const kaynakStr = h.harcamaKaynagi === "Birikim" && h.birikimHesabi ? `Birikim (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                const kaynakStr = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                     <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
@@ -365,7 +363,6 @@ const HarcamalarContent = () => {
         )}
       </div>
 
-      {/* Düzenleme Modalı */}
       <Modal
         title={<div className="text-lg font-bold text-blue-500 font-mono tracking-widest uppercase text-center">İşlemi Düzenle</div>}
         open={editModalVisible}
@@ -385,13 +382,12 @@ const HarcamalarContent = () => {
             <Text strong className="text-[9px] text-gray-400 uppercase block mb-1 ml-1 flex items-center gap-1">
               <WalletOutlined /> Harcama Yapılan Grup (Kasa)
             </Text>
-            <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({...formData, harcamaKaynagi: v, birikimHesabi: v === "Birikim" ? "Wise" : ""})}>
+            <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({...formData, harcamaKaynagi: v, birikimHesabi: v === "Tasarruf" ? "Wise" : ""})}>
               {HARCAMA_KAYNAKLARI.map(src => <Option key={src} value={src}>{src}</Option>)}
             </Select>
           </div>
 
-          {/* DİNAMİK ALAN: Eğer kaynak Birikim ise hangi alt hesap olduğunu seçtiriyoruz */}
-          {formData.harcamaKaynagi === "Birikim" && (
+          {formData.harcamaKaynagi === "Tasarruf" && (
             <div className="bg-blue-50/50 p-2.5 rounded-2xl border border-blue-100 transition-all">
               <Text strong className="text-[9px] text-blue-500 uppercase block mb-1 ml-1 flex items-center gap-1">
                 <BankOutlined /> Birikim Hesabı Seçimi
