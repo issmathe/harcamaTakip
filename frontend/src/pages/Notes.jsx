@@ -11,7 +11,9 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 
-const API_URL = "http://localhost:5001/notes"; 
+// 🌐 DÜZELTME: Diğer sayfalarla tam uyumlu ve telefon hatasını çözen dinamik URL yapısı
+const BASE_SERVER = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
+const API_URL = `${BASE_SERVER.replace("/api", "")}/notes`; 
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -20,10 +22,8 @@ const Notes = () => {
   const [aramaMetni, setAramaMetni] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Mobilde liste mi yoksa editör mü görünecek kontrolü
-  const [mobilGörünüm, setMobilGörünüm] = useState("liste"); // "liste" veya "editor"
+  const [mobilGörünüm, setMobilGörünüm] = useState("liste"); 
 
-  // Form State'leri
   const [baslik, setBaslik] = useState("");
   const [icerik, setIerik] = useState("");
   const [etiket, setEtiket] = useState("Genel");
@@ -38,7 +38,6 @@ const Notes = () => {
         const bulunan = res.data.find(n => n._id === secilecekId);
         if (bulunan) notSec(bulunan);
       } else if (res.data.length > 0 && !seciliNot && window.innerWidth > 768) {
-        // Bilgisayarda ilk notu seç ama mobilde boş ekran kalmasın diye seçme
         notSec(res.data[0]);
       }
     } catch (err) {
@@ -58,7 +57,7 @@ const Notes = () => {
     setBaslik(not.baslik);
     setIerik(not.icerik);
     setEtiket(not.etiket || "Genel");
-    setMobilGörünüm("editor"); // Mobilde direkt editör ekranına geçiş yap
+    setMobilGörünüm("editor"); 
   };
 
   const yeniNotEkle = async () => {
@@ -108,11 +107,10 @@ const Notes = () => {
   return (
     <div className="flex h-screen bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden">
       
-      {/* SOL PANEL: NOT LİSTESİ (Mobilde sadece liste görünümündeyse açılır) */}
+      {/* SOL PANEL: NOT LİSTESİ */}
       <div className={`w-full md:w-80 border-r border-gray-200 bg-white flex flex-col h-full shadow-sm transition-all duration-300
         ${mobilGörünüm === "liste" ? "block" : "hidden md:flex"}`}>
         
-        {/* Üst Menü */}
         <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
           <Button 
             type="text" 
@@ -130,7 +128,6 @@ const Notes = () => {
           />
         </div>
 
-        {/* Arama Barı */}
         <div className="p-3 border-b border-gray-100">
           <Input
             placeholder="Notlarda ara..."
@@ -142,7 +139,6 @@ const Notes = () => {
           />
         </div>
 
-        {/* Liste */}
         <div className="flex-1 overflow-y-auto">
           <List
             loading={loading}
@@ -177,16 +173,14 @@ const Notes = () => {
         </div>
       </div>
 
-      {/* SAĞ PANEL: EDİTÖR (Mobilde sadece editör görünümündeyse açılır) */}
+      {/* SAĞ PANEL: EDİTÖR */}
       <div className={`flex-1 flex flex-col bg-white h-full transition-all duration-300
         ${mobilGörünüm === "editor" ? "block" : "hidden md:flex"}`}>
         
         {seciliNot ? (
           <>
-            {/* Editör Üst Aksiyon Çubuğu */}
             <div className="px-4 md:px-6 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
               <div className="flex items-center gap-2">
-                {/* Mobilde Listeye Geri Dönme Butonu */}
                 <Button
                   type="text"
                   icon={<MenuUnfoldOutlined />}
@@ -232,7 +226,6 @@ const Notes = () => {
               </div>
             </div>
 
-            {/* Giriş Alanları */}
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-4 overflow-y-auto">
               <input
                 type="text"
