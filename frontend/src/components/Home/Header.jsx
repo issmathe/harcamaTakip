@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom"; // navigate eklendi
+import { useNavigate } from "react-router-dom"; 
 import { Typography, Progress, Button } from "antd";
 import {
   ArrowUpOutlined,
@@ -11,7 +11,8 @@ import {
   CalendarOutlined,
   SaveOutlined,
   EyeOutlined,
-  EyeInvisibleOutlined
+  EyeInvisibleOutlined,
+  FormOutlined // ➕ Not ikonu için eklendi
 } from "@ant-design/icons";
 import { useTotalsContext } from "../../context/TotalsContext";
 import dayjs from "dayjs";
@@ -19,7 +20,7 @@ import dayjs from "dayjs";
 const { Title, Text } = Typography;
 
 const Header = () => {
-  const navigate = useNavigate(); // navigate tanımlandı
+  const navigate = useNavigate(); 
   const { 
     totalIncome, totalExpense, totalToday, 
     cumulativeIncome, cumulativeExpense, bankBalance,
@@ -27,21 +28,18 @@ const Header = () => {
   } = useTotalsContext();
   
   const [activeState, setActiveState] = useState({ id: null, mode: 1 });
-  const [isHidden, setIsHidden] = useState(false); // Gizleme durumu
+  const [isHidden, setIsHidden] = useState(false); 
 
-  // Birikim kutusunun bakiyesini akıllıca hesaplar
   const totalSavings = useMemo(() => {
-    // 1. Kategorisi direkt "tasarruf" veya "birikim" olan eski/yeni gelir ve transfer kayıtları
     const gelirTasarruf = (gelirler || [])
       .filter(g => g.kategori?.toLowerCase() === "tasarruf" || g.kategori?.toLowerCase() === "birikim")
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Harcama kaynağı olarak "Birikim" seçilmiş harcamalar (Bu kutudan harcananlar)
-    const harcananTasarruf = (harcamalar || [])
+    const harcenanTasarruf = (harcamalar || [])
       .filter(h => h.harcamaKaynagi === "Birikim" || h.kategori?.toLowerCase() === "tasarruf")
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    return gelirTasarruf - harcananTasarruf;
+    return gelirTasarruf - harcenanTasarruf;
   }, [harcamalar, gelirler]);
 
   const totalAssets = (cumulativeIncome || 0) - (cumulativeExpense || 0);
@@ -75,7 +73,7 @@ const Header = () => {
   const fuelColor = remainingFuel > 50 ? "#10b981" : remainingFuel > 20 ? "#f59e0b" : "#ef4444";
 
   const formatCurrency = (val) => {
-    if (isHidden) return "****"; // Gizleme aktifse yıldız göster
+    if (isHidden) return "****"; 
     return (val || 0).toLocaleString("tr-TR", { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
@@ -144,6 +142,15 @@ const Header = () => {
                   onClick={() => setIsHidden(!isHidden)}
                   className="h-4 w-4 flex items-center justify-center hover:bg-white/10"
                 />
+                {/* ➕ APPLE NOTLAR TETİKLEYİCİ İKONU */}
+                <Button 
+                  type="text" 
+                  size="small" 
+                  icon={<FormOutlined className="text-white/70 hover:text-white" />} 
+                  onClick={() => navigate("/notlar")}
+                  className="h-4 w-4 flex items-center justify-center hover:bg-white/10"
+                  title="Notlar"
+                />
               </div>
               <Title level={2} className="!text-white !m-0 !text-3xl font-black italic">
                 €{formatCurrency(totalAssets)}
@@ -154,7 +161,6 @@ const Header = () => {
                 <BankOutlined className="text-emerald-400 text-xs" />
                 <span className="font-bold text-[11px]">banka €{formatCurrency(bankBalance)}</span>
               </div>
-              {/* Birikim butonu tıklandığında /birikim sayfasına gider */}
               <div 
                 onClick={() => navigate("/birikim")}
                 className="bg-blue-500/20 backdrop-blur-md px-3 py-1 rounded-xl border border-blue-400/30 flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"

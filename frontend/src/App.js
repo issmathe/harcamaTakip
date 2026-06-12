@@ -10,6 +10,7 @@ import Gelirler from "./pages/Gelirler";
 import Harcamalar from "./pages/Harcamalar";
 import Raporlar from "./pages/Raporlar"; 
 import Birikim from "./pages/Birikim"; 
+import Notes from "./pages/Notes"; // ➕ Notlar sayfasını içeri alıyoruz
 
 // --- Scroll SIFIRLAMA MANTIĞI BURADA ---
 const ScrollToTop = ({ containerRef }) => {
@@ -50,6 +51,7 @@ function App() {
               <Route path="/harcamalar" element={<Harcamalar />} />
               <Route path="/raporlar" element={<Raporlar />} /> 
               <Route path="/birikim" element={<Birikim />} /> 
+              <Route path="/notlar" element={<Notes />} />
             </Routes>
           </main>
           
