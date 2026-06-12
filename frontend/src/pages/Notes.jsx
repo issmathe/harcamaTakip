@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Button, List, Select, Popconfirm, message } from "antd";
+import { Input, Button, Select, Modal, message } from "antd"; // ✂️ List kaldırıldı
 import { 
   PlusOutlined, 
-  DeleteOutlined, 
   ArrowLeftOutlined, 
   SearchOutlined,
   SaveOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  DeleteOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
-// 🌐 DÜZELTME: Diğer sayfalarla tam uyumlu ve telefon hatasını çözen dinamik URL yapısı
+import {
+  SwipeableList,
+  SwipeableListItem,
+  SwipeAction,
+  TrailingActions,
+  Type as ListType,
+} from "react-swipeable-list";
+import "react-swipeable-list/dist/styles.css";
+
 const BASE_SERVER = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 const API_URL = `${BASE_SERVER.replace("/api", "")}/notes`; 
 
@@ -20,7 +28,7 @@ const Notes = () => {
   const [notlar, setNotlar] = useState([]);
   const [seciliNot, setSeciliNot] = useState(null);
   const [aramaMetni, setAramaMetni] = useState("");
-  const [loading, setLoading] = useState(false);
+  // ✂️ loading state'i tamamen kaldırıldı
   
   const [mobilGörünüm, setMobilGörünüm] = useState("liste"); 
 
@@ -29,7 +37,6 @@ const Notes = () => {
   const [etiket, setEtiket] = useState("Genel");
 
   const notlariGetir = async (secilecekId = null) => {
-    setLoading(true);
     try {
       const res = await axios.get(API_URL);
       setNotlar(res.data);
@@ -42,8 +49,6 @@ const Notes = () => {
       }
     } catch (err) {
       message.error("Notlar yüklenirken bir hata oluştu.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -87,21 +92,43 @@ const Notes = () => {
     }
   };
 
-  const notuSil = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      message.success("Not silindi.");
-      setSeciliNot(null);
-      setMobilGörünüm("liste");
-      await notlariGetir();
-    } catch (err) {
-      message.error("Not silinemedi.");
-    }
+  const notuSilOnay = (id) => {
+    Modal.confirm({
+      title: "Notu Sil",
+      content: "Bu notu silmek istediğinize emin misiniz?",
+      okText: "Evet, Sil",
+      okType: "danger",
+      cancelText: "Hayır",
+      centered: true,
+      onOk: async () => {
+        try {
+          await axios.delete(`${API_URL}/${id}`);
+          message.success("Not silindi.");
+          if (seciliNot?._id === id) {
+            setSeciliNot(null);
+            setMobilGörünüm("liste");
+          }
+          await notlariGetir();
+        } catch (err) {
+          message.error("Not silinemedi.");
+        }
+      },
+    });
   };
 
   const filtrelenmisNotlar = notlar.filter(not => 
     not.baslik.toLowerCase().includes(aramaMetni.toLowerCase()) ||
     not.icerik.toLowerCase().includes(aramaMetni.toLowerCase())
+  );
+
+  const trailingActions = (notId) => (
+    <TrailingActions>
+      <SwipeAction onClick={() => notuSilOnay(notId)} destructive={false}>
+        <div className="bg-red-500 text-white flex justify-center items-center h-full w-20 rounded-r-2xl cursor-pointer">
+          <DeleteOutlined className="text-xl" />
+        </div>
+      </SwipeAction>
+    </TrailingActions>
   );
 
   return (
@@ -140,36 +167,43 @@ const Notes = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <List
-            loading={loading}
-            dataSource={filtrelenmisNotlar}
-            renderItem={(item) => {
-              const isSelected = seciliNot?._id === item._id;
-              return (
-                <div
-                  onClick={() => notSec(item)}
-                  className={`p-4 border-b border-gray-50 cursor-pointer transition-all flex justify-between items-start select-none
-                    ${isSelected ? "bg-indigo-50 border-l-4 border-l-indigo-600" : "hover:bg-gray-50"}`}
-                >
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="font-semibold text-sm text-gray-900 truncate mb-1">
-                      {item.baslik || "Başlıksız Not"}
+          {filtrelenmisNotlar.length > 0 ? (
+            <SwipeableList threshold={0.4} fullSwipe={false} listType={ListType.IOS}>
+              {filtrelenmisNotlar.map((item) => {
+                const isSelected = seciliNot?._id === item._id;
+                return (
+                  <SwipeableListItem
+                    key={item._id}
+                    trailingActions={trailingActions(item._id)}
+                  >
+                    <div
+                      onClick={() => notSec(item)}
+                      className={`w-full p-4 border-b border-gray-50 cursor-pointer transition-all flex justify-between items-start select-none bg-white
+                        ${isSelected ? "bg-indigo-50/70 border-l-4 border-l-indigo-600" : "hover:bg-gray-50"}`}
+                    >
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="font-semibold text-sm text-gray-900 truncate mb-1">
+                          {item.baslik || "Başlıksız Not"}
+                        </div>
+                        <div className="text-xs text-gray-400 truncate">
+                          {item.icerik ? item.icerik.substring(0, 45) : "Metin girilmedi..."}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        item.etiket === "Borç" ? "bg-rose-50 text-rose-600" :
+                        item.etiket === "Alacak" ? "bg-emerald-50 text-emerald-600" :
+                        item.etiket === "Plan" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"
+                      }`}>
+                        {item.etiket || "Genel"}
+                      </span>
                     </div>
-                    <div className="text-xs text-gray-400 truncate">
-                      {item.icerik ? item.icerik.substring(0, 45) : "Metin girilmedi..."}
-                    </div>
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    item.etiket === "Borç" ? "bg-rose-50 text-rose-600" :
-                    item.etiket === "Alacak" ? "bg-emerald-50 text-emerald-600" :
-                    item.etiket === "Plan" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"
-                  }`}>
-                    {item.etiket || "Genel"}
-                  </span>
-                </div>
-              );
-            }}
-          />
+                  </SwipeableListItem>
+                );
+              })}
+            </SwipeableList>
+          ) : (
+            <div className="text-center text-gray-400 py-8 text-xs">Not bulunamadı.</div>
+          )}
         </div>
       </div>
 
@@ -209,20 +243,6 @@ const Notes = () => {
                 >
                   Kaydet
                 </Button>
-                <Popconfirm
-                  title="Not silinecek?"
-                  onConfirm={() => notuSil(seciliNot._id)}
-                  okText="Evet"
-                  cancelText="Hayır"
-                  okButtonProps={{ danger: true }}
-                >
-                  <Button 
-                    type="text" 
-                    danger 
-                    icon={<DeleteOutlined />} 
-                    className="hover:bg-red-50 rounded-xl"
-                  />
-                </Popconfirm>
               </div>
             </div>
 
