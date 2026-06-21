@@ -31,21 +31,20 @@ export const TotalsProvider = ({ children }) => {
 
     const isPastOrPresent = (date) => !dayjs(date).isAfter(now);
 
-    // API response yapısına göre dizileri güvenli bir şekilde üst seviyeye çıkartıyoruz
     const hamGelirler = totals.gelirler || (totals.data && totals.data.gelirler) || [];
     const hamHarcamalar = totals.harcamalar || (totals.data && totals.data.harcamalar) || [];
 
-    // 1. Bu Ayın Gelirleri (Sadece gerçek 'gelir' kategorisi, 'transfer' hariç)
+    // 🚀 DÜZELTME 1: Kategori bağımsız, transfer olmayan TÜM bu ayın gelirlerini topla
     const totalIncome = hamGelirler
       .filter(g => {
         const d = dayjs(g.createdAt);
+        const isTransfer = g.not && g.not.includes("| ID:TRF_");
         return d.isSame(now, "month") && d.isSame(now, "year") && 
-               g.kategori?.toLowerCase() === "gelir" && 
+               !isTransfer && 
                isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // 2. Bu Ayın Giderleri (Kaynağından bağımsız olarak tüm harcamalar)
     const totalExpense = hamHarcamalar
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -54,29 +53,26 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 3. Bugünün Toplam Harcaması
     const totalToday = hamHarcamalar
       .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 4. Kümülatif Hesaplamalar
-
-    // Tüm zamanların harcamaları
     const cumulativeExpense = hamHarcamalar
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // BANKADAN ÇIKAN PARA: Sadece harcama kaynağı boş olan (eski kayıtlar) veya "Gelir" olan harcamalar bankadan düşer
     const totalExitFromBank = hamHarcamalar
       .filter(h => isPastOrPresent(h.createdAt) && (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // Bankaya giren para sadece gerçek gelirlerdir
+    // 🚀 DÜZELTME 2: Bankaya giren para transfer dışındaki tüm ana gelir kategorileridir (Ekstra, Gelir vb.)
     const cumulativeOnlyIncome = hamGelirler
-      .filter(g => g.kategori?.toLowerCase() === "gelir" && isPastOrPresent(g.createdAt))
+      .filter(g => {
+        const isTransfer = g.not && g.not.includes("| ID:TRF_");
+        return !isTransfer && isPastOrPresent(g.createdAt);
+      })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    // Tüm zamanların tüm gelirleri
     const cumulativeTotalIncome = hamGelirler
       .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
@@ -86,8 +82,8 @@ export const TotalsProvider = ({ children }) => {
 
     return {
       ...totals,
-      gelirler: hamGelirler,     // Birikim.jsx dosyasının doğrudan okuyabilmesi için zorunlu alan
-      harcamalar: hamHarcamalar, // Birikim.jsx dosyasının doğrudan okuyabilmesi için zorunlu alan
+      gelirler: hamGelirler,     
+      harcamalar: hamHarcamalar, 
       totalIncome,
       totalExpense,
       totalToday,
