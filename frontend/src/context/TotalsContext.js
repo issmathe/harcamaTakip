@@ -34,17 +34,19 @@ export const TotalsProvider = ({ children }) => {
     const hamGelirler = totals.gelirler || (totals.data && totals.data.gelirler) || [];
     const hamHarcamalar = totals.harcamalar || (totals.data && totals.data.harcamalar) || [];
 
-    // 🚀 DÜZELTME 1: Kategori bağımsız, transfer olmayan TÜM bu ayın gelirlerini topla
+    // 1. Bu Ayın Gelirleri
+    // 🛠️ DÜZELTME: Sadece 'gelir' değil, 'tasarruf' hariç tüm gelir tipleri (Ekstra vb.) aylık gelire sayılır.
     const totalIncome = hamGelirler
       .filter(g => {
         const d = dayjs(g.createdAt);
-        const isTransfer = g.not && g.not.includes("| ID:TRF_");
+        const kat = g.kategori?.toLowerCase();
         return d.isSame(now, "month") && d.isSame(now, "year") && 
-               !isTransfer && 
+               kat !== "tasarruf" && kat !== "birikim" && // Transfer benzeri birikim hareketleri hariç
                isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
+    // 2. Bu Ayın Giderleri
     const totalExpense = hamHarcamalar
       .filter(h => {
         const d = dayjs(h.createdAt);
@@ -53,26 +55,31 @@ export const TotalsProvider = ({ children }) => {
       })
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
+    // 3. Bugünün Toplam Harcaması
     const totalToday = hamHarcamalar
       .filter(h => dayjs(h.createdAt).isSame(startOfToday, "day"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
+    // 4. Kümülatif Hesaplamalar
     const cumulativeExpense = hamHarcamalar
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
+    // BANKADAN ÇIKAN PARA
     const totalExitFromBank = hamHarcamalar
       .filter(h => isPastOrPresent(h.createdAt) && (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // 🚀 DÜZELTME 2: Bankaya giren para transfer dışındaki tüm ana gelir kategorileridir (Ekstra, Gelir vb.)
+    // BANKAYA GİREN PARA
+    // 🛠️ DÜZELTME: Bankaya giren nakit sadece ana gelir değil, 'Ekstra' gibi direkt harcanabilir gelirleri de kapsar.
     const cumulativeOnlyIncome = hamGelirler
       .filter(g => {
-        const isTransfer = g.not && g.not.includes("| ID:TRF_");
-        return !isTransfer && isPastOrPresent(g.createdAt);
+        const kat = g.kategori?.toLowerCase();
+        return kat !== "tasarruf" && kat !== "birikim" && isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
+    // Tüm zamanların tüm gelirleri
     const cumulativeTotalIncome = hamGelirler
       .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
