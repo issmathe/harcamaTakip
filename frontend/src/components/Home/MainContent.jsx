@@ -707,7 +707,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYBET</Button>
+          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
         </Form>
       </Modal>
 
