@@ -17,7 +17,7 @@ const HarcamaSchema = new mongoose.Schema(
         "Sağlık",
         "Ulaşım",
         "Eğlence",
-        "Elektronik",
+        "EvEsyasi", // "Elektronik" silindi, yerine frontend ile uyumlu "EvEsyasi" eklendi
         "İletisim",
         "Market",
         "Hediye",

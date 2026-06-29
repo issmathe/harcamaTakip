@@ -25,7 +25,7 @@ import {
   HeartPulse,
   Car,
   Gamepad2,
-  Smartphone,
+  Sofa, // Elektronik yerine Ev Eşyası için Sofa ikonu eklendi
   Wifi,
   Gift,
   Utensils,
@@ -53,7 +53,7 @@ const CATEGORY_CONFIG = {
   Sağlık: { icon: HeartPulse, color: "#ef4444", bg: "rgba(239, 68, 68, 0.2)" },
   Ulaşım: { icon: Car, color: "#f97316", bg: "rgba(249, 115, 22, 0.2)" },
   Eğlence: { icon: Gamepad2, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.2)" },
-  Elektronik: { icon: Smartphone, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" },
+  EvEsyasi: { icon: Sofa, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" }, // Elektronik, EvEsyasi olarak güncellendi
   İletisim: { icon: Wifi, color: "#14b8a6", bg: "rgba(20, 184, 166, 0.2)" },
   Hediye: { icon: Gift, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.2)" },
   Restoran: { icon: Utensils, color: "#d946ef", bg: "rgba(217, 70, 239, 0.2)" },
@@ -68,7 +68,7 @@ const CategoryIcon = ({ type, isTop }) => {
   const labelElement = (
     <div className={`absolute -bottom-7 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-1' : 'opacity-40 scale-90'}`}>
       <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-white text-black' : 'bg-black/20 text-gray-400'}`}>
-        {type}
+        {type === "EvEsyasi" ? "Ev Eşyası" : type}
       </span>
     </div>
   );
@@ -103,6 +103,13 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
+const EV_ESYASI_TURLERI = [
+  "Mobilya & Dekorasyon",
+  "Kişisel Elektronik",
+  "Küçük Ev Aletleri",
+  "Tamirat",
+  "Mutfak Gereçleri",
+];
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
 const BIRIKIM_HESAPLARI = ["Ev", "Wise", "Trade Republic"];
@@ -466,7 +473,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       toplamMiktar: totalAmount,
       taksitSayisi: taksitSayisi,
       kategori: selectedCategory || "Diğer",
-      altKategori: ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory) ? values.altKategori : "",
+      altKategori: ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory) ? values.altKategori : "",
       not: customNote,
       harcamaKaynagi: values.harcamaKaynagi || "Gelir",
       birikimHesabi: values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
@@ -478,7 +485,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     return Object.values(activeSubscriptions).filter(sub => sub.kategori === selectedCategory);
   }, [activeSubscriptions, selectedCategory]);
 
-  const isAltKategoriRequired = ["Market", "Giyim", "Aile", "Ulaşım"].includes(selectedCategory);
+  const isAltKategoriRequired = ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory);
   const isBirikimSelected = watchHarcamaKaynagi === "Birikim";
 
   // Grid kolon sayısı: Tarih (1) + Kaynak (1) + (Birikim mi? 1) + (Alt Kategori mi? 1)
@@ -492,7 +499,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       
       <div className="text-center mb-6 pt-4 relative z-10">
         <div className="text-white font-bold text-2xl tracking-widest transition-all uppercase" style={{ color: CATEGORY_CONFIG[currentTopCategory]?.color || '#fff' }}>
-          {currentTopCategory}
+          {currentTopCategory === "EvEsyasi" ? "Ev Eşyası" : currentTopCategory}
         </div>
         <div className="text-white/60 font-mono text-xl mt-1">{formattedTotal} €</div>
       </div>
@@ -547,7 +554,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       </div>
 
       <Modal 
-        title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory}</div>}
+        title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory === "EvEsyasi" ? "Ev Eşyası" : selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
         className="space-modal"
         styles={{ body: { padding: '12px 16px' } }}
@@ -619,7 +626,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                   {(selectedCategory === "Market" ? MARKETLER : 
                     selectedCategory === "Giyim" ? GIYIM_KISILERI : 
                     selectedCategory === "Aile" ? AILE_UYELERI : 
-                    ULASIM_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
+                    selectedCategory === "Ulaşım" ? ULASIM_TURLERI :
+                    EV_ESYASI_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
                 </Select>
               </Form.Item>
             )}
