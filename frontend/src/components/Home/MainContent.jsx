@@ -599,25 +599,26 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
                 <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
                 
-                <Popconfirm
-                  title="Aboneliği İptal Et"
-                  description="Bu otomatik ödemeyi iptal etmek istediğinize emin misiniz?"
-                  onConfirm={() => handleCancelSubscription(sub.id)}
-                  okText="Evet, İptal Et"
-                  cancelText="Vazgeç"
-                  okButtonProps={{ danger: true }}
-                  placement="left"
-                >
-                  <Button 
-                    type="text" 
-                    danger 
-                    size="small" 
-                    icon={<XCircle size={14} />}
-                    className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
-                  >
-                    İptal Et
-                  </Button>
-                </Popconfirm>
+<Popconfirm
+  title="Abonelik İptali"
+  description="Emin misin?"
+  onConfirm={() => handleCancelSubscription(sub.id)}
+  okText="İptal Et"
+  cancelText="Vazgeç"
+  okButtonProps={{ danger: true, className: "rounded-xl font-medium" }}
+  cancelButtonProps={{ className: "rounded-xl" }}
+  placement="topLeft"
+>
+  <Button 
+    type="text" 
+    danger 
+    size="small" 
+    icon={<XCircle size={15} />}
+    className="text-[11px] h-7 px-2.5 font-bold bg-red-50 hover:bg-red-100 border-none rounded-xl flex items-center gap-1 active:scale-95 transition-all"
+  >
+    İptal Et
+  </Button>
+</Popconfirm>
               </div>
             ))}
           </div>
