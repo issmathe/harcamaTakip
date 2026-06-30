@@ -7,7 +7,8 @@ const database = require('./database.js');
 // Route imports
 const gelirRoute = require("./routes/gelirs.js");  
 const harcamaRoutes = require("./routes/harcamas.js");
-const notesRoutes = require("./routes/notes.js"); // ➕ Notlar rotası import edildi
+const notesRoutes = require("./routes/notes.js"); 
+const abonelikRoutes = require("./routes/aboneliks.js"); // ➕ Abonelik rotası import edildi
 
 dotenv.config();
 
@@ -21,7 +22,8 @@ const PORT = process.env.PORT || 5001;
 // Use Routes
 app.use("/gelir", gelirRoute);
 app.use("/harcama", harcamaRoutes);
-app.use("/notes", notesRoutes); // ➕ Notlar endpoint'i aktif edildi
+app.use("/notes", notesRoutes); 
+app.use("/abonelik", abonelikRoutes); // ➕ Abonelik endpoint'i aktif edildi
 
 app.listen(PORT, () => {
   database();

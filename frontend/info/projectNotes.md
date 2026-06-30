@@ -6,13 +6,16 @@ backend/
 ├─ models/                          # MongoDB modelleri (Mongoose şemaları)
 │  ├─ Gelir.js                      # Gelir verilerini tanımlayan model
 │  ├─ Harcama.js                    # Harcama verilerini tanımlayan model
-model
 │  ├─ Note.js                    # Uyglamadan bağımsız not 
+│
+│  ├─ Abonelik.js                    # Fatura kısmındaki veriler
 │
 ├─ routes/                          # API endpoint dosyaları
 │  ├─ gelirs.js                     # /api/gelir -> Düz gelir ve transfer işlemleri
 │  ├─ harcamas.js                    # /api/harcama -> Harcama işlemleri (Taksit, abonelik vb.)
 │  ├─ note.js                    # /api/notes -> 
+│
+│  ├─ abonelik.js                    # /api/abonelik -> 
 │
 ├─ node_modules/                    # Bağımlılıkların bulunduğu klasör (otomatik)
 │

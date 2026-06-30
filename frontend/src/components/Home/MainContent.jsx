@@ -25,7 +25,7 @@ import {
   HeartPulse,
   Car,
   Gamepad2,
-  Sofa, // Elektronik yerine Ev Eşyası için Sofa ikonu eklendi
+  Sofa, 
   Wifi,
   Gift,
   Utensils,
@@ -53,7 +53,7 @@ const CATEGORY_CONFIG = {
   Sağlık: { icon: HeartPulse, color: "#ef4444", bg: "rgba(239, 68, 68, 0.2)" },
   Ulaşım: { icon: Car, color: "#f97316", bg: "rgba(249, 115, 22, 0.2)" },
   Eğlence: { icon: Gamepad2, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.2)" },
-  EvEsyasi: { icon: Sofa, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" }, // Elektronik, EvEsyasi olarak güncellendi
+  EvEsyasi: { icon: Sofa, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" }, 
   İletisim: { icon: Wifi, color: "#14b8a6", bg: "rgba(20, 184, 166, 0.2)" },
   Hediye: { icon: Gift, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.2)" },
   Restoran: { icon: Utensils, color: "#d946ef", bg: "rgba(217, 70, 239, 0.2)" },
@@ -103,12 +103,7 @@ const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
-const EV_ESYASI_TURLERI = [
-  "Mobilya & Dekorasyon",
-  "Elektronik",
-  "Küçük Ev Aletleri",
-  "Tamirat",
-];
+const EV_ESYASI_TURLERI = ["Mobilya & Dekorasyon", "Elektronik", "Küçük Ev Aletleri", "Tamirat"];
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
 const BIRIKIM_HESAPLARI = ["Ev", "Wise", "Trade Republic"];
@@ -215,10 +210,32 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
+  // 🛠️ DEĞİŞİKLİK 1: Cihaz hafızasından (localStorage) değil, Veritabanından abonelikleri çekiyoruz.
   useEffect(() => {
-    const stored = localStorage.getItem("active_subscriptions");
-    if (stored) {
-      setActiveSubscriptions(JSON.parse(stored));
+    const fetchSubscriptions = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/abonelik`);
+        const subObj = {};
+        response.data.forEach(sub => {
+          subObj[sub._id] = {
+            id: sub._id,
+            miktar: sub.miktar,
+            kategori: sub.kategori,
+            altKategori: sub.altKategori,
+            not: sub.not,
+            kayitGunu: sub.kayitGunu,
+            harcamaKaynagi: sub.harcamaKaynagi,
+            triggeredMonths: sub.triggeredMonths || []
+          };
+        });
+        setActiveSubscriptions(subObj);
+      } catch (err) {
+        console.error("Abonelikler veritabanından çekilemedi:", err);
+      }
+    };
+
+    if (isModalVisible) {
+      fetchSubscriptions();
     }
   }, [isModalVisible]);
 
@@ -249,72 +266,71 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   };
 
+  // 🛠️ DEĞİŞİKLİK 2: Otomatik tetikleme artık MongoDB üzerinden durum kontrolü yapıyor. Cihazlar arası çift kayıt engellendi.
   useEffect(() => {
-const checkAndTriggerSubscriptions = async () => {
-  const stored = localStorage.getItem("active_subscriptions");
-  if (!stored) return;
+    const checkAndTriggerSubscriptions = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/abonelik`);
+        const subscriptions = response.data;
+        
+        const today = dayjs();
+        const currentMonthStr = today.format("YYYY-MM");
+        const currentDay = today.date();
+        const daysInMonth = today.daysInMonth();
+        let hasNewTrigger = false;
 
-  try {
-    const subscriptions = JSON.parse(stored);
-    const today = dayjs();
-    const currentMonthStr = today.format("YYYY-MM");
-    const currentDay = today.date();
-    const daysInMonth = today.daysInMonth();
-    let hasNewTrigger = false;
+        for (const sub of subscriptions) {
+          if (sub.triggeredMonths.includes(currentMonthStr)) continue;
 
-    for (const subId in subscriptions) {
-      const sub = subscriptions[subId];
-      
-      // Eğer bu ay zaten tetiklendiyse direkt geç
-      if (sub.triggeredMonths.includes(currentMonthStr)) continue;
+          const targetDay = Math.min(sub.kayitGunu, daysInMonth);
 
-      const targetDay = Math.min(sub.kayitGunu, daysInMonth);
+          if (currentDay === targetDay) {
+            await axios.post(`${API_URL}/harcama`, {
+              miktar: sub.miktar,
+              toplamMiktar: sub.miktar,
+              taksitSayisi: 1,
+              kategori: sub.kategori,
+              altKategori: sub.altKategori || "",
+              not: sub.not,
+              harcamaKaynagi: sub.harcamaKaynagi || "Gelir",
+              createdAt: today.toISOString(),
+            });
 
-      if (currentDay === targetDay) {
-        // ÇİFT KAYDI ÖNLEMEK İÇİN EN KRİTİK ADIM: 
-        // İstek göndermeden ÖNCE yerelde tetiklendi olarak işaretliyoruz ki ikinci döngü veya tetiklenme buraya girmesin.
-        sub.triggeredMonths.push(currentMonthStr);
-        hasNewTrigger = true;
+            const updatedMonths = [...sub.triggeredMonths, currentMonthStr];
+            await axios.put(`${API_URL}/abonelik/${sub._id}`, {
+              triggeredMonths: updatedMonths
+            });
 
-        await axios.post(`${API_URL}/harcama`, {
-          miktar: sub.miktar,
-          toplamMiktar: sub.miktar,
-          taksitSayisi: 1,
-          kategori: sub.kategori,
-          altKategori: sub.altKategori || "",
-          not: sub.not,
-          harcamaKaynagi: sub.harcamaKaynagi || "Gelir",
-          createdAt: today.toISOString(),
-        });
+            hasNewTrigger = true;
+          }
+        }
+
+        if (hasNewTrigger) {
+          await refetch();
+          message.info("Aylık düzenli ödemeleriniz veritabanı üzerinden senkronize işlendi.");
+        }
+      } catch (err) {
+        console.error("Abonelik tetikleme hatası:", err);
       }
-    }
-
-    if (hasNewTrigger) {
-      localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
-      setActiveSubscriptions(subscriptions);
-      await refetch();
-      message.info("Aylık düzenli ödemeleriniz otomatik olarak sisteme işlendi.");
-    }
-  } catch (err) {
-    console.error("Abonelik tetikleme hatası:", err);
-  }
-};
+    };
 
     if (harcamalar && harcamalar.length > 0) {
       checkAndTriggerSubscriptions();
     }
   }, [harcamalar, refetch]);
 
-  const handleCancelSubscription = (subId) => {
-    const stored = localStorage.getItem("active_subscriptions");
-    if (stored) {
-      const subscriptions = JSON.parse(stored);
-      if (subscriptions[subId]) {
-        delete subscriptions[subId];
-        localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
-        setActiveSubscriptions(subscriptions);
-        message.success("Aylık düzenli ödeme aboneliği başarıyla iptal edildi.");
-      }
+  // 🛠️ DEĞİŞİKLİK 3: İptal işlemi doğrudan veritabanından siliyor (DELETE)
+  const handleCancelSubscription = async (subId) => {
+    try {
+      await axios.delete(`${API_URL}/abonelik/${subId}`);
+      message.success("Aylık düzenli ödeme aboneliği başarıyla iptal edildi.");
+      setActiveSubscriptions(prev => {
+        const guncel = { ...prev };
+        delete guncel[subId];
+        return guncel;
+      });
+    } catch (err) {
+      message.error("Abonelik iptal edilirken bir hata oluştu.");
     }
   };
 
@@ -430,7 +446,7 @@ const checkAndTriggerSubscriptions = async () => {
     setShowNote(false);
   };
 
-  const onHarcamaFinish = (values) => {
+  const onHarcamaFinish = async (values) => {
     const totalAmount = parseFloat(amount.replace(",", "."));
     if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
 
@@ -446,18 +462,13 @@ const checkAndTriggerSubscriptions = async () => {
       customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
     }
 
+    // 🛠️ DEĞİŞİKLİK 4: Yeni Abonelik kaydı artık API üzerinden veritabanına (POST) gidiyor.
     if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
-      const subId = "SUB_" + Date.now();
       const chosenDate = dayjs(values.tarih || new Date());
       const currentMonthStr = chosenDate.format("YYYY-MM");
       const kayitGunu = chosenDate.date(); 
       
-      const aboIbaresi = `[Abonelik ID: ${subId}]`;
-      customNote = customNote ? `${aboIbaresi} ${customNote}` : aboIbaresi;
-
-      const currentSubs = localStorage.getItem("active_subscriptions") ? JSON.parse(localStorage.getItem("active_subscriptions")) : {};
-      currentSubs[subId] = {
-        id: subId,
+      const payload = {
         miktar: finalAmount,
         kategori: selectedCategory,
         altKategori: values.altKategori || "",
@@ -466,8 +477,12 @@ const checkAndTriggerSubscriptions = async () => {
         harcamaKaynagi: values.harcamaKaynagi || "Gelir",
         triggeredMonths: [currentMonthStr]
       };
-      localStorage.setItem("active_subscriptions", JSON.stringify(currentSubs));
-      setActiveSubscriptions(currentSubs);
+
+      try {
+        await axios.post(`${API_URL}/abonelik`, payload);
+      } catch (err) {
+        console.error("Abonelik veritabanına kaydedilemedi:", err);
+      }
     }
 
     harcamaMutation.mutate({
@@ -490,7 +505,6 @@ const checkAndTriggerSubscriptions = async () => {
   const isAltKategoriRequired = ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory);
   const isBirikimSelected = watchHarcamaKaynagi === "Birikim";
 
-  // Grid kolon sayısı: Tarih (1) + Kaynak (1) + (Birikim mi? 1) + (Alt Kategori mi? 1)
   let gridCols = 2;
   if (isBirikimSelected) gridCols += 1;
   if (isAltKategoriRequired) gridCols += 1;
@@ -581,31 +595,31 @@ const checkAndTriggerSubscriptions = async () => {
         {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && filteredSubscriptions.length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
-{filteredSubscriptions.map((sub) => (
-  <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
-    <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
-    
-    <Popconfirm
-      title="Aboneliği İptal Et"
-      description="Bu otomatik ödemeyi iptal etmek istediğinize emin misiniz?"
-      onConfirm={() => handleCancelSubscription(sub.id)}
-      okText="Evet, İptal Et"
-      cancelText="Vazgeç"
-      okButtonProps={{ danger: true }}
-      placement="left"
-    >
-      <Button 
-        type="text" 
-        danger 
-        size="small" 
-        icon={<XCircle size={14} />}
-        className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
-      >
-        İptal Et
-      </Button>
-    </Popconfirm>
-  </div>
-))}
+            {filteredSubscriptions.map((sub) => (
+              <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
+                <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
+                
+                <Popconfirm
+                  title="Aboneliği İptal Et"
+                  description="Bu otomatik ödemeyi iptal etmek istediğinize emin misiniz?"
+                  onConfirm={() => handleCancelSubscription(sub.id)}
+                  okText="Evet, İptal Et"
+                  cancelText="Vazgeç"
+                  okButtonProps={{ danger: true }}
+                  placement="left"
+                >
+                  <Button 
+                    type="text" 
+                    danger 
+                    size="small" 
+                    icon={<XCircle size={14} />}
+                    className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
+                  >
+                    İptal Et
+                  </Button>
+                </Popconfirm>
+              </div>
+            ))}
           </div>
         )}
 
