@@ -6,7 +6,7 @@ import {
   Button,
   message,
   Select,
-  Checkbox,
+  Checkbox,Popconfirm,
 } from "antd";
 
 import dayjs from "dayjs";
@@ -105,10 +105,9 @@ const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 const EV_ESYASI_TURLERI = [
   "Mobilya & Dekorasyon",
-  "Kişisel Elektronik",
+  "Elektronik",
   "Küçük Ev Aletleri",
   "Tamirat",
-  "Mutfak Gereçleri",
 ];
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
@@ -251,52 +250,55 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   };
 
   useEffect(() => {
-    const checkAndTriggerSubscriptions = async () => {
-      const stored = localStorage.getItem("active_subscriptions");
-      if (!stored) return;
+const checkAndTriggerSubscriptions = async () => {
+  const stored = localStorage.getItem("active_subscriptions");
+  if (!stored) return;
 
-      try {
-        const subscriptions = JSON.parse(stored);
-        const today = dayjs();
-        const currentMonthStr = today.format("YYYY-MM");
-        const currentDay = today.date();
-        const daysInMonth = today.daysInMonth();
-        let hasNewTrigger = false;
+  try {
+    const subscriptions = JSON.parse(stored);
+    const today = dayjs();
+    const currentMonthStr = today.format("YYYY-MM");
+    const currentDay = today.date();
+    const daysInMonth = today.daysInMonth();
+    let hasNewTrigger = false;
 
-        for (const subId in subscriptions) {
-          const sub = subscriptions[subId];
-          
-          if (sub.triggeredMonths.includes(currentMonthStr)) continue;
+    for (const subId in subscriptions) {
+      const sub = subscriptions[subId];
+      
+      // Eğer bu ay zaten tetiklendiyse direkt geç
+      if (sub.triggeredMonths.includes(currentMonthStr)) continue;
 
-          const targetDay = Math.min(sub.kayitGunu, daysInMonth);
+      const targetDay = Math.min(sub.kayitGunu, daysInMonth);
 
-          if (currentDay === targetDay) {
-            await axios.post(`${API_URL}/harcama`, {
-              miktar: sub.miktar,
-              toplamMiktar: sub.miktar,
-              taksitSayisi: 1,
-              kategori: sub.kategori,
-              altKategori: sub.altKategori || "",
-              not: sub.not,
-              harcamaKaynagi: sub.harcamaKaynagi || "Gelir",
-              createdAt: today.toISOString(),
-            });
+      if (currentDay === targetDay) {
+        // ÇİFT KAYDI ÖNLEMEK İÇİN EN KRİTİK ADIM: 
+        // İstek göndermeden ÖNCE yerelde tetiklendi olarak işaretliyoruz ki ikinci döngü veya tetiklenme buraya girmesin.
+        sub.triggeredMonths.push(currentMonthStr);
+        hasNewTrigger = true;
 
-            sub.triggeredMonths.push(currentMonthStr);
-            hasNewTrigger = true;
-          }
-        }
-
-        if (hasNewTrigger) {
-          localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
-          setActiveSubscriptions(subscriptions);
-          await refetch();
-          message.info("Aylık düzenli ödemeleriniz otomatik olarak sisteme işlendi.");
-        }
-      } catch (err) {
-        console.error("Abonelik tetikleme hatası:", err);
+        await axios.post(`${API_URL}/harcama`, {
+          miktar: sub.miktar,
+          toplamMiktar: sub.miktar,
+          taksitSayisi: 1,
+          kategori: sub.kategori,
+          altKategori: sub.altKategori || "",
+          not: sub.not,
+          harcamaKaynagi: sub.harcamaKaynagi || "Gelir",
+          createdAt: today.toISOString(),
+        });
       }
-    };
+    }
+
+    if (hasNewTrigger) {
+      localStorage.setItem("active_subscriptions", JSON.stringify(subscriptions));
+      setActiveSubscriptions(subscriptions);
+      await refetch();
+      message.info("Aylık düzenli ödemeleriniz otomatik olarak sisteme işlendi.");
+    }
+  } catch (err) {
+    console.error("Abonelik tetikleme hatası:", err);
+  }
+};
 
     if (harcamalar && harcamalar.length > 0) {
       checkAndTriggerSubscriptions();
@@ -579,21 +581,31 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && filteredSubscriptions.length > 0 && (
           <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
             <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
-            {filteredSubscriptions.map((sub) => (
-              <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
-                <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
-                <Button 
-                  type="text" 
-                  danger 
-                  size="small" 
-                  onClick={() => handleCancelSubscription(sub.id)}
-                  icon={<XCircle size={14} />}
-                  className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
-                >
-                  İptal Et
-                </Button>
-              </div>
-            ))}
+{filteredSubscriptions.map((sub) => (
+  <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
+    <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
+    
+    <Popconfirm
+      title="Aboneliği İptal Et"
+      description="Bu otomatik ödemeyi iptal etmek istediğinize emin misiniz?"
+      onConfirm={() => handleCancelSubscription(sub.id)}
+      okText="Evet, İptal Et"
+      cancelText="Vazgeç"
+      okButtonProps={{ danger: true }}
+      placement="left"
+    >
+      <Button 
+        type="text" 
+        danger 
+        size="small" 
+        icon={<XCircle size={14} />}
+        className="text-[11px] h-6 flex items-center px-1.5 hover:bg-red-500/10 border-none"
+      >
+        İptal Et
+      </Button>
+    </Popconfirm>
+  </div>
+))}
           </div>
         )}
 
