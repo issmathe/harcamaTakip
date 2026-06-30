@@ -45,7 +45,6 @@ const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = "harcamaSilmeIslemi";
 
-// DÜZELTME: Tasarruf bu listeden tamamen kaldırıldı
 const ALL_CATEGORIES = [
   "Market", "Giyim", "Kira", "Fatura", "Eğitim", "Sağlık", 
   "Ulaşım", "Eğlence", "Elektronik", "İletisim", "Hediye",
@@ -57,7 +56,6 @@ const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep"]; 
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 
-// DÜZELTME: Harcama kaynakları (Kasa grupları) yeni mimariye uygun olarak güncellendi
 const HARCAMA_KAYNAKLARI = ["Gelir", "Tasarruf"];
 const BIRIKIM_HESAPLARI = ["Trade Republic", "Wise", "Nakit"];
 
@@ -191,7 +189,6 @@ const HarcamalarContent = () => {
     };
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now, sortByAmount]);
 
-  // DÜZELTME: Tasarruf filtresi artık gereksizleştiği için sadeleştirildi
   const kategoriToplam = useMemo(
     () => normalHarcamalar
       .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir") 
@@ -295,15 +292,24 @@ const HarcamalarContent = () => {
                 <SwipeableList threshold={0.3} fullSwipe={true} listType={ListType.IOS}>
                   {futureHarcamalar.map((h) => {
                     const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                    
+                    // 🔄 Düzenli Ödeme / Abonelik İşareti Kontrolü
+                    const isSubscription = h.kategori === "Fatura" || h.kategori === "İletisim" || h.not?.toLowerCase().includes("taksit");
+
                     return (
                       <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                         <div className="bg-white/80 p-3 mb-2 rounded-2xl border border-orange-100 flex justify-between items-center w-full shadow-sm">
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 mb-1">
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                               <Text strong className="text-[9px] block text-orange-400 uppercase leading-none">{h.kategori}</Text>
                               <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(h.harcamaKaynagi)}`}>
                                 {inlineKaynak}
                               </span>
+                              {isSubscription && (
+                                <span className="px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none bg-emerald-100 text-emerald-700">
+                                  🔄 Düzenli
+                                </span>
+                              )}
                             </div>
                             <Text className="text-[11px] font-bold block leading-none truncate max-w-[150px]">{h.altKategori || h.kategori}</Text>
                             <Text className="text-[9px] text-gray-400 block mt-1">{dayjs(h.createdAt).format('DD MMM, HH:mm')}</Text>
@@ -328,6 +334,10 @@ const HarcamalarContent = () => {
                 const { icon, color } = getCategoryDetails(h.kategori);
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
                 const kaynakStr = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                
+                // 🔄 Düzenli Ödeme / Abonelik İşareti Kontrolü
+                const isSubscription = h.kategori === "Fatura" || h.kategori === "İletisim" || h.not?.toLowerCase().includes("taksit");
+
                 return (
                   <SwipeableListItem key={h._id} leadingActions={leadingActions(h)} trailingActions={trailingActions(h)}>
                     <div className={`flex items-center w-full p-4 mb-3 rounded-3xl shadow-sm border active:scale-[0.98] transition-all ${isToday ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-50'}`}>
@@ -337,10 +347,15 @@ const HarcamalarContent = () => {
                           <div className="flex items-center min-w-0 gap-2">
                             <div className="flex flex-col min-w-0">
                               <Text strong className="text-xs uppercase tracking-wide truncate max-w-[120px] text-gray-500">{h.altKategori || h.kategori}</Text>
-                              <div className="mt-0.5">
+                              <div className="mt-0.5 flex items-center gap-1 flex-wrap">
                                 <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${getSourceBadgeClass(h.harcamaKaynagi || "Gelir")}`}>
                                   {kaynakStr}
                                 </span>
+                                {isSubscription && (
+                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+                                    🔄 Düzenli
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
