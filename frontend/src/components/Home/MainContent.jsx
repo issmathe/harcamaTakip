@@ -37,8 +37,6 @@ import {
 
 import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
-import { useMutation } from "@tanstack/react-query";
-
 dayjs.extend(isSameOrAfter);
 
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
@@ -210,7 +208,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const wheelRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
-  // 🛠️ DEĞİŞİKLİK 1: Cihaz hafızasından (localStorage) değil, Veritabanından abonelikleri çekiyoruz.
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
@@ -239,16 +236,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   }, [isModalVisible]);
 
-  const harcamaMutation = useMutation({
-    mutationFn: (data) => axios.post(`${API_URL}/harcama`, data),
-    onSuccess: async () => {
-      message.success("Harcama eklendi!");
-      await refetch();
-      handleModalCancel();
-    },
-    onError: () => message.error("Harcama eklenirken hata oluştu."),
-  });
-
   const handleGelirOrTransferSave = async (payload) => {
     try {
       if (payload.kaynakKategori) {
@@ -266,7 +253,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   };
 
-  // 🛠️ DEĞİŞİKLİK 2: Otomatik tetikleme artık MongoDB üzerinden durum kontrolü yapıyor. Cihazlar arası çift kayıt engellendi.
   useEffect(() => {
     const checkAndTriggerSubscriptions = async () => {
       try {
@@ -319,7 +305,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   }, [harcamalar, refetch]);
 
-  // 🛠️ DEĞİŞİKLİK 3: İptal işlemi doğrudan veritabanından siliyor (DELETE)
   const handleCancelSubscription = async (subId) => {
     try {
       await axios.delete(`${API_URL}/abonelik/${subId}`);
@@ -430,7 +415,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     form.resetFields();
     form.setFieldsValue({ 
       tarih: dayjs().toDate(),
-      harcamaKaynagi: "Gelir"
+      harcamaKaynagi: "Gelir",
+      taksitSayisi: "2"
     });
     setShowNote(false);
   };
@@ -450,52 +436,62 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     const totalAmount = parseFloat(amount.replace(",", "."));
     if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
 
-    let finalAmount = totalAmount;
-    let taksitSayisi = 1;
-    let customNote = values.not || "";
+    let taksitSayisi = isTaksitli ? parseInt(values.taksitSayisi || currentTaksitSayisi, 10) : 1;
+    let customNoteBase = values.not || "";
+    const baseDate = values.tarih ? dayjs(values.tarih) : dayjs();
 
-    if (isTaksitli && values.taksitSayisi) {
-      taksitSayisi = parseInt(values.taksitSayisi, 10);
-      finalAmount = parseFloat((totalAmount / taksitSayisi).toFixed(2));
-      
-      const taksitIbaresi = `[1/${taksitSayisi} Taksit]`;
-      customNote = customNote ? `${taksitIbaresi} ${customNote}` : taksitIbaresi;
-    }
-
-    // 🛠️ DEĞİŞİKLİK 4: Yeni Abonelik kaydı artık API üzerinden veritabanına (POST) gidiyor.
     if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
-      const chosenDate = dayjs(values.tarih || new Date());
-      const currentMonthStr = chosenDate.format("YYYY-MM");
-      const kayitGunu = chosenDate.date(); 
+      const currentMonthStr = baseDate.format("YYYY-MM");
+      const kayitGunu = baseDate.date(); 
       
-      const payload = {
-        miktar: finalAmount,
+      const abonelikPayload = {
+        miktar: totalAmount,
         kategori: selectedCategory,
         altKategori: values.altKategori || "",
-        not: customNote,
+        not: customNoteBase,
         kayitGunu: kayitGunu, 
         harcamaKaynagi: values.harcamaKaynagi || "Gelir",
         triggeredMonths: [currentMonthStr]
       };
 
       try {
-        await axios.post(`${API_URL}/abonelik`, payload);
+        await axios.post(`${API_URL}/abonelik`, abonelikPayload);
       } catch (err) {
         console.error("Abonelik veritabanına kaydedilemedi:", err);
       }
     }
 
-    harcamaMutation.mutate({
-      miktar: finalAmount,
-      toplamMiktar: totalAmount,
-      taksitSayisi: taksitSayisi,
-      kategori: selectedCategory || "Diğer",
-      altKategori: ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory) ? values.altKategori : "",
-      not: customNote,
-      harcamaKaynagi: values.harcamaKaynagi || "Gelir",
-      birikimHesabi: values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
-      createdAt: values.tarih ? dayjs(values.tarih).toISOString() : dayjs().toISOString(),
-    });
+    try {
+      for (let i = 1; i <= taksitSayisi; i++) {
+        let finalAmount = isTaksitli ? parseFloat((totalAmount / taksitSayisi).toFixed(2)) : totalAmount;
+        let customNote = customNoteBase;
+
+        if (isTaksitli) {
+          const taksitIbaresi = `[${i}/${taksitSayisi} Taksit]`;
+          customNote = customNoteBase ? `${taksitIbaresi} ${customNoteBase}` : taksitIbaresi;
+        }
+
+        const currentTaksitDate = baseDate.add(i - 1, "month").toISOString();
+
+        await axios.post(`${API_URL}/harcama`, {
+          miktar: finalAmount,
+          toplamMiktar: totalAmount,
+          taksitSayisi: taksitSayisi,
+          kategori: selectedCategory || "Diğer",
+          altKategori: ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory) ? values.altKategori : "",
+          not: customNote,
+          harcamaKaynagi: values.harcamaKaynagi || "Gelir",
+          birikimHesabi: values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
+          createdAt: currentTaksitDate,
+        });
+      }
+
+      message.success(isTaksitli ? `${taksitSayisi} Taksit başarıyla planlandı ve eklendi!` : "Harcama eklendi!");
+      await refetch();
+      handleModalCancel();
+    } catch (err) {
+      message.error("Harcama eklenirken bir hata oluştu.");
+    }
   };
 
   const filteredSubscriptions = useMemo(() => {
@@ -742,7 +738,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block loading={harcamaMutation.isPending} className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
+          <Button type="primary" htmlType="submit" block className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
         </Form>
       </Modal>
 
