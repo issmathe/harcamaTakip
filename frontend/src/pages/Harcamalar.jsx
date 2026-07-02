@@ -389,99 +389,56 @@ const HarcamalarContent = () => {
       </div>
 
       {/* GELECEK TAKSİTLER MODALİ (Mobilde Butonlu Stabil Tasarım) */}
-{/* GELECEK TAKSİTLER MODALI */}
-<Modal
-  title={
-    <div className="text-md font-bold text-orange-500 font-mono tracking-wider uppercase text-center flex items-center justify-center gap-2">
-      <CreditCardOutlined />
-      Gelecek Dönem Taksitleri
-    </div>
-  }
-  open={taksitModalVisible}
-  onCancel={() => setTaksitModalVisible(false)}
-  footer={null}
-  centered
-  width={380}
-  styles={{
-    body: {
-      padding: "12px 16px",
-      maxHeight: "420px",
-      overflowY: "auto",
-    },
-  }}
->
-  {tumGelecekTaksitler.length === 0 ? (
-    <Empty description="Kayıt bulunamadı" />
-  ) : (
-    <SwipeableList
-      threshold={0.3}
-      fullSwipe={true}
-      listType={ListType.IOS}
-    >
-      {tumGelecekTaksitler.map((h) => {
-        const inlineKaynak =
-          h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi
-            ? `Tasarruf (${
-                h.birikimHesabi === "Ev"
-                  ? "Nakit"
-                  : h.birikimHesabi
-              })`
-            : h.harcamaKaynagi || "Gelir";
-
-        return (
-          <SwipeableListItem
-            key={h._id}
-            leadingActions={leadingActions(h)}
-            trailingActions={trailingActions(h)}
-          >
-            <div className="bg-gray-50 p-3 mb-2 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm active:scale-[0.98] transition-all">
-
-              <div className="min-w-0 flex-grow pr-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Text
-                    strong
-                    className="text-[9px] text-gray-400 uppercase leading-none"
-                  >
-                    {h.kategori === "EvEsyasi"
-                      ? "Ev Eşyası"
-                      : h.kategori}
-                  </Text>
-
-                  <span
-                    className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(
-                      h.harcamaKaynagi
-                    )}`}
-                  >
-                    {inlineKaynak}
-                  </span>
+      <Modal
+        title={<div className="text-md font-bold text-orange-500 font-mono tracking-wider uppercase text-center flex items-center justify-center gap-2"><CreditCardOutlined /> Gelecek Dönem Taksitleri</div>}
+        open={taksitModalVisible}
+        onCancel={() => setTaksitModalVisible(false)}
+        footer={null}
+        centered
+        width={380}
+        styles={{ body: { padding: '12px 16px', maxHeight: '420px', overflowY: 'auto' } }}
+      >
+        <div className="space-y-3">
+          {tumGelecekTaksitler.map((h) => {
+            const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+            return (
+              <div key={h._id} className="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex justify-between items-center w-full shadow-sm">
+                <div className="min-w-0 flex-grow pr-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Text strong className="text-[9px] block text-gray-400 uppercase leading-none">{h.kategori === "EvEsyasi" ? "Ev Eşyası" : h.kategori}</Text>
+                    <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(h.harcamaKaynagi)}`}>
+                      {inlineKaynak}
+                    </span>
+                  </div>
+                  <Text className="text-[11px] font-bold block leading-none truncate max-w-[140px]">{h.altKategori || h.kategori}</Text>
+                  {h.not && <Text className="text-[10px] text-orange-600 block mt-1 font-medium">{h.not}</Text>}
+                  <Text className="text-[9px] text-gray-400 block mt-0.5">{dayjs(h.createdAt).format('DD MMMM YYYY')}</Text>
                 </div>
-
-                <Text className="text-[11px] font-bold block leading-none truncate">
-                  {h.altKategori || h.kategori}
-                </Text>
-
-                {h.not && (
-                  <Text className="text-[10px] text-orange-600 block mt-1 font-medium truncate">
-                    {h.not}
-                  </Text>
-                )}
-
-                <Text className="text-[9px] text-gray-400 block mt-1">
-                  {dayjs(h.createdAt).format("DD MMMM YYYY")}
-                </Text>
+                
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Text className="text-sm font-black text-red-500">-{h.miktar}€</Text>
+                  <div className="flex flex-col gap-1">
+                    <Button 
+                      type="text" 
+                      size="small" 
+                      icon={<EditOutlined className="text-blue-500 text-xs" />} 
+                      onClick={() => { setTaksitModalVisible(false); openEditModal(h); }} 
+                      className="hover:bg-blue-50 flex items-center justify-center h-6 w-6 rounded-lg"
+                    />
+                    <Button 
+                      type="text" 
+                      size="small" 
+                      icon={<DeleteOutlined className="text-red-500 text-xs" />} 
+                      onClick={() => startDeleteProcess(h._id)} 
+                      className="hover:bg-red-50 flex items-center justify-center h-6 w-6 rounded-lg"
+                    />
+                  </div>
+                </div>
               </div>
-
-              <Text className="text-sm font-black text-red-500 flex-shrink-0">
-                -{h.miktar}€
-              </Text>
-
-            </div>
-          </SwipeableListItem>
-        );
-      })}
-    </SwipeableList>
-  )}
-</Modal>
+            );
+          })}
+        </div>
+      </Modal>
 
       {/* DÜZENLEME MODALİ */}
       <Modal
