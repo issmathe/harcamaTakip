@@ -6,7 +6,10 @@ import {
   Button,
   message,
   Select,
-  Checkbox,Popconfirm,
+  Checkbox,
+  Popconfirm,
+  Tag,
+  Divider
 } from "antd";
 
 import dayjs from "dayjs";
@@ -33,6 +36,8 @@ import {
   GraduationCap,
   Plus,
   XCircle,
+  CreditCard,
+  Trash2
 } from "lucide-react";
 
 import axios from "axios";
@@ -59,6 +64,7 @@ const CATEGORY_CONFIG = {
   Eğitim: { icon: GraduationCap, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.2)" },
 };
 
+// Çark üzerindeki taksit badge'i kaldırılmış Kategori İkon Bileşeni
 const CategoryIcon = ({ type, isTop }) => {
   const config = CATEGORY_CONFIG[type] || CATEGORY_CONFIG.Diğer;
   const IconComponent = config.icon;
@@ -85,6 +91,7 @@ const CategoryIcon = ({ type, isTop }) => {
         color={isTop ? config.color : "#94a3b8"} 
         strokeWidth={2.5}
       />
+
       {labelElement}
       {isTop && (
         <div 
@@ -316,6 +323,43 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       });
     } catch (err) {
       message.error("Abonelik iptal edilirken bir hata oluştu.");
+    }
+  };
+
+  // Seçili kategoriye ait gelecek taksitlerin listesi (Modal içi yönetim için)
+  const categoryFutureTaksits = useMemo(() => {
+    if (!selectedCategory) return [];
+    const now = dayjs();
+    return (harcamalar ?? []).filter(h => 
+      h.kategori === selectedCategory && 
+      h.not?.includes("Taksit") && 
+      dayjs(h.createdAt).isAfter(now, 'minute')
+    ).sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf());
+  }, [harcamalar, selectedCategory]);
+
+  // Tekli veya Komple Taksit Zincirini Silme Fonksiyonu
+  const handleTaksitDelete = async (harcama, deleteAllChain) => {
+    try {
+      if (deleteAllChain) {
+        const cleanNote = harcama.not.replace(/\[\d+\/\d+\sTaksit\]\s?/, "").trim();
+        const chainItems = harcamalar.filter(h => 
+          h.kategori === harcama.kategori && 
+          h.toplamMiktar === harcama.toplamMiktar && 
+          h.taksitSayisi === harcama.taksitSayisi &&
+          (!cleanNote || h.not?.includes(cleanNote))
+        );
+
+        for (const item of chainItems) {
+          await axios.delete(`${API_URL}/harcama/${item._id}`);
+        }
+        message.success("Taksit zincirinin tamamı başarıyla silindi.");
+      } else {
+        await axios.delete(`${API_URL}/harcama/${harcama._id}`);
+        message.success("Seçili taksit başarıyla silindi.");
+      }
+      await refetch();
+    } catch (err) {
+      message.error("Silme işlemi gerçekleştirilemedi.");
     }
   };
 
@@ -569,8 +613,57 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory === "EvEsyasi" ? "Ev Eşyası" : selectedCategory}</div>}
         open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
         className="space-modal"
-        styles={{ body: { padding: '12px 16px' } }}
+        styles={{ body: { padding: '12px 16px', maxHeight: '520px', overflowY: 'auto' } }}
       >
+        {/* KATEGORİYE AİT AKTİF GELECEK DÖNEM TAKSİTLERİ YÖNETİM ALANI */}
+        {categoryFutureTaksits.length > 0 && (
+          <div className="mb-4 p-2.5 bg-amber-950/20 border border-amber-500/30 rounded-2xl">
+            <div className="text-[10px] text-amber-400 font-bold mb-1.5 uppercase tracking-wider flex items-center gap-1">
+              <CreditCard size={12} /> Bu Kategorideki Gelecek Taksitler:
+            </div>
+            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+              {categoryFutureTaksits.map((taksit) => (
+                <div key={taksit._id} className="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <span className="text-[11px] text-white font-medium truncate">
+                      {taksit.not || (taksit.altKategori || taksit.kategori)}
+                    </span>
+                    <span className="text-[9px] text-gray-400">
+                      {dayjs(taksit.createdAt).format("DD MMM YYYY")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Tag color="error" className="m-0 text-[10px] font-mono font-bold px-1.5 py-0">
+                      -{taksit.miktar.toFixed(2)}€
+                    </Tag>
+                    
+                    <Popconfirm
+                      title="Taksit Silme İşlemi"
+                      description="Sadece bu taksiti mi, yoksa tüm taksit zincirini mi silmek istersiniz?"
+                      onConfirm={() => handleTaksitDelete(taksit, false)}
+                      onCancel={() => handleTaksitDelete(taksit, true)}
+                      okText="Sadece Bu Ayı Sil"
+                      cancelText="Tüm Zinciri Sil"
+                      okButtonProps={{ size: 'small', className: "rounded-lg text-[11px]" }}
+                      cancelButtonProps={{ size: 'small', danger: true, type: 'primary', className: "rounded-lg text-[11px]" }}
+                      placement="topRight"
+                    >
+                      <Button 
+                        type="text" 
+                        danger 
+                        size="small" 
+                        icon={<Trash2 size={13} />}
+                        className="p-1 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border-none"
+                      />
+                    </Popconfirm>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Divider className="my-2 border-slate-700/50" />
+          </div>
+        )}
+
         <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
           <div className="text-4xl font-black text-white tracking-tight">
             {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
@@ -595,26 +688,26 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
                 <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
                 
-<Popconfirm
-  title="Abonelik İptali"
-  description="Emin misin?"
-  onConfirm={() => handleCancelSubscription(sub.id)}
-  okText="İptal Et"
-  cancelText="Vazgeç"
-  okButtonProps={{ danger: true, className: "rounded-xl font-medium" }}
-  cancelButtonProps={{ className: "rounded-xl" }}
-  placement="topLeft"
->
-  <Button 
-    type="text" 
-    danger 
-    size="small" 
-    icon={<XCircle size={15} />}
-    className="text-[11px] h-7 px-2.5 font-bold bg-red-50 hover:bg-red-100 border-none rounded-xl flex items-center gap-1 active:scale-95 transition-all"
-  >
-    İptal Et
-  </Button>
-</Popconfirm>
+                <Popconfirm
+                  title="Abonelik İptali"
+                  description="Emin misin?"
+                  onConfirm={() => handleCancelSubscription(sub.id)}
+                  okText="İptal Et"
+                  cancelText="Vazgeç"
+                  okButtonProps={{ danger: true, className: "rounded-xl font-medium" }}
+                  cancelButtonProps={{ className: "rounded-xl" }}
+                  placement="topLeft"
+                >
+                  <Button 
+                    type="text" 
+                    danger 
+                    size="small" 
+                    icon={<XCircle size={15} />}
+                    className="text-[11px] h-7 px-2.5 font-bold bg-red-50 hover:bg-red-100 border-none rounded-xl flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    İptal Et
+                  </Button>
+                </Popconfirm>
               </div>
             ))}
           </div>

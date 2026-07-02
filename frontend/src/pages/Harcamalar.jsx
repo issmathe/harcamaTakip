@@ -234,26 +234,12 @@ const HarcamalarContent = () => {
     setEditModalVisible(true);
   };
 
-  const handleModalEditClick = (harcama) => {
-    setTaksitModalVisible(false);
-    openEditModal(harcama);
-  };
-
   const leadingActions = (harcama) => (
     <LeadingActions><SwipeAction onClick={() => openEditModal(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-16 rounded-l-3xl"><EditOutlined className="text-lg" /></div></SwipeAction></LeadingActions>
   );
 
   const trailingActions = (harcama) => (
     <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-16 rounded-r-3xl"><DeleteOutlined className="text-lg" /></div></SwipeAction></TrailingActions>
-  );
-
-  // Modal içindeki itemler için ayrı aksiyonlar (Görsel tutarlılık ve modal kapatma tetikleyicisi için)
-  const modalLeadingActions = (harcama) => (
-    <LeadingActions><SwipeAction onClick={() => handleModalEditClick(harcama)}><div className="bg-blue-500 text-white flex justify-center items-center h-full w-16 rounded-l-2xl"><EditOutlined className="text-md" /></div></SwipeAction></LeadingActions>
-  );
-
-  const modalTrailingActions = (harcama) => (
-    <TrailingActions><SwipeAction destructive onClick={() => startDeleteProcess(harcama._id)}><div className="bg-red-500 text-white flex justify-center items-center h-full w-16 rounded-r-2xl"><DeleteOutlined className="text-md" /></div></SwipeAction></TrailingActions>
   );
 
   if (isLoading) return <div className="flex justify-center items-center h-screen bg-gray-50"><Spin size="large" /></div>;
@@ -402,53 +388,100 @@ const HarcamalarContent = () => {
         )}
       </div>
 
-      {/* GELECEK TAKSİTLER MODALİ (Hassasiyeti Ayarlanmış Kaydırma Yapısı) */}
-      <Modal
-        title={<div className="text-md font-bold text-orange-500 font-mono tracking-wider uppercase text-center flex items-center justify-center gap-2"><CreditCardOutlined /> Gelecek Dönem Taksitleri</div>}
-        open={taksitModalVisible}
-        onCancel={() => setTaksitModalVisible(false)}
-        footer={null}
-        centered
-        width={380}
-        styles={{ body: { padding: '12px 16px', maxHeight: '420px', overflowY: 'auto' } }}
-      >
-        <div className="space-y-1">
-          {/* scrollStartThreshold ve swipeStartThreshold çakışmayı önlemek için eklendi */}
-          <SwipeableList 
-            threshold={0.4} 
-            fullSwipe={true} 
-            listType={ListType.IOS}
-            scrollStartThreshold={20}
-            swipeStartThreshold={15}
+      {/* GELECEK TAKSİTLER MODALİ (Mobilde Butonlu Stabil Tasarım) */}
+{/* GELECEK TAKSİTLER MODALI */}
+<Modal
+  title={
+    <div className="text-md font-bold text-orange-500 font-mono tracking-wider uppercase text-center flex items-center justify-center gap-2">
+      <CreditCardOutlined />
+      Gelecek Dönem Taksitleri
+    </div>
+  }
+  open={taksitModalVisible}
+  onCancel={() => setTaksitModalVisible(false)}
+  footer={null}
+  centered
+  width={380}
+  styles={{
+    body: {
+      padding: "12px 16px",
+      maxHeight: "420px",
+      overflowY: "auto",
+    },
+  }}
+>
+  {tumGelecekTaksitler.length === 0 ? (
+    <Empty description="Kayıt bulunamadı" />
+  ) : (
+    <SwipeableList
+      threshold={0.3}
+      fullSwipe={true}
+      listType={ListType.IOS}
+    >
+      {tumGelecekTaksitler.map((h) => {
+        const inlineKaynak =
+          h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi
+            ? `Tasarruf (${
+                h.birikimHesabi === "Ev"
+                  ? "Nakit"
+                  : h.birikimHesabi
+              })`
+            : h.harcamaKaynagi || "Gelir";
+
+        return (
+          <SwipeableListItem
+            key={h._id}
+            leadingActions={leadingActions(h)}
+            trailingActions={trailingActions(h)}
           >
-            {tumGelecekTaksitler.map((h) => {
-              const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
-              return (
-                <SwipeableListItem 
-                  key={h._id} 
-                  leadingActions={modalLeadingActions(h)} 
-                  trailingActions={modalTrailingActions(h)}
-                >
-                  <div className="bg-gray-50/90 p-3 mb-2 rounded-2xl border border-gray-100 flex justify-between items-center w-full shadow-sm">
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Text strong className="text-[9px] block text-gray-400 uppercase leading-none">{h.kategori === "EvEsyasi" ? "Ev Eşyası" : h.kategori}</Text>
-                        <span className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(h.harcamaKaynagi)}`}>
-                          {inlineKaynak}
-                        </span>
-                      </div>
-                      <Text className="text-[11px] font-bold block leading-none truncate max-w-[160px]">{h.altKategori || h.kategori}</Text>
-                      {h.not && <Text className="text-[10px] text-orange-600 block mt-1 font-medium">{h.not}</Text>}
-                      <Text className="text-[9px] text-gray-400 block mt-0.5">{dayjs(h.createdAt).format('DD MMMM YYYY')}</Text>
-                    </div>
-                    <Text className="text-sm font-black text-red-500 flex-shrink-0">-{h.miktar}€</Text>
-                  </div>
-                </SwipeableListItem>
-              );
-            })}
-          </SwipeableList>
-        </div>
-      </Modal>
+            <div className="bg-gray-50 p-3 mb-2 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm active:scale-[0.98] transition-all">
+
+              <div className="min-w-0 flex-grow pr-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Text
+                    strong
+                    className="text-[9px] text-gray-400 uppercase leading-none"
+                  >
+                    {h.kategori === "EvEsyasi"
+                      ? "Ev Eşyası"
+                      : h.kategori}
+                  </Text>
+
+                  <span
+                    className={`px-1 py-0.5 rounded text-[8px] font-bold uppercase leading-none ${getSourceBadgeClass(
+                      h.harcamaKaynagi
+                    )}`}
+                  >
+                    {inlineKaynak}
+                  </span>
+                </div>
+
+                <Text className="text-[11px] font-bold block leading-none truncate">
+                  {h.altKategori || h.kategori}
+                </Text>
+
+                {h.not && (
+                  <Text className="text-[10px] text-orange-600 block mt-1 font-medium truncate">
+                    {h.not}
+                  </Text>
+                )}
+
+                <Text className="text-[9px] text-gray-400 block mt-1">
+                  {dayjs(h.createdAt).format("DD MMMM YYYY")}
+                </Text>
+              </div>
+
+              <Text className="text-sm font-black text-red-500 flex-shrink-0">
+                -{h.miktar}€
+              </Text>
+
+            </div>
+          </SwipeableListItem>
+        );
+      })}
+    </SwipeableList>
+  )}
+</Modal>
 
       {/* DÜZENLEME MODALİ */}
       <Modal
