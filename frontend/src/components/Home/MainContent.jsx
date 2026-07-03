@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
-  Modal,
-  Form,
+  Modal,Form,
   Input,
   Button,
   message,
@@ -64,7 +63,6 @@ const CATEGORY_CONFIG = {
   Eğitim: { icon: GraduationCap, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.2)" },
 };
 
-// Çark üzerindeki taksit badge'i kaldırılmış Kategori İkon Bileşeni
 const CategoryIcon = ({ type, isTop }) => {
   const config = CATEGORY_CONFIG[type] || CATEGORY_CONFIG.Diğer;
   const IconComponent = config.icon;
@@ -203,6 +201,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [isTaksitli, setIsTaksitli] = useState(false);
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
   const [isAbonelik, setIsAbonelik] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ➕ Kilit mekanizması eklendi
 
   const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
@@ -326,7 +325,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     }
   };
 
-  // Seçili kategoriye ait gelecek taksitlerin listesi (Modal içi yönetim için)
   const categoryFutureTaksits = useMemo(() => {
     if (!selectedCategory) return [];
     const now = dayjs();
@@ -337,7 +335,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     ).sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf());
   }, [harcamalar, selectedCategory]);
 
-  // Tekli veya Komple Taksit Zincirini Silme Fonksiyonu
   const handleTaksitDelete = async (harcama, deleteAllChain) => {
     try {
       if (deleteAllChain) {
@@ -456,6 +453,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setIsTaksitli(false);
     setIsAbonelik(false);
     setCurrentTaksitSayisi("2");
+    setIsSubmitting(false);
     form.resetFields();
     form.setFieldsValue({ 
       tarih: dayjs().toDate(),
@@ -472,13 +470,18 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setIsTaksitli(false);
     setIsAbonelik(false);
     setCurrentTaksitSayisi("2");
+    setIsSubmitting(false); // 🔒 İptal durumunda kilidi aç
     form.resetFields();
     setShowNote(false);
   };
 
   const onHarcamaFinish = async (values) => {
+    if (isSubmitting) return; // 🔒 Çift tıklama kilidi aktifse durdur
+
     const totalAmount = parseFloat(amount.replace(",", "."));
     if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
+
+    setIsSubmitting(true); // 🔒 İstek sürecini kilitle
 
     let taksitSayisi = isTaksitli ? parseInt(values.taksitSayisi || currentTaksitSayisi, 10) : 1;
     let customNoteBase = values.not || "";
@@ -535,6 +538,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       handleModalCancel();
     } catch (err) {
       message.error("Harcama eklenirken bir hata oluştu.");
+    } finally {
+      setIsSubmitting(false); // 🔓 İşlem bittiğinde kilidi tamamen serbest bırak
     }
   };
 
@@ -615,7 +620,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         className="space-modal"
         styles={{ body: { padding: '12px 16px', maxHeight: '520px', overflowY: 'auto' } }}
       >
-        {/* KATEGORİYE AİT AKTİF GELECEK DÖNEM TAKSİTLERİ YÖNETİM ALANI */}
         {categoryFutureTaksits.length > 0 && (
           <div className="mb-4 p-2.5 bg-amber-950/20 border border-amber-500/30 rounded-2xl">
             <div className="text-[10px] text-amber-400 font-bold mb-1.5 uppercase tracking-wider flex items-center gap-1">
@@ -831,7 +835,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ) : (
             <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
           )}
-          <Button type="primary" htmlType="submit" block className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl">KAYDET</Button>
+          <Button 
+            type="primary" 
+            htmlType="submit" 
+            block 
+            loading={isSubmitting} // ➕ İstek sürerken dönen çark efekti verir
+            disabled={isSubmitting} // 🔒 Gönderim esnasında butonu tamamen dondurur
+            className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
+          >
+            KAYDET
+          </Button>
         </Form>
       </Modal>
 
