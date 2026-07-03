@@ -241,9 +241,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       fetchSubscriptions();
     }
   }, [isModalVisible]);
+const handleGelirOrTransferSave = async (payload) => {
+    if (isSubmitting) return; // 🔒 Çift tıklamayı engelle
 
-  const handleGelirOrTransferSave = async (payload) => {
     try {
+      setIsSubmitting(true); // 🔒 Süreci kilitle
       if (payload.kaynakKategori) {
         await axios.post(`${API_URL}/gelir/transfer`, payload);
         message.success("Transfer başarıyla gerçekleşti!");
@@ -256,6 +258,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       const errMsg = err.response?.data?.message || "İşlem sırasında sunucu hatası oluştu.";
       message.error(errMsg);
       throw err;
+    } finally {
+      setIsSubmitting(false); // 🔓 İşlem bitince kilidi aç
     }
   };
 

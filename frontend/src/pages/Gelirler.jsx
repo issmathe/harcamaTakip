@@ -29,7 +29,6 @@ const { Option } = Select;
 const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
 const MESSAGE_KEY = 'silmeIslemi'; 
 
-// DÜZELTME: Standart kelime yapısına uyması için baş harfler büyük tanımlandı
 const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
 
 const getCategoryDetails = (kategori, isTransfer) => {
@@ -41,7 +40,8 @@ const getCategoryDetails = (kategori, isTransfer) => {
 };
 
 const GelirlerContent = () => {
-  const { gelirler = [], refetch, isLoading: isContextLoading } = useTotalsContext();
+  // 💡 harcamalar verisini de tüm zamanların toplamını bulmak için context'ten çektik
+  const { gelirler = [], harcamalar = [], refetch, isLoading: isContextLoading } = useTotalsContext();
   const deleteTimerRef = useRef(null); 
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -64,6 +64,21 @@ const GelirlerContent = () => {
 
   const displayMonth = dayjs().year(selectedYear).month(selectedMonth).format('MMMM YYYY');
   const isFutureMonth = dayjs().year(selectedYear).month(selectedMonth).isAfter(now, 'month');
+
+  // 🔄 TÜM ZAMANLARIN TOPLAM GELİRİ (Transferler hariç, saf gelirler)
+  const tumZamanlarGelir = useMemo(() => {
+    return (gelirler || [])
+      .filter(g => {
+        const transferIdMatch = g.not && g.not.match(/\| ID:(TRF_\d+)/);
+        return !transferIdMatch;
+      })
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+  }, [gelirler]);
+
+  // 🔄 TÜM ZAMANLARIN TOPLAM HARCAMASI
+  const tumZamanlarHarcama = useMemo(() => {
+    return (harcamalar || []).reduce((sum, h) => sum + Number(h.miktar || 0), 0);
+  }, [harcamalar]);
 
   // 🔄 AKILLI TRANSFER BİRLEŞTİRME SÜZGECİ
   const filteredGelirler = useMemo(() => {
@@ -218,8 +233,25 @@ const GelirlerContent = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center">
+      <div className="p-4 space-y-3">
+        {/* ➕ Yeni Eklenen Kısım: Tüm Zamanların Özeti Kartı */}
+        <div className="bg-white p-3.5 rounded-3xl shadow-sm border border-gray-100 grid grid-cols-2 gap-2 text-center">
+          <div className="border-r border-gray-100 pr-1">
+            <Text className="block text-[9px] font-bold uppercase text-gray-400 tracking-wider">Top. Giriş (Tüm Zamanlar)</Text>
+            <Text className="text-sm font-black text-emerald-600 block mt-0.5">
+              +{tumZamanlarGelir.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+          <div className="pl-1">
+            <Text className="block text-[9px] font-bold uppercase text-gray-400 tracking-wider">Top. Gider (Tüm Zamanlar)</Text>
+            <Text className="text-sm font-black text-red-500 block mt-0.5">
+              -{tumZamanlarHarcama.toFixed(2).replace('.', ',')}€
+            </Text>
+          </div>
+        </div>
+
+        {/* Seçili Dönem Özeti Kartı */}
+        <div className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100 text-center">
           <div className="flex justify-center items-center gap-2">
             <Text className="text-[11px] font-bold uppercase text-gray-400">Dönem Toplamı:</Text>
             <Text className="text-base font-black text-emerald-600">
@@ -340,7 +372,6 @@ const GelirlerContent = () => {
                 value={formData.kategori} 
                 onChange={v => setFormData({...formData, kategori: v})}
               >
-                {/* DÜZELTME: Veritabanında dil birliği sağlamak adına value değeri küçük harfe zorlanmaktan kurtarıldı */}
                 {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
               </Select>
             </div>
