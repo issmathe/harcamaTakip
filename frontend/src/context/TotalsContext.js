@@ -35,13 +35,12 @@ export const TotalsProvider = ({ children }) => {
     const hamHarcamalar = totals.harcamalar || (totals.data && totals.data.harcamalar) || [];
 
     // 1. Bu Ayın Gelirleri
-    // 🛠️ DÜZELTME: Sadece 'gelir' değil, 'tasarruf' hariç tüm gelir tipleri (Ekstra vb.) aylık gelire sayılır.
     const totalIncome = hamGelirler
       .filter(g => {
         const d = dayjs(g.createdAt);
         const kat = g.kategori?.toLowerCase();
         return d.isSame(now, "month") && d.isSame(now, "year") && 
-               kat !== "tasarruf" && kat !== "birikim" && // Transfer benzeri birikim hareketleri hariç
+               kat !== "tasarruf" && kat !== "birikim" && 
                isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
@@ -65,17 +64,35 @@ export const TotalsProvider = ({ children }) => {
       .filter(h => isPastOrPresent(h.createdAt))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // BANKADAN ÇIKAN PARA
+    // BANKADAN ÇIKAN HARCAMALAR
     const totalExitFromBank = hamHarcamalar
       .filter(h => isPastOrPresent(h.createdAt) && (!h.harcamaKaynagi || h.harcamaKaynagi === "Gelir"))
       .reduce((sum, h) => sum + Number(h.miktar || 0), 0);
 
-    // BANKAYA GİREN PARA
-    // 🛠️ DÜZELTME: Bankaya giren nakit sadece ana gelir değil, 'Ekstra' gibi direkt harcanabilir gelirleri de kapsar.
+    // BANKAYA GİREN PARA (Saf gelirler ve transfer dışı ekstralar)
     const cumulativeOnlyIncome = hamGelirler
       .filter(g => {
         const kat = g.kategori?.toLowerCase();
-        return kat !== "tasarruf" && kat !== "birikim" && isPastOrPresent(g.createdAt);
+        const isTransfer = g.not && g.not.includes("TRF_");
+        return kat !== "tasarruf" && kat !== "birikim" && !isTransfer && isPastOrPresent(g.createdAt);
+      })
+      .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
+
+    // 🛠️ DÜZELTME: BANKADAN BAŞKA HAVUZLARA GİDEN TRANSFERLER (Banka bakiyesini azaltmalı)
+    const bankadanGidenTransferler = hamGelirler
+      .filter(g => {
+        const kat = g.kategori?.toLowerCase();
+        const isTransfer = g.not && g.not.includes("TRF_");
+        return kat === "gelir" && isTransfer && g.miktar < 0 && isPastOrPresent(g.createdAt);
+      })
+      .reduce((sum, g) => sum + Math.abs(g.miktar), 0);
+
+    // 🛠️ DÜZELTME: DİĞER HAVUZLARDAN BANKAYA GERİ GELEN TRANSFERLER (Banka bakiyesini artırmalı)
+    const bankayaGelenTransferler = hamGelirler
+      .filter(g => {
+        const kat = g.kategori?.toLowerCase();
+        const isTransfer = g.not && g.not.includes("TRF_");
+        return kat === "gelir" && isTransfer && g.miktar > 0 && isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
@@ -84,7 +101,9 @@ export const TotalsProvider = ({ children }) => {
       .filter(g => isPastOrPresent(g.createdAt))
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);
 
-    const bankBalance = cumulativeOnlyIncome - totalExitFromBank;
+    // 🛠️ YENİ BANKA FORMÜLÜ: (Giren Gelirler + Gelen Transferler) - Harcamalar - Giden Transferler
+    const bankBalance = (cumulativeOnlyIncome + bankayaGelenTransferler) - totalExitFromBank - bankadanGidenTransferler;
+    
     const cumulativeBalance = cumulativeTotalIncome - cumulativeExpense;
 
     return {

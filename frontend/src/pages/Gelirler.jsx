@@ -31,12 +31,16 @@ const MESSAGE_KEY = 'silmeIslemi';
 
 const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
 
+// Gelirler.jsx içindeki ikon motorunu şu şekilde güncelle:
 const getCategoryDetails = (kategori, isTransfer) => {
   if (isTransfer) return { icon: <SwapOutlined />, color: 'bg-blue-50 text-blue-500' };
+  
   const cat = kategori?.toLowerCase();
   if (cat === 'gelir') return { icon: <BankOutlined />, color: 'bg-emerald-50 text-emerald-500' };
   if (cat === 'tasarruf') return { icon: <SaveOutlined />, color: 'bg-blue-50 text-blue-500' };
-  return { icon: <EuroCircleOutlined />, color: 'bg-gray-50 text-gray-500' };
+  
+  // 💡 EKSTRA / DİĞER Gelirler için görsel ayırt edici renk ve ikon (Örn: EuroCircle veya elindeki mevcut ikonlardan biri)
+  return { icon: <EuroCircleOutlined />, color: 'bg-amber-50 text-amber-500' }; 
 };
 
 const GelirlerContent = () => {
