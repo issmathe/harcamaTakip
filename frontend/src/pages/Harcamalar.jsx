@@ -85,7 +85,10 @@ const getSourceBadgeClass = (source) => {
 
 const HarcamalarContent = () => {
   const { harcamalar = [], refetch, isLoading } = useTotalsContext();
-  const deleteTimerRef = useRef(null);
+  
+  // 🛠️ ÇOKLU SİLME ZAMANLAYICI DESTEĞİ İÇİN GÜVENLİ REF DEĞİŞİKLİĞİ
+  const activeDeleteTimers = useRef({});
+  
   const now = dayjs();
 
   const [selectedMonth, setSelectedMonth] = useState(now.month());
@@ -128,6 +131,7 @@ const HarcamalarContent = () => {
   const definitiveDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/harcama/${id}`);
+      delete activeDeleteTimers.current[id]; // İşlem bittiğinde hafızadan temizle
       refetch();
     } catch (err) {
       message.error("Silme işlemi sunucuda başarısız oldu");
@@ -135,17 +139,37 @@ const HarcamalarContent = () => {
   };
 
   const startDeleteProcess = (id) => {
-    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    // Eğer bu ID için zaten çalışan bir silme zamanlayıcısı varsa temizle
+    if (activeDeleteTimers.current[id]) {
+      clearTimeout(activeDeleteTimers.current[id]);
+    }
+
     message.success({
       content: (
         <span className="flex items-center space-x-2">
           <Text strong>🗑️ Silindi</Text>
-          <Button type="link" size="small" onClick={() => { clearTimeout(deleteTimerRef.current); message.destroy(MESSAGE_KEY); }}>Geri Al</Button>
+          <Button 
+            type="link" 
+            size="small" 
+            onClick={() => { 
+              clearTimeout(activeDeleteTimers.current[id]); 
+              delete activeDeleteTimers.current[id];
+              message.destroy(MESSAGE_KEY); 
+              refetch(); 
+            }}
+          >
+            Geri Al
+          </Button>
         </span>
       ),
-      key: MESSAGE_KEY, duration: 3
+      key: MESSAGE_KEY, 
+      duration: 3
     });
-    deleteTimerRef.current = setTimeout(() => { definitiveDelete(id); }, 3000);
+
+    // Her harcamayı kendi ID'si altında kuyruğa al, böylece peş peşe hızlı silmeler birbirini ezmez
+    activeDeleteTimers.current[id] = setTimeout(() => { 
+      definitiveDelete(id); 
+    }, 3000);
   };
 
   const toggleSort = () => {
@@ -388,7 +412,7 @@ const HarcamalarContent = () => {
         )}
       </div>
 
-      {/* GELECEK TAKSİTLER MODALİ (Mobilde Butonlu Stabil Tasarım) */}
+      {/* GELECEK TAKSİTLER MODALİ */}
       <Modal
         title={<div className="text-md font-bold text-orange-500 font-mono tracking-wider uppercase text-center flex items-center justify-center gap-2"><CreditCardOutlined /> Gelecek Dönem Taksitleri</div>}
         open={taksitModalVisible}
