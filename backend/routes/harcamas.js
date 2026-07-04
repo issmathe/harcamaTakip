@@ -7,10 +7,10 @@ router.post("/", async (req, res) => {
   try {
     const harcamaData = { ...req.body };
 
-    // DÜZELTME: Eğer harcama bir tasarruf havuzundan yapılıyorsa, 
-    // raporlarda çift sayılmaması için kategori alanını normalize ediyoruz.
+    // Eski frontend sürümlerinden gelebilecek "Tasarruf" değerini modeldeki
+    // geçerli kasa adı olan "Birikim"e çeviriyoruz.
     if (harcamaData.harcamaKaynagi?.toLowerCase() === "tasarruf") {
-      harcamaData.kategori = "Tasarruf";
+      harcamaData.harcamaKaynagi = "Birikim";
     }
 
     const yeniHarcama = new Harcama(harcamaData);
@@ -48,7 +48,7 @@ router.put("/:id", async (req, res) => {
     const harcamaData = { ...req.body };
 
     if (harcamaData.harcamaKaynagi?.toLowerCase() === "tasarruf") {
-      harcamaData.kategori = "Tasarruf";
+      harcamaData.harcamaKaynagi = "Birikim";
     }
 
     const guncellenen = await Harcama.findByIdAndUpdate(

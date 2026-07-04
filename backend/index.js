@@ -24,6 +24,10 @@ app.use("/gelir", gelirRoute);
 app.use("/harcama", harcamaRoutes);
 app.use("/notes", notesRoutes); 
 app.use("/abonelik", abonelikRoutes); // ➕ Abonelik endpoint'i aktif edildi
+app.use("/api/gelir", gelirRoute);
+app.use("/api/harcama", harcamaRoutes);
+app.use("/api/notes", notesRoutes);
+app.use("/api/abonelik", abonelikRoutes);
 
 app.listen(PORT, () => {
   database();

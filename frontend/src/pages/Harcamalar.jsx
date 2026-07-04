@@ -90,7 +90,7 @@ const { Option } = Select;
 
 
 
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 
 const MESSAGE_KEY = "harcamaSilmeIslemi";
 
@@ -120,7 +120,7 @@ const EV_ESYASI_TURLERI = ["Mobilya & Dekorasyon", "Elektronik", "Küçük Ev Al
 
 
 
-const HARCAMA_KAYNAKLARI = ["Gelir", "Tasarruf"];
+const HARCAMA_KAYNAKLARI = ["Gelir", "Birikim"];
 
 const BIRIKIM_HESAPLARI = ["Trade Republic", "Wise", "Nakit"];
 
@@ -160,7 +160,7 @@ const getCategoryDetails = (kategori) => {
 
 const getSourceBadgeClass = (source) => {
 
-  if (source === "Tasarruf") return "bg-blue-100 text-blue-700";
+  if (source === "Birikim" || source === "Tasarruf") return "bg-blue-100 text-blue-700";
 
   return "bg-gray-100 text-gray-600";
 
@@ -218,7 +218,7 @@ const HarcamalarContent = () => {
 
     if (!formData.miktar) return message.error("Miktar giriniz");
 
-    if (formData.harcamaKaynagi === "Tasarruf" && !formData.birikimHesabi) {
+    if (formData.harcamaKaynagi === "Birikim" && !formData.birikimHesabi) {
 
       return message.error("Lütfen bir birikim hesabı seçin");
 
@@ -234,7 +234,7 @@ const HarcamalarContent = () => {
 
         miktar: parseFloat(formData.miktar),
 
-        birikimHesabi: formData.harcamaKaynagi === "Tasarruf" ? formData.birikimHesabi : "",
+        birikimHesabi: formData.harcamaKaynagi === "Birikim" ? formData.birikimHesabi : "",
 
         createdAt: dayjs(formData.tarih).toISOString(),
 
@@ -493,6 +493,7 @@ const HarcamalarContent = () => {
   const openEditModal = (harcama) => {
 
     setEditingHarcama(harcama);
+    const normalizedSource = harcama.harcamaKaynagi === "Tasarruf" ? "Birikim" : (harcama.harcamaKaynagi || "Gelir");
 
     setFormData({
 
@@ -504,7 +505,7 @@ const HarcamalarContent = () => {
 
       not: harcama.not || "",
 
-      harcamaKaynagi: harcama.harcamaKaynagi || "Gelir",
+      harcamaKaynagi: normalizedSource,
 
       birikimHesabi: harcama.birikimHesabi || "",
 
@@ -684,7 +685,7 @@ const HarcamalarContent = () => {
 
                   {futureHarcamalar.map((h) => {
 
-                    const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                    const inlineKaynak = h.harcamaKaynagi === "Birikim" && h.birikimHesabi ? `Birikim (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
 
                     return (
 
@@ -750,7 +751,7 @@ const HarcamalarContent = () => {
 
                 const isToday = dayjs(h.createdAt).isSame(now, 'day');
 
-                const kaynakStr = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+                const kaynakStr = h.harcamaKaynagi === "Birikim" && h.birikimHesabi ? `Birikim (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
 
                 return (
 
@@ -850,7 +851,7 @@ const HarcamalarContent = () => {
 
           {tumGelecekTaksitler.map((h) => {
 
-            const inlineKaynak = h.harcamaKaynagi === "Tasarruf" && h.birikimHesabi ? `Tasarruf (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
+            const inlineKaynak = h.harcamaKaynagi === "Birikim" && h.birikimHesabi ? `Birikim (${h.birikimHesabi === "Ev" ? "Nakit" : h.birikimHesabi})` : (h.harcamaKaynagi || "Gelir");
 
             return (
 
@@ -970,7 +971,7 @@ const HarcamalarContent = () => {
 
             </Text>
 
-            <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({ ...formData, harcamaKaynagi: v, birikimHesabi: v === "Tasarruf" ? "Wise" : "" })}>
+            <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({ ...formData, harcamaKaynagi: v, birikimHesabi: v === "Birikim" ? "Wise" : "" })}>
 
               {HARCAMA_KAYNAKLARI.map(src => <Option key={src} value={src}>{src}</Option>)}
 
@@ -980,7 +981,7 @@ const HarcamalarContent = () => {
 
 
 
-          {formData.harcamaKaynagi === "Tasarruf" && (
+          {formData.harcamaKaynagi === "Birikim" && (
 
             <div className="bg-blue-50/50 p-2.5 rounded-2xl border border-blue-100 transition-all">
 

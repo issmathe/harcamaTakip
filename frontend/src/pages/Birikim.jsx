@@ -19,7 +19,7 @@ import "react-swipeable-list/dist/styles.css";
 dayjs.locale(tr);
 
 const { Text, Title } = Typography;
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001"; 
 const MESSAGE_KEY = 'silmeIslemiBirikim';
 
 const BirikimContent = () => {

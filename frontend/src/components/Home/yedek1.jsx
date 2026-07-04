@@ -56,7 +56,7 @@ const saturnPoster = "/gezegenler/saturn.jpg";
 
 dayjs.extend(isSameOrAfter);
 
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 const { Option } = Select;
 
 const PlanetStyle = ({ type, isTop }) => {

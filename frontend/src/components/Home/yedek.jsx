@@ -39,7 +39,7 @@ import { useMutation } from "@tanstack/react-query";
 
 dayjs.extend(isSameOrAfter);
 
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 const { Text } = Typography;
 const { Option } = Select;
 

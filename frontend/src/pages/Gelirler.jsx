@@ -26,10 +26,14 @@ dayjs.locale(tr);
 
 const { Text, Title } = Typography;
 const { Option } = Select;
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api"; 
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001"; 
 const MESSAGE_KEY = 'silmeIslemi'; 
 
-const ALL_GELIR_CATEGORIES = ["Gelir", "Tasarruf", "Diğer"]; 
+const ALL_GELIR_CATEGORIES = [
+  { value: "gelir", label: "Gelir" },
+  { value: "tasarruf", label: "Tasarruf" },
+  { value: "diğer", label: "Diğer" },
+]; 
 
 // Gelirler.jsx içindeki ikon motorunu şu şekilde güncelle:
 const getCategoryDetails = (kategori, isTransfer) => {
@@ -376,7 +380,7 @@ const GelirlerContent = () => {
                 value={formData.kategori} 
                 onChange={v => setFormData({...formData, kategori: v})}
               >
-                {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
+                {ALL_GELIR_CATEGORIES.map(cat => <Option key={cat.value} value={cat.value}>{cat.label}</Option>)}
               </Select>
             </div>
           </div>

@@ -43,7 +43,7 @@ import axios from "axios";
 import { useTotalsContext } from "../../context/TotalsContext";
 dayjs.extend(isSameOrAfter);
 
-const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 const { Option } = Select;
 
 const CATEGORY_CONFIG = {
@@ -109,7 +109,7 @@ const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
 const EV_ESYASI_TURLERI = ["Mobilya & Dekorasyon", "Elektronik", "Küçük Ev Aletleri", "Tamirat"];
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
-const BIRIKIM_HESAPLARI = ["Ev", "Wise", "Trade Republic"];
+const BIRIKIM_HESAPLARI = ["Nakit", "Wise", "Trade Republic"];
 
 const SpaceBackground = () => {
   const canvasRef = useRef(null);
@@ -276,7 +276,8 @@ const handleGelirOrTransferSave = async (payload) => {
         let hasNewTrigger = false;
 
         for (const sub of subscriptions) {
-          if (sub.triggeredMonths.includes(currentMonthStr)) continue;
+          const triggeredMonths = sub.triggeredMonths || [];
+          if (triggeredMonths.includes(currentMonthStr)) continue;
 
           const targetDay = Math.min(sub.kayitGunu, daysInMonth);
 
@@ -292,7 +293,7 @@ const handleGelirOrTransferSave = async (payload) => {
               createdAt: today.toISOString(),
             });
 
-            const updatedMonths = [...sub.triggeredMonths, currentMonthStr];
+            const updatedMonths = [...triggeredMonths, currentMonthStr];
             await axios.put(`${API_URL}/abonelik/${sub._id}`, {
               triggeredMonths: updatedMonths
             });
@@ -310,9 +311,7 @@ const handleGelirOrTransferSave = async (payload) => {
       }
     };
 
-    if (harcamalar && harcamalar.length > 0) {
-      checkAndTriggerSubscriptions();
-    }
+    checkAndTriggerSubscriptions();
   }, [harcamalar, refetch]);
 
   const handleCancelSubscription = async (subId) => {

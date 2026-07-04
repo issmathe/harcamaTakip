@@ -69,7 +69,7 @@ router.post("/transfer", async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({ message: "Transfer başarıyla gerçekleşti", kaynakKayit, Residential: hedefKayit });
+    res.status(201).json({ message: "Transfer başarıyla gerçekleşti", kaynakKayit, hedefKayit });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
