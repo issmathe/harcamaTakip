@@ -845,28 +845,41 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                         />
                       </Popconfirm>
 
-                      <Popconfirm
-                        title="Tüm Taksit Zinciri Silinsin Mi?"
-                        description="Gelecekteki tüm taksitler tek hamlede silinecektir!"
-                        onConfirm={() => handleTaksitDelete(taksit, true)}
-                        okText="Tümünü Sil"
-                        cancelText="Vazgeç"
-                        okButtonProps={{
-                          size: "small",
-                          type: "primary",
-                          danger: true,
-                        }}
-                        cancelButtonProps={{ size: "small" }}
-                        placement="topRight"
-                      >
-                        <Button
-                          type="primary"
-                          danger
-                          size="small"
-                          icon={<Layers size={10} />}
-                          className="h-5 w-5 p-0 rounded flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
-                        />
-                      </Popconfirm>
+{/* Tüm Zinciri Sil (Kompakt ve iPhone 15 Uyumlu Popconfirm) */}
+<Popconfirm
+  title={
+    <span className="text-red-400 font-bold text-xs tracking-wide block mb-0.5">
+      Tüm Zincir Silinsin mi?
+    </span>
+  }
+  description={
+    <span className="text-gray-400 text-[10px] block leading-tight max-w-[180px]">
+      Gelecekteki tüm taksit serisi tek hamlede iptal edilecektir.
+    </span>
+  }
+  onConfirm={() => handleTaksitDelete(taksit, true)}
+  okText="Seriyi Sil"
+  cancelText="Vazgeç"
+  okButtonProps={{
+    size: "small",
+    type: "primary",
+    danger: true,
+    className: "text-[10px] h-6 px-2 rounded-md font-bold"
+  }}
+  cancelButtonProps={{ 
+    size: "small",
+    className: "text-[10px] h-6 px-2 rounded-md" 
+  }}
+  placement="topRight"
+>
+  <Button
+    type="primary"
+    danger
+    size="small"
+    icon={<Layers size={10} />}
+    className="h-5 w-5 p-0 rounded flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
+  />
+</Popconfirm>
                     </div>
                   </div>
                 ))}
