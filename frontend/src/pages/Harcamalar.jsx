@@ -479,9 +479,9 @@ const HarcamalarContent = () => {
           </div>
 
           <div className="bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
-            <Text strong className="text-[9px] text-gray-400 uppercase block mb-1 ml-1 flex items-center gap-1">
+            <div className="text-[9px] font-bold text-gray-400 uppercase mb-1 ml-1 flex items-center gap-1">
               <WalletOutlined /> Harcama Yapılan Grup (Kasa)
-            </Text>
+            </div>
             <Select variant="borderless" size="small" className="w-full font-bold text-xs" style={{ padding: 0 }} value={formData.harcamaKaynagi} onChange={v => setFormData({ ...formData, harcamaKaynagi: v, birikimHesabi: v === "Birikim" ? "Wise" : "" })}>
               {HARCAMA_KAYNAKLARI.map(src => <Option key={src} value={src}>{src}</Option>)}
             </Select>
@@ -489,9 +489,9 @@ const HarcamalarContent = () => {
 
           {formData.harcamaKaynagi === "Birikim" && (
             <div className="bg-blue-50/50 p-2.5 rounded-2xl border border-blue-100 transition-all">
-              <Text strong className="text-[9px] text-blue-500 uppercase block mb-1 ml-1 flex items-center gap-1">
+              <div className="text-[9px] font-bold text-blue-500 uppercase mb-1 ml-1 flex items-center gap-1">
                 <BankOutlined /> Birikim Hesabı Seçimi
-              </Text>
+              </div>
               <Select variant="borderless" size="small" className="w-full font-bold text-xs text-blue-600" style={{ padding: 0 }} value={formData.birikimHesabi} onChange={v => setFormData({ ...formData, birikimHesabi: v })}>
                 {BIRIKIM_HESAPLARI.map(acc => <Option key={acc} value={acc}>{acc}</Option>)}
               </Select>
