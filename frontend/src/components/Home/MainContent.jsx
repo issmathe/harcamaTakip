@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   Modal,
   Form,
@@ -8,8 +14,6 @@ import {
   Select,
   Checkbox,
   Popconfirm,
-  Tag,
-  Divider
 } from "antd";
 
 import dayjs from "dayjs";
@@ -28,7 +32,7 @@ import {
   HeartPulse,
   Car,
   Gamepad2,
-  Sofa, 
+  Sofa,
   Wifi,
   Gift,
   Utensils,
@@ -38,7 +42,7 @@ import {
   XCircle,
   CreditCard,
   Trash2,
-  Layers
+  Layers,
 } from "lucide-react";
 
 import axios from "axios";
@@ -49,20 +53,32 @@ const API_URL = process.env.REACT_APP_SERVER_URL || "http://localhost:5001";
 const { Option } = Select;
 
 const CATEGORY_CONFIG = {
-  Market: { icon: ShoppingCart, color: "#10b981", bg: "rgba(16, 185, 129, 0.2)" },
+  Market: {
+    icon: ShoppingCart,
+    color: "#10b981",
+    bg: "rgba(16, 185, 129, 0.2)",
+  },
   Giyim: { icon: Shirt, color: "#ec4899", bg: "rgba(236, 72, 153, 0.2)" },
   Kira: { icon: Home, color: "#6366f1", bg: "rgba(99, 102, 241, 0.2)" },
   Fatura: { icon: FileText, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.2)" },
-  Diğer: { icon: MoreHorizontal, color: "#94a3b8", bg: "rgba(148, 163, 184, 0.2)" },
+  Diğer: {
+    icon: MoreHorizontal,
+    color: "#94a3b8",
+    bg: "rgba(148, 163, 184, 0.2)",
+  },
   Sağlık: { icon: HeartPulse, color: "#ef4444", bg: "rgba(239, 68, 68, 0.2)" },
   Ulaşım: { icon: Car, color: "#f97316", bg: "rgba(249, 115, 22, 0.2)" },
   Eğlence: { icon: Gamepad2, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.2)" },
-  EvEsyasi: { icon: Sofa, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" }, 
+  EvEsyasi: { icon: Sofa, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.2)" },
   İletisim: { icon: Wifi, color: "#14b8a6", bg: "rgba(20, 184, 166, 0.2)" },
   Hediye: { icon: Gift, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.2)" },
   Restoran: { icon: Utensils, color: "#d946ef", bg: "rgba(217, 70, 239, 0.2)" },
   Aile: { icon: Users, color: "#84cc16", bg: "rgba(132, 204, 22, 0.2)" },
-  Eğitim: { icon: GraduationCap, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.2)" },
+  Eğitim: {
+    icon: GraduationCap,
+    color: "#fbbf24",
+    bg: "rgba(251, 191, 36, 0.2)",
+  },
 };
 
 const CategoryIcon = ({ type, isTop }) => {
@@ -70,31 +86,36 @@ const CategoryIcon = ({ type, isTop }) => {
   const IconComponent = config.icon;
 
   const labelElement = (
-    <div className={`absolute -bottom-7 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? 'opacity-100 scale-110 translate-y-1' : 'opacity-40 scale-90'}`}>
-      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? 'bg-white text-black' : 'bg-black/20 text-gray-400'}`}>
+    <div
+      className={`absolute -bottom-7 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isTop ? "opacity-100 scale-110 translate-y-1" : "opacity-40 scale-90"}`}
+    >
+      <span
+        className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap tracking-wider shadow-lg ${isTop ? "bg-white text-black" : "bg-black/20 text-gray-400"}`}
+      >
         {type === "EvEsyasi" ? "Ev Eşyası" : type}
       </span>
     </div>
   );
 
   return (
-    <div className={`relative w-full h-full flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl  
-      ${isTop ? 'scale-125' : 'scale-100 opacity-60'}`}
-      style={{ 
-        backgroundColor: isTop ? config.bg : 'rgba(255,255,255,0.05)',
-        border: `1.5px solid ${isTop ? config.color : 'rgba(255,255,255,0.1)'}`,
-        boxShadow: isTop ? `0 0 20px ${config.bg}` : 'none'
+    <div
+      className={`relative w-full h-full flex items-center justify-center rounded-2xl transition-all duration-300 shadow-xl  
+      ${isTop ? "scale-125" : "scale-100 opacity-60"}`}
+      style={{
+        backgroundColor: isTop ? config.bg : "rgba(255,255,255,0.05)",
+        border: `1.5px solid ${isTop ? config.color : "rgba(255,255,255,0.1)"}`,
+        boxShadow: isTop ? `0 0 20px ${config.bg}` : "none",
       }}
     >
-      <IconComponent 
-        size={isTop ? 32 : 24} 
-        color={isTop ? config.color : "#94a3b8"} 
+      <IconComponent
+        size={isTop ? 32 : 24}
+        color={isTop ? config.color : "#94a3b8"}
         strokeWidth={2.5}
       />
       {labelElement}
       {isTop && (
-        <div 
-          className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none" 
+        <div
+          className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none"
           style={{ border: `2px solid ${config.color}`, opacity: 0.3 }}
         />
       )}
@@ -103,11 +124,36 @@ const CategoryIcon = ({ type, isTop }) => {
 };
 
 const CATEGORIES = Object.keys(CATEGORY_CONFIG);
-const MARKETLER = ["Lidl", "Aldi", "DM", "Action", "Norma", "Türk Market", "Et-Tavuk", "Kaufland", "bäckerei", "Rewe", "Netto", "Tedi", "Kik", "Fundgrube", "Rossmann", "Edeka", "Biomarkt", "Penny", "Diğer"];
+const MARKETLER = [
+  "Lidl",
+  "Aldi",
+  "DM",
+  "Action",
+  "Norma",
+  "Türk Market",
+  "Et-Tavuk",
+  "Kaufland",
+  "bäckerei",
+  "Rewe",
+  "Netto",
+  "Tedi",
+  "Kik",
+  "Fundgrube",
+  "Rossmann",
+  "Edeka",
+  "Biomarkt",
+  "Penny",
+  "Diğer",
+];
 const GIYIM_KISILERI = ["Ahmet", "Ayşe", "Yusuf", "Zeynep", "Hediye"];
 const AILE_UYELERI = ["Ayşe", "Yusuf", "Zeynep"];
 const ULASIM_TURLERI = ["Benzin", "Motorin", "Bilet", "Tamir", "Diğer"];
-const EV_ESYASI_TURLERI = ["Mobilya & Dekorasyon", "Elektronik", "Küçük Ev Aletleri", "Tamirat"];
+const EV_ESYASI_TURLERI = [
+  "Mobilya & Dekorasyon",
+  "Elektronik",
+  "Küçük Ev Aletleri",
+  "Tamirat",
+];
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
 const BIRIKIM_HESAPLARI = ["Nakit", "Wise", "Trade Republic"];
@@ -177,17 +223,21 @@ const NumericNumpad = ({ value, onChange }) => {
 
   return (
     <div className="grid grid-cols-3 gap-2 mt-2">
-      {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map((key) => (
-        <Button
-          key={key}
-          onClick={() => handlePress(key)}
-          className={`h-11 text-lg font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
-            key === "back" ? "bg-red-500/80 text-white" : "bg-white text-gray-800"
-          }`}
-        >
-          {key === "back" ? <Delete size={20} /> : key}
-        </Button>
-      ))}
+      {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "back"].map(
+        (key) => (
+          <Button
+            key={key}
+            onClick={() => handlePress(key)}
+            className={`h-11 text-lg font-semibold flex items-center justify-center rounded-xl border-none shadow-sm transition-all active:scale-95 ${
+              key === "back"
+                ? "bg-red-500/80 text-white"
+                : "bg-white text-gray-800"
+            }`}
+          >
+            {key === "back" ? <Delete size={20} /> : key}
+          </Button>
+        ),
+      )}
     </div>
   );
 };
@@ -198,6 +248,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isGelirModalVisible, setIsGelirModalVisible] = useState(false);
   const [showNote, setShowNote] = useState(false);
+  const [showActiveSubs, setShowActiveSubs] = useState(false);
+  const [showFutureTaksits, setShowFutureTaksits] = useState(false);
   const [amount, setAmount] = useState("");
   const [isTaksitli, setIsTaksitli] = useState(false);
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
@@ -220,7 +272,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       try {
         const response = await axios.get(`${API_URL}/abonelik`);
         const subObj = {};
-        response.data.forEach(sub => {
+        response.data.forEach((sub) => {
           subObj[sub._id] = {
             id: sub._id,
             miktar: sub.miktar,
@@ -229,7 +281,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             not: sub.not,
             kayitGunu: sub.kayitGunu,
             harcamaKaynagi: sub.harcamaKaynagi,
-            triggeredMonths: sub.triggeredMonths || []
+            triggeredMonths: sub.triggeredMonths || [],
           };
         });
         setActiveSubscriptions(subObj);
@@ -256,7 +308,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       }
       await refetch();
     } catch (err) {
-      const errMsg = err.response?.data?.message || "İşlem sırasında sunucu hatası oluştu.";
+      const errMsg =
+        err.response?.data?.message || "İşlem sırasında sunucu hatası oluştu.";
       message.error(errMsg);
       throw err;
     } finally {
@@ -269,7 +322,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       try {
         const response = await axios.get(`${API_URL}/abonelik`);
         const subscriptions = response.data;
-        
+
         const today = dayjs();
         const currentMonthStr = today.format("YYYY-MM");
         const currentDay = today.date();
@@ -297,7 +350,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
             const updatedMonths = [...triggeredMonths, currentMonthStr];
             await axios.put(`${API_URL}/abonelik/${sub._id}`, {
-              triggeredMonths: updatedMonths
+              triggeredMonths: updatedMonths,
             });
 
             hasNewTrigger = true;
@@ -306,7 +359,9 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
         if (hasNewTrigger) {
           await refetch();
-          message.info("Aylık düzenli ödemeleriniz veritabanı üzerinden senkronize işlendi.");
+          message.info(
+            "Aylık düzenli ödemeleriniz veritabanı üzerinden senkronize işlendi.",
+          );
         }
       } catch (err) {
         console.error("Abonelik tetikleme hatası:", err);
@@ -320,7 +375,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     try {
       await axios.delete(`${API_URL}/abonelik/${subId}`);
       message.success("Aylık düzenli ödeme aboneliği başarıyla iptal edildi.");
-      setActiveSubscriptions(prev => {
+      setActiveSubscriptions((prev) => {
         const guncel = { ...prev };
         delete guncel[subId];
         return guncel;
@@ -333,11 +388,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const categoryFutureTaksits = useMemo(() => {
     if (!selectedCategory) return [];
     const now = dayjs();
-    return (harcamalar ?? []).filter(h => 
-      h.kategori === selectedCategory && 
-      h.not?.includes("Taksit") && 
-      dayjs(h.createdAt).isAfter(now, 'minute')
-    ).sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf());
+    return (harcamalar ?? [])
+      .filter(
+        (h) =>
+          h.kategori === selectedCategory &&
+          h.not?.includes("Taksit") &&
+          dayjs(h.createdAt).isAfter(now, "minute"),
+      )
+      .sort(
+        (a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf(),
+      );
   }, [harcamalar, selectedCategory]);
 
   // 🚀 ARTIK ZİNCİR SİLME İŞLEMİ DİREKT BACKEND ENDPOINT'İNE `taksitGrupId` GÖNDERİYOR
@@ -345,7 +405,9 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     try {
       if (deleteAllChain) {
         if (!harcama.taksitGrupId) {
-          return message.error("Bu eski kayıt bir grup kimliğine sahip değil. Güvenlik için lütfen tek tek silin.");
+          return message.error(
+            "Bu eski kayıt bir grup kimliğine sahip değil. Güvenlik için lütfen tek tek silin.",
+          );
         }
 
         await axios.delete(`${API_URL}/harcama/grup/${harcama.taksitGrupId}`);
@@ -361,10 +423,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   };
 
   const monthlyCategoryTotals = useMemo(() => {
-    const startOfMonth = dayjs().startOf('month');
+    const startOfMonth = dayjs().startOf("month");
     return (harcamalar ?? []).reduce((acc, h) => {
       const harcamaDate = dayjs(h.createdAt);
-      if (harcamaDate.isSameOrAfter(startOfMonth, 'month')) {
+      if (harcamaDate.isSameOrAfter(startOfMonth, "month")) {
         const m = Number(h.miktar || 0);
         if (h.kategori) acc[h.kategori] = (acc[h.kategori] || 0) + m;
       }
@@ -375,58 +437,91 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const getTopCategory = useCallback(() => {
     const angle = 360 / CATEGORIES.length;
     const normalized = ((rotation % 360) + 360) % 360;
-    return CATEGORIES[(Math.round(-normalized / angle) + CATEGORIES.length) % CATEGORIES.length];
+    return CATEGORIES[
+      (Math.round(-normalized / angle) + CATEGORIES.length) % CATEGORIES.length
+    ];
   }, [rotation]);
 
   const currentTopCategory = getTopCategory();
   const currentCategoryTotal = monthlyCategoryTotals[currentTopCategory] || 0;
   const formattedTotal = currentCategoryTotal.toFixed(2).replace(".", ",");
 
-  const getAngle = (cX, cY, pX, pY) => Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
+  const getAngle = (cX, cY, pX, pY) =>
+    Math.atan2(pY - cY, pX - cX) * (180 / Math.PI);
 
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
     const rect = wheelRef.current.getBoundingClientRect();
-    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY));
+    setLastAngle(
+      getAngle(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        e.clientX,
+        e.clientY,
+      ),
+    );
   };
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
-    const rect = wheelRef.current.getBoundingClientRect();
-    const angle = getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, e.clientX, e.clientY);
-    let delta = angle - lastAngle;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-    setRotation((p) => p + delta);
-    setLastAngle(angle);
-  }, [isDragging, lastAngle]);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+      const rect = wheelRef.current.getBoundingClientRect();
+      const angle = getAngle(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        e.clientX,
+        e.clientY,
+      );
+      let delta = angle - lastAngle;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      setRotation((p) => p + delta);
+      setLastAngle(angle);
+    },
+    [isDragging, lastAngle],
+  );
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
   const handleTouchStart = (e) => {
     const t = e.touches[0];
     const rect = wheelRef.current.getBoundingClientRect();
-    setLastAngle(getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, t.clientX, t.clientY));
+    setLastAngle(
+      getAngle(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        t.clientX,
+        t.clientY,
+      ),
+    );
     touchStartPos.current = { x: t.clientX, y: t.clientY };
   };
 
-  const handleTouchMove = useCallback((e) => {
-    const t = e.touches[0];
-    const dx = t.clientX - touchStartPos.current.x;
-    const dy = t.clientY - touchStartPos.current.y;
-    if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
-      if (e.cancelable) e.preventDefault();
-      if (!isDragging) setIsDragging(true);
-      const rect = wheelRef.current.getBoundingClientRect();
-      const angle = getAngle(rect.left + rect.width / 2, rect.top + rect.height / 2, t.clientX, t.clientY);
-      let delta = angle - lastAngle;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      setRotation((p) => p + delta);
-      setLastAngle(angle);
-    }
-  }, [isDragging, lastAngle]);
+  const handleTouchMove = useCallback(
+    (e) => {
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartPos.current.x;
+      const dy = t.clientY - touchStartPos.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 10 || isDragging) {
+        if (e.cancelable) e.preventDefault();
+        if (!isDragging) setIsDragging(true);
+        const rect = wheelRef.current.getBoundingClientRect();
+        const angle = getAngle(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+          t.clientX,
+          t.clientY,
+        );
+        let delta = angle - lastAngle;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        setRotation((p) => p + delta);
+        setLastAngle(angle);
+      }
+    },
+    [isDragging, lastAngle],
+  );
 
   const handleTouchEnd = useCallback(() => setIsDragging(false), []);
 
@@ -455,10 +550,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setCurrentTaksitSayisi("2");
     setIsSubmitting(false);
     form.resetFields();
-    form.setFieldsValue({ 
+    form.setFieldsValue({
       tarih: dayjs().toDate(),
       harcamaKaynagi: "Gelir",
-      taksitSayisi: "2"
+      taksitSayisi: "2",
     });
     setShowNote(false);
   };
@@ -479,31 +574,39 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     if (isSubmitting) return;
 
     const totalAmount = parseFloat(amount.replace(",", "."));
-    if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
+    if (isNaN(totalAmount) || totalAmount <= 0)
+      return message.warning("Miktar girin.");
 
     if (!selectedCategory) return message.error("Kategori seçimi eksik.");
 
     setIsSubmitting(true);
 
-    let taksitSayisi = isTaksitli ? parseInt(values.taksitSayisi || currentTaksitSayisi, 10) : 1;
+    let taksitSayisi = isTaksitli
+      ? parseInt(values.taksitSayisi || currentTaksitSayisi, 10)
+      : 1;
     let customNoteBase = values.not || "";
     const baseDate = values.tarih ? dayjs(values.tarih) : dayjs();
 
     // ➕ HER TAKSİTLİ GRUP İÇİN BENZERSİZ BİR GRUP KİMLİĞİ OLUŞTURUYORUZ
-    const taksitGrupId = isTaksitli ? `grup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` : "";
+    const taksitGrupId = isTaksitli
+      ? `grup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+      : "";
 
-    if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
+    if (
+      (selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
+      isAbonelik
+    ) {
       const currentMonthStr = baseDate.format("YYYY-MM");
-      const kayitGunu = baseDate.date(); 
-      
+      const kayitGunu = baseDate.date();
+
       const abonelikPayload = {
         miktar: totalAmount,
         kategori: selectedCategory,
         altKategori: values.altKategori || "",
         not: customNoteBase,
-        kayitGunu: kayitGunu, 
+        kayitGunu: kayitGunu,
         harcamaKaynagi: values.harcamaKaynagi || "Gelir",
-        triggeredMonths: [currentMonthStr]
+        triggeredMonths: [currentMonthStr],
       };
 
       try {
@@ -515,12 +618,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
     try {
       for (let i = 1; i <= taksitSayisi; i++) {
-        let finalAmount = isTaksitli ? parseFloat((totalAmount / taksitSayisi).toFixed(2)) : totalAmount;
+        let finalAmount = isTaksitli
+          ? parseFloat((totalAmount / taksitSayisi).toFixed(2))
+          : totalAmount;
         let customNote = customNoteBase;
 
         if (isTaksitli) {
           const taksitIbaresi = `[${i}/${taksitSayisi} Taksit]`;
-          customNote = customNoteBase ? `${taksitIbaresi} ${customNoteBase}` : taksitIbaresi;
+          customNote = customNoteBase
+            ? `${taksitIbaresi} ${customNoteBase}`
+            : taksitIbaresi;
         }
 
         const currentTaksitDate = baseDate.add(i - 1, "month").toISOString();
@@ -531,15 +638,28 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           taksitSayisi: taksitSayisi,
           taksitGrupId: taksitGrupId, // 🚀 ARTIK KELİME FİLTRESİ YERİNE BU ID YAZILIYOR
           kategori: selectedCategory,
-          altKategori: ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory) ? values.altKategori : "",
+          altKategori: [
+            "Market",
+            "Giyim",
+            "Aile",
+            "Ulaşım",
+            "EvEsyasi",
+          ].includes(selectedCategory)
+            ? values.altKategori
+            : "",
           not: customNote,
           harcamaKaynagi: values.harcamaKaynagi || "Gelir",
-          birikimHesabi: values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
+          birikimHesabi:
+            values.harcamaKaynagi === "Birikim" ? values.birikimHesabi : "",
           createdAt: currentTaksitDate,
         });
       }
 
-      message.success(isTaksitli ? `${taksitSayisi} Taksit başarıyla planlandı ve eklendi!` : "Harcama eklendi!");
+      message.success(
+        isTaksitli
+          ? `${taksitSayisi} Taksit başarıyla planlandı ve eklendi!`
+          : "Harcama eklendi!",
+      );
       await refetch();
       handleModalCancel();
     } catch (err) {
@@ -550,10 +670,18 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   };
 
   const filteredSubscriptions = useMemo(() => {
-    return Object.values(activeSubscriptions).filter(sub => sub.kategori === selectedCategory);
+    return Object.values(activeSubscriptions).filter(
+      (sub) => sub.kategori === selectedCategory,
+    );
   }, [activeSubscriptions, selectedCategory]);
 
-  const isAltKategoriRequired = ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory);
+  const isAltKategoriRequired = [
+    "Market",
+    "Giyim",
+    "Aile",
+    "Ulaşım",
+    "EvEsyasi",
+  ].includes(selectedCategory);
   const isBirikimSelected = watchHarcamaKaynagi === "Birikim";
 
   let gridCols = 2;
@@ -563,30 +691,43 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   return (
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
       <SpaceBackground />
-      
+
       <div className="text-center mb-6 pt-4 relative z-10">
-        <div className="text-white font-bold text-2xl tracking-widest transition-all uppercase" style={{ color: CATEGORY_CONFIG[currentTopCategory]?.color || '#fff' }}>
+        <div
+          className="text-white font-bold text-2xl tracking-widest transition-all uppercase"
+          style={{
+            color: CATEGORY_CONFIG[currentTopCategory]?.color || "#fff",
+          }}
+        >
           {currentTopCategory === "EvEsyasi" ? "Ev Eşyası" : currentTopCategory}
         </div>
-        <div className="text-white/60 font-mono text-xl mt-1">{formattedTotal} €</div>
+        <div className="text-white/60 font-mono text-xl mt-1">
+          {formattedTotal} €
+        </div>
       </div>
 
       <div className="relative flex items-center justify-center h-[420px] w-full mx-auto my-6 z-10">
-        <div 
-          onClick={() => setIsGelirModalVisible(true)} 
+        <div
+          onClick={() => setIsGelirModalVisible(true)}
           className="relative group cursor-pointer z-20 flex items-center justify-center active:scale-95 transition-transform duration-200"
         >
           <div className="absolute w-[160px] h-[160px] bg-orange-500/10 rounded-full blur-[40px]" />
-          <div 
-            className="relative w-[110px] h-[110px] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] bg-gradient-to-tr from-orange-600 to-amber-400 border-4 border-white/20"
-          >
+          <div className="relative w-[110px] h-[110px] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] bg-gradient-to-tr from-orange-600 to-amber-400 border-4 border-white/20">
             <Plus size={48} color="white" strokeWidth={3} />
           </div>
         </div>
 
-        <div ref={wheelRef} className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-          style={{ transform: `rotate(${rotation}deg)`, transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.15, 0, 0.15, 1)" }}
-          onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}
+        <div
+          ref={wheelRef}
+          className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
+          style={{
+            transform: `rotate(${rotation}deg)`,
+            transition: isDragging
+              ? "none"
+              : "transform 0.5s cubic-bezier(0.15, 0, 0.15, 1)",
+          }}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
           {CATEGORIES.map((cat, i) => {
             const ang = (360 / CATEGORIES.length) * i - 90;
@@ -596,18 +737,19 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             const isTop = cat === currentTopCategory;
 
             return (
-              <div key={cat}
+              <div
+                key={cat}
                 className="absolute"
-                style={{ 
-                  top: `${center + y}%`, 
-                  left: `${center + x}%`, 
+                style={{
+                  top: `${center + y}%`,
+                  left: `${center + x}%`,
                   transform: `translate(-50%, -50%)`,
-                  width: isTop ? '80px' : '55px',
-                  height: isTop ? '80px' : '55px',
-                  zIndex: isTop ? 50 : 10
+                  width: isTop ? "80px" : "55px",
+                  height: isTop ? "80px" : "55px",
+                  zIndex: isTop ? 50 : 10,
                 }}
               >
-                <button 
+                <button
                   onClick={() => handleIconClick(cat)}
                   className="w-full h-full p-0 border-none bg-transparent outline-none"
                   style={{ transform: `rotate(${-rotation}deg)` }}
@@ -620,160 +762,309 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      <Modal 
-        title={<div className="text-lg font-bold font-mono tracking-widest uppercase" style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}>{selectedCategory === "EvEsyasi" ? "Ev Eşyası" : selectedCategory}</div>}
-        open={isModalVisible} onCancel={handleModalCancel} footer={null} centered width={380}
+      <Modal
+        title={
+          <div
+            className="text-lg font-bold font-mono tracking-widest uppercase"
+            style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}
+          >
+            {selectedCategory === "EvEsyasi" ? "Ev Eşyası" : selectedCategory}
+          </div>
+        }
+        open={isModalVisible}
+        onCancel={handleModalCancel}
+        footer={null}
+        centered
+        width={380}
         className="space-modal"
-        styles={{ body: { padding: '12px 16px', maxHeight: '520px', overflowY: 'auto' } }}
+        styles={{
+          body: { padding: "12px 16px", maxHeight: "520px", overflowY: "auto" },
+        }}
       >
+        {/* 🚀 GELECEK TAKSİTLER DETAY BUTONU VE AKORDİYON PANEL */}
         {categoryFutureTaksits.length > 0 && (
-          <div className="mb-4 p-2.5 bg-amber-950/20 border border-amber-500/30 rounded-2xl">
-            <div className="text-[10px] text-amber-400 font-bold mb-1.5 uppercase tracking-wider flex items-center gap-1">
-              <CreditCard size={12} /> Bu Kategorideki Gelecek Taksitler:
-            </div>
-            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-              {categoryFutureTaksits.map((taksit) => (
-                <div key={taksit._id} className="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-slate-800">
-                  <div className="flex flex-col min-w-0 pr-2">
-                    <span className="text-[11px] text-white font-medium truncate">
-                      {taksit.not || (taksit.altKategori || taksit.kategori)}
-                    </span>
-                    <span className="text-[9px] text-gray-400">
-                      {dayjs(taksit.createdAt).format("DD MMM YYYY")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Tag color="error" className="m-0 text-[10px] font-mono font-bold px-1.5 py-0">
-                      -{taksit.miktar.toFixed(2)}€
-                    </Tag>
-                    
-                    {/* 1. SEÇENEK: SADECE BU AYI SİL */}
-                    <Popconfirm
-                      title="Sadece bu taksit silinsin mi?"
-                      onConfirm={() => handleTaksitDelete(taksit, false)}
-                      okText="Evet"
-                      cancelText="Hayır"
-                      okButtonProps={{ size: 'small', danger: true }}
-                      cancelButtonProps={{ size: 'small' }}
-                      placement="topRight"
-                    >
-                      <Button 
-                        type="text" 
-                        danger 
-                        size="small" 
-                        icon={<Trash2 size={13} />}
-                        className="p-1 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border-none"
-                      />
-                    </Popconfirm>
+          <div className="mb-3 rounded-2xl overflow-hidden border border-amber-500/20 bg-amber-950/10 transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => setShowFutureTaksits(!showFutureTaksits)}
+              className="w-full px-3 py-2.5 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-amber-900/10"
+            >
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
+                <CreditCard size={13} className="animate-pulse" />
+                <span>
+                  Gelecek Dönem Taksitleri ({categoryFutureTaksits.length})
+                </span>
+              </div>
+              <div
+                className={`text-amber-400 font-bold text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/10 flex items-center gap-1 transition-transform duration-300 ${showFutureTaksits ? "rotate-180" : ""}`}
+              >
+                ▼
+              </div>
+            </button>
 
-                    {/* 2. SEÇENEK: TÜM ZİNCİRİ GÜVENLE TEK HAMLEDE SİL */}
-                    <Popconfirm
-                      title="Tüm Taksit Zinciri Silinsin Mi?"
-                      description="Bu seriye ait gelecekteki tüm taksitler tek hamlede silinecektir!"
-                      onConfirm={() => handleTaksitDelete(taksit, true)}
-                      okText="Tümünü Sil"
-                      cancelText="Vazgeç"
-                      okButtonProps={{ size: 'small', type: 'primary', danger: true }}
-                      cancelButtonProps={{ size: 'small' }}
-                      placement="topRight"
-                    >
-                      <Button 
-                        type="primary"
-                        danger
-                        size="small"
-                        className="h-6 px-1.5 text-[9px] font-bold rounded-lg flex items-center justify-center gap-0.5 active:scale-95 transition-all shadow-md bg-red-600 border-none"
+            {showFutureTaksits && (
+              <div className="px-2.5 pb-2.5 space-y-1.5 max-h-[160px] overflow-y-auto border-t border-amber-500/10 pt-2 animate-fadeIn">
+                {categoryFutureTaksits.map((taksit) => (
+                  <div
+                    key={taksit._id}
+                    className="flex items-center justify-between bg-slate-950/60 p-2 rounded-xl border border-slate-800/60 gap-2"
+                  >
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[11px] text-gray-200 font-medium truncate">
+                        {taksit.not || taksit.altKategori || taksit.kategori}
+                      </span>
+                      <span className="text-[9px] text-gray-400/80 font-mono mt-0.5">
+                        {dayjs(taksit.createdAt).format("DD MMM YYYY")}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/10">
+                        -{taksit.miktar.toFixed(2)}€
+                      </span>
+
+                      {/* Sadece Bu Taksiti Sil */}
+                      <Popconfirm
+                        title="Sadece bu taksit silinsin mi?"
+                        onConfirm={() => handleTaksitDelete(taksit, false)}
+                        okText="Evet"
+                        cancelText="Hayır"
+                        okButtonProps={{ size: "small", danger: true }}
+                        cancelButtonProps={{ size: "small" }}
+                        placement="topRight"
                       >
-                        <Layers size={10} /> Tümünü Sil
-                      </Button>
-                    </Popconfirm>
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<Trash2 size={12} />}
+                          className="p-0 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border-none transition-all active:scale-90"
+                        />
+                      </Popconfirm>
+
+                      {/* Tüm Zinciri Sil (iPhone 15 ekranında taşma yapmaması için kompakt ikonlu buton) */}
+                      <Popconfirm
+                        title="Tüm Taksit Zinciri Silinsin Mi?"
+                        description="Gelecekteki tüm taksitler tek hamlede silinecektir!"
+                        onConfirm={() => handleTaksitDelete(taksit, true)}
+                        okText="Tümünü Sil"
+                        cancelText="Vazgeç"
+                        okButtonProps={{
+                          size: "small",
+                          type: "primary",
+                          danger: true,
+                        }}
+                        cancelButtonProps={{ size: "small" }}
+                        placement="topRight"
+                      >
+                        <Button
+                          type="primary"
+                          danger
+                          size="small"
+                          icon={<Layers size={11} />}
+                          className="h-6 w-6 p-0 rounded-lg flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
+                        />
+                      </Popconfirm>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            <Divider className="my-2 border-slate-700/50" />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
           <div className="text-4xl font-black text-white tracking-tight">
-            {amount || "0"}<span className="text-xl ml-2 text-blue-500/50">€</span>
+            {amount || "0"}
+            <span className="text-xl ml-2 text-blue-500/50">€</span>
           </div>
           {isTaksitli && (
             <div className="text-xs text-slate-400 mt-1 font-semibold flex flex-col gap-0.5">
-              <div>Aylık Ödeme: {(parseFloat(amount.replace(",", ".")) / parseInt(currentTaksitSayisi || 1, 10) || 0).toFixed(2).replace(".", ",")} €</div>
-              <div className="text-blue-400 text-[11px]">Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan: {parseInt(currentTaksitSayisi, 10) - 1})</div>
+              <div>
+                Aylık Ödeme:{" "}
+                {(
+                  parseFloat(amount.replace(",", ".")) /
+                    parseInt(currentTaksitSayisi || 1, 10) || 0
+                )
+                  .toFixed(2)
+                  .replace(".", ",")}{" "}
+                €
+              </div>
+              <div className="text-blue-400 text-[11px]">
+                Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan:{" "}
+                {parseInt(currentTaksitSayisi, 10) - 1})
+              </div>
             </div>
           )}
-          {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik && (
-            <div className="text-xs text-emerald-400 mt-1 font-semibold">
-              🔄 Her ay otomatik olarak tekrarlanacak.
-            </div>
-          )}
+          {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
+            isAbonelik && (
+              <div className="text-xs text-emerald-400 mt-1 font-semibold">
+                🔄 Her ay otomatik olarak tekrarlanacak.
+              </div>
+            )}
         </div>
 
-        {(selectedCategory === "Fatura" || selectedCategory === "İletisim") && filteredSubscriptions.length > 0 && (
-          <div className="mb-3 p-2 bg-red-950/20 border border-red-500/30 rounded-xl">
-            <div className="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Aktif Otomatik Ödemeleriniz:</div>
-            {filteredSubscriptions.map((sub) => (
-              <div key={sub.id} className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-lg mb-1 last:mb-0">
-                <span className="text-xs text-white font-mono font-bold">{sub.miktar.toFixed(2).replace(".", ",")} €</span>
-                
-                <Popconfirm
-                  title="Abonelik İptali"
-                  description="Emin misin?"
-                  onConfirm={() => handleCancelSubscription(sub.id)}
-                  okText="İptal Et"
-                  cancelText="Vazgeç"
-                  okButtonProps={{ danger: true, className: "rounded-xl font-medium" }}
-                  cancelButtonProps={{ className: "rounded-xl" }}
-                  placement="topLeft"
+        {/* 🚀 AKTİF OTOMATİK ÖDEMELER DETAY BUTONU VE AKORDİYON PANEL */}
+        {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
+          filteredSubscriptions.length > 0 && (
+            <div className="mb-3 rounded-2xl overflow-hidden border border-emerald-500/20 bg-emerald-950/10 transition-all duration-300">
+              <button
+                type="button"
+                onClick={() => setShowActiveSubs(!showActiveSubs)}
+                className="w-full px-3 py-2.5 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-emerald-900/10"
+              >
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px] uppercase tracking-wider">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>
+                    Aktif Otomatik Ödemeler ({filteredSubscriptions.length})
+                  </span>
+                </div>
+                <div
+                  className={`text-emerald-400 font-bold text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/10 flex items-center gap-1 transition-transform duration-300 ${showActiveSubs ? "rotate-180" : ""}`}
                 >
-                  <Button 
-                    type="text" 
-                    danger 
-                    size="small" 
-                    icon={<XCircle size={15} />}
-                    className="text-[11px] h-7 px-2.5 font-bold bg-red-50 hover:bg-red-100 border-none rounded-xl flex items-center gap-1 active:scale-95 transition-all"
-                  >
-                    İptal Et
-                  </Button>
-                </Popconfirm>
-              </div>
-            ))}
-          </div>
-        )}
+                  ▼
+                </div>
+              </button>
+
+              {showActiveSubs && (
+                <div className="px-2.5 pb-2.5 space-y-1.5 max-h-[140px] overflow-y-auto border-t border-emerald-500/10 pt-2">
+                  {filteredSubscriptions.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="flex items-center justify-between bg-slate-950/60 p-2 rounded-xl border border-slate-800/60 gap-2"
+                    >
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-[11px] text-gray-200 font-mono font-bold">
+                          {sub.miktar.toFixed(2).replace(".", ",")} €
+                        </span>
+                        {sub.not && (
+                          <span className="text-[9px] text-gray-400/80 truncate mt-0.5">
+                            {sub.not}
+                          </span>
+                        )}
+                      </div>
+
+                      <Popconfirm
+                        title="Abonelik İptali"
+                        description="Bu otomatik ödeme aboneliğini iptal etmek istediğinize emin misiniz?"
+                        onConfirm={() => handleCancelSubscription(sub.id)}
+                        okText="İptal Et"
+                        cancelText="Vazgeç"
+                        okButtonProps={{ danger: true, size: "small" }}
+                        cancelButtonProps={{ size: "small" }}
+                        placement="topRight"
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<XCircle size={13} />}
+                          className="h-6 px-2 text-[10px] font-bold bg-red-500/10 hover:bg-red-500/20 border-none rounded-lg flex items-center gap-1 active:scale-90 transition-all"
+                        >
+                          İptal Et
+                        </Button>
+                      </Popconfirm>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
-          <div 
+          <div
             className="grid gap-1.5 items-end"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-          > 
-            <Form.Item name="tarih" label={<span className="text-gray-400 text-[10px]">Tarih</span>} className="mb-0">
+            style={{
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+            }}
+          >
+            <Form.Item
+              name="tarih"
+              label={<span className="text-gray-400 text-[10px]">Tarih</span>}
+              className="mb-0"
+            >
               <CustomDayPicker />
             </Form.Item>
-            
-            <Form.Item name="harcamaKaynagi" label={<span className="text-gray-400 text-[10px]">Ödeme Hesabı</span>} rules={[{ required: true }]} className="mb-0">
-              <Select className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
-                {HARCAMA_KAYNAKLARI.map(i => <Option key={i} value={i}>{i}</Option>)}
+
+            <Form.Item
+              name="harcamaKaynagi"
+              label={
+                <span className="text-gray-400 text-[10px]">Ödeme Hesabı</span>
+              }
+              rules={[{ required: true }]}
+              className="mb-0"
+            >
+              <Select
+                className="w-full"
+                style={{ height: "38px" }}
+                dropdownStyle={{ borderRadius: "12px" }}
+              >
+                {HARCAMA_KAYNAKLARI.map((i) => (
+                  <Option key={i} value={i}>
+                    {i}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
 
             {isBirikimSelected && (
-              <Form.Item name="birikimHesabi" label={<span className="text-gray-400 text-[10px]">Hesap Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
-                <Select placeholder="Hesap" className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
-                  {BIRIKIM_HESAPLARI.map(i => <Option key={i} value={i}>{i}</Option>)}
+              <Form.Item
+                name="birikimHesabi"
+                label={
+                  <span className="text-gray-400 text-[10px]">Hesap Detay</span>
+                }
+                rules={[{ required: true, message: "Seç" }]}
+                className="mb-0"
+              >
+                <Select
+                  placeholder="Hesap"
+                  className="w-full"
+                  style={{ height: "38px" }}
+                  dropdownStyle={{ borderRadius: "12px" }}
+                >
+                  {BIRIKIM_HESAPLARI.map((i) => (
+                    <Option key={i} value={i}>
+                      {i}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             )}
 
             {isAltKategoriRequired && (
-              <Form.Item name="altKategori" label={<span className="text-gray-400 text-[10px]">Kategori Detay</span>} rules={[{ required: true, message: "Seç" }]} className="mb-0">
-                <Select placeholder="Seç" className="w-full" style={{ height: '38px' }} dropdownStyle={{ borderRadius: '12px' }}>
-                  {(selectedCategory === "Market" ? MARKETLER : 
-                    selectedCategory === "Giyim" ? GIYIM_KISILERI : 
-                    selectedCategory === "Aile" ? AILE_UYELERI : 
-                    selectedCategory === "Ulaşım" ? ULASIM_TURLERI :
-                    EV_ESYASI_TURLERI).map(i => <Option key={i} value={i}>{i}</Option>)}
+              <Form.Item
+                name="altKategori"
+                label={
+                  <span className="text-gray-400 text-[10px]">
+                    Kategori Detay
+                  </span>
+                }
+                rules={[{ required: true, message: "Seç" }]}
+                className="mb-0"
+              >
+                <Select
+                  placeholder="Seç"
+                  className="w-full"
+                  style={{ height: "38px" }}
+                  dropdownStyle={{ borderRadius: "12px" }}
+                >
+                  {(selectedCategory === "Market"
+                    ? MARKETLER
+                    : selectedCategory === "Giyim"
+                      ? GIYIM_KISILERI
+                      : selectedCategory === "Aile"
+                        ? AILE_UYELERI
+                        : selectedCategory === "Ulaşım"
+                          ? ULASIM_TURLERI
+                          : EV_ESYASI_TURLERI
+                  ).map((i) => (
+                    <Option key={i} value={i}>
+                      {i}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             )}
@@ -782,11 +1073,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           <div className="flex items-center justify-between mt-3 px-1 gap-2">
             {selectedCategory === "İletisim" ? (
               <>
-                <Checkbox 
-                  checked={isTaksitli} 
+                <Checkbox
+                  checked={isTaksitli}
                   onChange={(e) => {
                     setIsTaksitli(e.target.checked);
-                    if(e.target.checked) {
+                    if (e.target.checked) {
                       setIsAbonelik(false);
                       form.setFieldsValue({ taksitSayisi: "2" });
                       setCurrentTaksitSayisi("2");
@@ -796,11 +1087,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 >
                   Taksitli Alışveriş
                 </Checkbox>
-                <Checkbox 
-                  checked={isAbonelik} 
+                <Checkbox
+                  checked={isAbonelik}
                   onChange={(e) => {
                     setIsAbonelik(e.target.checked);
-                    if(e.target.checked) {
+                    if (e.target.checked) {
                       setIsTaksitli(false);
                     }
                   }}
@@ -810,11 +1101,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 </Checkbox>
               </>
             ) : selectedCategory === "Fatura" ? (
-              <Checkbox 
-                checked={isAbonelik} 
+              <Checkbox
+                checked={isAbonelik}
                 onChange={(e) => {
                   setIsAbonelik(e.target.checked);
-                  if(e.target.checked) {
+                  if (e.target.checked) {
                     setIsTaksitli(false);
                   }
                 }}
@@ -823,11 +1114,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 Aylık Düzenli Ödeme (Otomatik)
               </Checkbox>
             ) : (
-              <Checkbox 
-                checked={isTaksitli} 
+              <Checkbox
+                checked={isTaksitli}
                 onChange={(e) => {
                   setIsTaksitli(e.target.checked);
-                  if(e.target.checked) {
+                  if (e.target.checked) {
                     form.setFieldsValue({ taksitSayisi: "2" });
                     setCurrentTaksitSayisi("2");
                   }
@@ -839,14 +1130,20 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             )}
 
             {isTaksitli && selectedCategory !== "Fatura" && (
-              <Form.Item name="taksitSayisi" className="mb-0" rules={[{ required: true, message: "Seç" }]}>
-                <Select 
-                  style={{ width: 100, height: '32px' }} 
-                  dropdownStyle={{ borderRadius: '8px' }}
+              <Form.Item
+                name="taksitSayisi"
+                className="mb-0"
+                rules={[{ required: true, message: "Seç" }]}
+              >
+                <Select
+                  style={{ width: 100, height: "32px" }}
+                  dropdownStyle={{ borderRadius: "8px" }}
                   onChange={(val) => setCurrentTaksitSayisi(val)}
                 >
-                  {[2, 3, 4, 5, 6, 9, 12].map(m => (
-                    <Option key={m} value={m.toString()}>{m} Taksit</Option>
+                  {[2, 3, 4, 5, 6, 9, 12].map((m) => (
+                    <Option key={m} value={m.toString()}>
+                      {m} Taksit
+                    </Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -856,17 +1153,30 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           <NumericNumpad value={amount} onChange={setAmount} />
           {showNote ? (
             <Form.Item name="not" className="mt-2 mb-0">
-              <Input.TextArea rows={2} placeholder="Not ekleyin..." autoFocus className="bg-slate-800 border-slate-700 text-white rounded-xl" style={{ color: '#ffffff', backgroundColor: '#1e293b' }} />
+              <Input.TextArea
+                rows={2}
+                placeholder="Not ekleyin..."
+                autoFocus
+                className="bg-slate-800 border-slate-700 text-white rounded-xl"
+                style={{ color: "#ffffff", backgroundColor: "#1e293b" }}
+              />
             </Form.Item>
           ) : (
-            <Button type="text" onClick={() => setShowNote(true)} icon={<MessageCircle size={14} />} className="w-full mt-2 text-slate-400 text-xs">Not Ekle</Button>
+            <Button
+              type="text"
+              onClick={() => setShowNote(true)}
+              icon={<MessageCircle size={14} />}
+              className="w-full mt-2 text-slate-400 text-xs"
+            >
+              Not Ekle
+            </Button>
           )}
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            block 
-            loading={isSubmitting} 
-            disabled={isSubmitting} 
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            loading={isSubmitting}
+            disabled={isSubmitting}
             className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
           >
             KAYDET
@@ -874,7 +1184,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </Form>
       </Modal>
 
-      <GelirEkleModal 
+      <GelirEkleModal
         open={isGelirModalVisible}
         onClose={() => setIsGelirModalVisible(false)}
         onSave={handleGelirOrTransferSave}
