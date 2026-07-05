@@ -31,6 +31,27 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 🚀 ➕ Tüm Taksit Zincirini Grup Kimliğine Göre Sil (GÜVENLİ TOPLU SİLME)
+router.delete("/grup/:grupId", async (req, res) => {
+  try {
+    const { grupId } = req.params;
+
+    if (!grupId || grupId === "") {
+      return res.status(400).json({ error: "Geçersiz grup kimliği" });
+    }
+
+    // Sadece bu gruba ait olan kayıtları diğer hiçbir şeye dokunmadan tek hamlede uçurur
+    const sonuc = await Harcama.deleteMany({ taksitGrupId: grupId });
+    
+    res.json({ 
+      message: `${sonuc.deletedCount} adet taksit kaydı başarıyla silindi.`, 
+      deletedCount: sonuc.deletedCount 
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Grup silme işlemi başarısız", details: err.message });
+  }
+});
+
 // 🗑 Harcama sil
 router.delete("/:id", async (req, res) => {
   try {

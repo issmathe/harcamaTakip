@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
-  Modal,Form,
+  Modal,
+  Form,
   Input,
   Button,
   message,
@@ -36,7 +37,8 @@ import {
   Plus,
   XCircle,
   CreditCard,
-  Trash2
+  Trash2,
+  Layers
 } from "lucide-react";
 
 import axios from "axios";
@@ -89,7 +91,6 @@ const CategoryIcon = ({ type, isTop }) => {
         color={isTop ? config.color : "#94a3b8"} 
         strokeWidth={2.5}
       />
-
       {labelElement}
       {isTop && (
         <div 
@@ -201,7 +202,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   const [isTaksitli, setIsTaksitli] = useState(false);
   const [currentTaksitSayisi, setCurrentTaksitSayisi] = useState("2");
   const [isAbonelik, setIsAbonelik] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // ➕ Kilit mekanizması eklendi
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeSubscriptions, setActiveSubscriptions] = useState({});
 
@@ -241,11 +242,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
       fetchSubscriptions();
     }
   }, [isModalVisible]);
-const handleGelirOrTransferSave = async (payload) => {
-    if (isSubmitting) return; // 🔒 Çift tıklamayı engelle
 
+  const handleGelirOrTransferSave = async (payload) => {
+    if (isSubmitting) return;
     try {
-      setIsSubmitting(true); // 🔒 Süreci kilitle
+      setIsSubmitting(true);
       if (payload.kaynakKategori) {
         await axios.post(`${API_URL}/gelir/transfer`, payload);
         message.success("Transfer başarıyla gerçekleşti!");
@@ -259,7 +260,7 @@ const handleGelirOrTransferSave = async (payload) => {
       message.error(errMsg);
       throw err;
     } finally {
-      setIsSubmitting(false); // 🔓 İşlem bitince kilidi aç
+      setIsSubmitting(false);
     }
   };
 
@@ -286,6 +287,7 @@ const handleGelirOrTransferSave = async (payload) => {
               miktar: sub.miktar,
               toplamMiktar: sub.miktar,
               taksitSayisi: 1,
+              taksitGrupId: "",
               kategori: sub.kategori,
               altKategori: sub.altKategori || "",
               not: sub.not,
@@ -338,21 +340,16 @@ const handleGelirOrTransferSave = async (payload) => {
     ).sort((a, b) => dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf());
   }, [harcamalar, selectedCategory]);
 
+  // 🚀 ARTIK ZİNCİR SİLME İŞLEMİ DİREKT BACKEND ENDPOINT'İNE `taksitGrupId` GÖNDERİYOR
   const handleTaksitDelete = async (harcama, deleteAllChain) => {
     try {
       if (deleteAllChain) {
-        const cleanNote = harcama.not.replace(/\[\d+\/\d+\sTaksit\]\s?/, "").trim();
-        const chainItems = harcamalar.filter(h => 
-          h.kategori === harcama.kategori && 
-          h.toplamMiktar === harcama.toplamMiktar && 
-          h.taksitSayisi === harcama.taksitSayisi &&
-          (!cleanNote || h.not?.includes(cleanNote))
-        );
-
-        for (const item of chainItems) {
-          await axios.delete(`${API_URL}/harcama/${item._id}`);
+        if (!harcama.taksitGrupId) {
+          return message.error("Bu eski kayıt bir grup kimliğine sahip değil. Güvenlik için lütfen tek tek silin.");
         }
-        message.success("Taksit zincirinin tamamı başarıyla silindi.");
+
+        await axios.delete(`${API_URL}/harcama/grup/${harcama.taksitGrupId}`);
+        message.success("Taksit zincirinin tamamı güvenle silindi.");
       } else {
         await axios.delete(`${API_URL}/harcama/${harcama._id}`);
         message.success("Seçili taksit başarıyla silindi.");
@@ -473,22 +470,27 @@ const handleGelirOrTransferSave = async (payload) => {
     setIsTaksitli(false);
     setIsAbonelik(false);
     setCurrentTaksitSayisi("2");
-    setIsSubmitting(false); // 🔒 İptal durumunda kilidi aç
+    setIsSubmitting(false);
     form.resetFields();
     setShowNote(false);
   };
 
   const onHarcamaFinish = async (values) => {
-    if (isSubmitting) return; // 🔒 Çift tıklama kilidi aktifse durdur
+    if (isSubmitting) return;
 
     const totalAmount = parseFloat(amount.replace(",", "."));
     if (isNaN(totalAmount) || totalAmount <= 0) return message.warning("Miktar girin.");
 
-    setIsSubmitting(true); // 🔒 İstek sürecini kilitle
+    if (!selectedCategory) return message.error("Kategori seçimi eksik.");
+
+    setIsSubmitting(true);
 
     let taksitSayisi = isTaksitli ? parseInt(values.taksitSayisi || currentTaksitSayisi, 10) : 1;
     let customNoteBase = values.not || "";
     const baseDate = values.tarih ? dayjs(values.tarih) : dayjs();
+
+    // ➕ HER TAKSİTLİ GRUP İÇİN BENZERSİZ BİR GRUP KİMLİĞİ OLUŞTURUYORUZ
+    const taksitGrupId = isTaksitli ? `grup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` : "";
 
     if ((selectedCategory === "Fatura" || selectedCategory === "İletisim") && isAbonelik) {
       const currentMonthStr = baseDate.format("YYYY-MM");
@@ -527,7 +529,8 @@ const handleGelirOrTransferSave = async (payload) => {
           miktar: finalAmount,
           toplamMiktar: totalAmount,
           taksitSayisi: taksitSayisi,
-          kategori: selectedCategory || "Diğer",
+          taksitGrupId: taksitGrupId, // 🚀 ARTIK KELİME FİLTRESİ YERİNE BU ID YAZILIYOR
+          kategori: selectedCategory,
           altKategori: ["Market", "Giyim", "Aile", "Ulaşım", "EvEsyasi"].includes(selectedCategory) ? values.altKategori : "",
           not: customNote,
           harcamaKaynagi: values.harcamaKaynagi || "Gelir",
@@ -542,7 +545,7 @@ const handleGelirOrTransferSave = async (payload) => {
     } catch (err) {
       message.error("Harcama eklenirken bir hata oluştu.");
     } finally {
-      setIsSubmitting(false); // 🔓 İşlem bittiğinde kilidi tamamen serbest bırak
+      setIsSubmitting(false);
     }
   };
 
@@ -639,20 +642,19 @@ const handleGelirOrTransferSave = async (payload) => {
                       {dayjs(taksit.createdAt).format("DD MMM YYYY")}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Tag color="error" className="m-0 text-[10px] font-mono font-bold px-1.5 py-0">
                       -{taksit.miktar.toFixed(2)}€
                     </Tag>
                     
+                    {/* 1. SEÇENEK: SADECE BU AYI SİL */}
                     <Popconfirm
-                      title="Taksit Silme İşlemi"
-                      description="Sadece bu taksiti mi, yoksa tüm taksit zincirini mi silmek istersiniz?"
+                      title="Sadece bu taksit silinsin mi?"
                       onConfirm={() => handleTaksitDelete(taksit, false)}
-                      onCancel={() => handleTaksitDelete(taksit, true)}
-                      okText="Sadece Bu Ayı Sil"
-                      cancelText="Tüm Zinciri Sil"
-                      okButtonProps={{ size: 'small', className: "rounded-lg text-[11px]" }}
-                      cancelButtonProps={{ size: 'small', danger: true, type: 'primary', className: "rounded-lg text-[11px]" }}
+                      okText="Evet"
+                      cancelText="Hayır"
+                      okButtonProps={{ size: 'small', danger: true }}
+                      cancelButtonProps={{ size: 'small' }}
                       placement="topRight"
                     >
                       <Button 
@@ -662,6 +664,27 @@ const handleGelirOrTransferSave = async (payload) => {
                         icon={<Trash2 size={13} />}
                         className="p-1 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border-none"
                       />
+                    </Popconfirm>
+
+                    {/* 2. SEÇENEK: TÜM ZİNCİRİ GÜVENLE TEK HAMLEDE SİL */}
+                    <Popconfirm
+                      title="Tüm Taksit Zinciri Silinsin Mi?"
+                      description="Bu seriye ait gelecekteki tüm taksitler tek hamlede silinecektir!"
+                      onConfirm={() => handleTaksitDelete(taksit, true)}
+                      okText="Tümünü Sil"
+                      cancelText="Vazgeç"
+                      okButtonProps={{ size: 'small', type: 'primary', danger: true }}
+                      cancelButtonProps={{ size: 'small' }}
+                      placement="topRight"
+                    >
+                      <Button 
+                        type="primary"
+                        danger
+                        size="small"
+                        className="h-6 px-1.5 text-[9px] font-bold rounded-lg flex items-center justify-center gap-0.5 active:scale-95 transition-all shadow-md bg-red-600 border-none"
+                      >
+                        <Layers size={10} /> Tümünü Sil
+                      </Button>
                     </Popconfirm>
                   </div>
                 </div>
@@ -842,8 +865,8 @@ const handleGelirOrTransferSave = async (payload) => {
             type="primary" 
             htmlType="submit" 
             block 
-            loading={isSubmitting} // ➕ İstek sürerken dönen çark efekti verir
-            disabled={isSubmitting} // 🔒 Gönderim esnasında butonu tamamen dondurur
+            loading={isSubmitting} 
+            disabled={isSubmitting} 
             className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
           >
             KAYDET

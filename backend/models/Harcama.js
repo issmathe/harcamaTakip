@@ -30,6 +30,17 @@ const HarcamaSchema = new mongoose.Schema(
     altKategori: {
       type: String,
     },
+    toplamMiktar: {
+      type: Number,
+    },
+    taksitSayisi: {
+      type: Number,
+    },
+    taksitGrupId: {
+      type: String,
+      default: "",
+      index: true,
+    },
     not: {
       type: String,
     },
