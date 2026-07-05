@@ -114,7 +114,7 @@ const HarcamalarContent = () => {
         ...formData,
         miktar: parseFloat(formData.miktar),
         birikimHesabi: formData.harcamaKaynagi === "Birikim" ? formData.birikimHesabi : "",
-        taksitGrupId: editingHarcama?.taksitGrupId || "",
+        taksitGrupId: editingHarcama?.taksitGrupId || "", // 🚀 KORUMA: Taksit zincir grup kimliği korunuyor
         createdAt: dayjs(formData.tarih).toISOString(),
       };
       await axios.put(`${API_URL}/harcama/${editingHarcama._id}`, payload);
@@ -141,6 +141,7 @@ const HarcamalarContent = () => {
       clearTimeout(activeDeleteTimers.current[id]);
     }
 
+    // 🚀 KORUMA: Hızlı silmelerde doğru zamanlayıcıyı (id üzerinden) iptal etmek için yapı güncellendi
     message.success({
       content: (
         <span className="flex items-center space-x-2">
@@ -182,7 +183,7 @@ const HarcamalarContent = () => {
     const filtered = harcamalar.filter((h) => {
       const categoryMatch = selectedCategory === "Tümü" || h.kategori === selectedCategory;
       const searchMatch = h.kategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        h.altKapping || h.altKategori?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         h.harcamaKaynagi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         h.birikimHesabi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         h.not?.toLowerCase().includes(searchTerm.toLowerCase());
