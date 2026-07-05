@@ -12,8 +12,8 @@ import {
   Button,
   message,
   Select,
-  Checkbox,
   Popconfirm,
+  Switch,
 } from "antd";
 
 import dayjs from "dayjs";
@@ -762,7 +762,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-<Modal
+      <Modal
         title={
           <div
             className="text-base font-bold font-mono tracking-widest uppercase"
@@ -778,10 +778,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         width={360}
         className="space-modal"
         styles={{
-          body: { 
-            padding: "8px 12px", 
-            maxHeight: "calc(100vh - 120px)", 
-            overflowY: "auto" 
+          body: {
+            padding: "8px 12px",
+            maxHeight: "calc(100vh - 120px)",
+            overflowY: "auto",
           },
         }}
       >
@@ -845,41 +845,43 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                         />
                       </Popconfirm>
 
-{/* Tüm Zinciri Sil (Kompakt ve iPhone 15 Uyumlu Popconfirm) */}
-<Popconfirm
-  title={
-    <span className="text-red-400 font-bold text-xs tracking-wide block mb-0.5">
-      Tüm Zincir Silinsin mi?
-    </span>
-  }
-  description={
-    <span className="text-gray-400 text-[10px] block leading-tight max-w-[180px]">
-      Gelecekteki tüm taksit serisi tek hamlede iptal edilecektir.
-    </span>
-  }
-  onConfirm={() => handleTaksitDelete(taksit, true)}
-  okText="Seriyi Sil"
-  cancelText="Vazgeç"
-  okButtonProps={{
-    size: "small",
-    type: "primary",
-    danger: true,
-    className: "text-[10px] h-6 px-2 rounded-md font-bold"
-  }}
-  cancelButtonProps={{ 
-    size: "small",
-    className: "text-[10px] h-6 px-2 rounded-md" 
-  }}
-  placement="topRight"
->
-  <Button
-    type="primary"
-    danger
-    size="small"
-    icon={<Layers size={10} />}
-    className="h-5 w-5 p-0 rounded flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
-  />
-</Popconfirm>
+                      {/* Tüm Zinciri Sil (Kompakt ve iPhone 15 Uyumlu Popconfirm) */}
+                      <Popconfirm
+                        title={
+                          <span className="text-red-400 font-bold text-xs tracking-wide block mb-0.5">
+                            Tüm Zincir Silinsin mi?
+                          </span>
+                        }
+                        description={
+                          <span className="text-gray-400 text-[10px] block leading-tight max-w-[180px]">
+                            Gelecekteki tüm taksit serisi tek hamlede iptal
+                            edilecektir.
+                          </span>
+                        }
+                        onConfirm={() => handleTaksitDelete(taksit, true)}
+                        okText="Seriyi Sil"
+                        cancelText="Vazgeç"
+                        okButtonProps={{
+                          size: "small",
+                          type: "primary",
+                          danger: true,
+                          className:
+                            "text-[10px] h-6 px-2 rounded-md font-bold",
+                        }}
+                        cancelButtonProps={{
+                          size: "small",
+                          className: "text-[10px] h-6 px-2 rounded-md",
+                        }}
+                        placement="topRight"
+                      >
+                        <Button
+                          type="primary"
+                          danger
+                          size="small"
+                          icon={<Layers size={10} />}
+                          className="h-5 w-5 p-0 rounded flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
+                        />
+                      </Popconfirm>
                     </div>
                   </div>
                 ))}
@@ -989,16 +991,27 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             </div>
           )}
 
-        <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onHarcamaFinish}
+          initialValues={{ tarih: dayjs() }} // Tarihin direkt seçili gelmesi için
+          className="w-full max-w-md mx-auto p-1"
+        >
+          {/* 👑 ÜST SEÇİM ALANI (Tam Simetrik Grid) */}
           <div
-            className="grid gap-1 items-end"
+            className="grid gap-2 items-end mb-3"
             style={{
               gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
             }}
           >
             <Form.Item
               name="tarih"
-              label={<span className="text-gray-400 text-[10px]">Tarih</span>}
+              label={
+                <span className="text-gray-400 text-[10px] font-semibold tracking-wide uppercase">
+                  Tarih
+                </span>
+              }
               className="mb-0"
             >
               <CustomDayPicker />
@@ -1007,14 +1020,16 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             <Form.Item
               name="harcamaKaynagi"
               label={
-                <span className="text-gray-400 text-[10px]">Ödeme Hesabı</span>
+                <span className="text-gray-400 text-[10px] font-semibold tracking-wide uppercase">
+                  Ödeme Hesabı
+                </span>
               }
               rules={[{ required: true }]}
               className="mb-0"
             >
               <Select
-                className="w-full"
-                style={{ height: "34px" }}
+                className="w-full custom-select-modern"
+                style={{ height: "38px" }}
                 dropdownStyle={{ borderRadius: "12px" }}
               >
                 {HARCAMA_KAYNAKLARI.map((i) => (
@@ -1029,15 +1044,17 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <Form.Item
                 name="birikimHesabi"
                 label={
-                  <span className="text-gray-400 text-[10px]">Hesap Detay</span>
+                  <span className="text-gray-400 text-[10px] font-semibold tracking-wide uppercase">
+                    Hesap Detay
+                  </span>
                 }
                 rules={[{ required: true, message: "Seç" }]}
-                className="mb-0"
+                className="mb-0 animate-fade-in"
               >
                 <Select
                   placeholder="Hesap"
                   className="w-full"
-                  style={{ height: "34px" }}
+                  style={{ height: "38px" }}
                   dropdownStyle={{ borderRadius: "12px" }}
                 >
                   {BIRIKIM_HESAPLARI.map((i) => (
@@ -1053,17 +1070,17 @@ const MainContent = ({ radius = 42, center = 50 }) => {
               <Form.Item
                 name="altKategori"
                 label={
-                  <span className="text-gray-400 text-[10px]">
+                  <span className="text-gray-400 text-[10px] font-semibold tracking-wide uppercase">
                     Kategori Detay
                   </span>
                 }
                 rules={[{ required: true, message: "Seç" }]}
-                className="mb-0"
+                className="mb-0 animate-fade-in"
               >
                 <Select
                   placeholder="Seç"
                   className="w-full"
-                  style={{ height: "34px" }}
+                  style={{ height: "38px" }}
                   dropdownStyle={{ borderRadius: "12px" }}
                 >
                   {(selectedCategory === "Market"
@@ -1085,116 +1102,143 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between mt-1.5 px-1 gap-2">
+          {/* 🔄 MODERN EK ÖZELLİKLER PANELİ (iOS Tarzı Kart Tasarımı) */}
+          <div className="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-3 mb-4 space-y-3">
             {selectedCategory === "İletisim" ? (
-              <>
-                <Checkbox
+              <div className="space-y-3 split-rows">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 text-xs font-medium">
+                    Taksitli Alışveriş
+                  </span>
+                  <Switch
+                    size="small"
+                    checked={isTaksitli}
+                    onChange={(checked) => {
+                      setIsTaksitli(checked);
+                      if (checked) {
+                        setIsAbonelik(false);
+                        form.setFieldsValue({ taksitSayisi: "2" });
+                        setCurrentTaksitSayisi("2");
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-800/60 pt-2.5">
+                  <span className="text-gray-300 text-xs font-medium">
+                    Aylık Düzenli Ödeme
+                  </span>
+                  <Switch
+                    size="small"
+                    checked={isAbonelik}
+                    onChange={(checked) => {
+                      setIsAbonelik(checked);
+                      if (checked) setIsTaksitli(false);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : selectedCategory === "Fatura" ? (
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-gray-300 text-xs font-medium">
+                  Aylık Düzenli Ödeme (Otomatik)
+                </span>
+                <Switch
+                  size="small"
+                  checked={isAbonelik}
+                  onChange={(checked) => {
+                    setIsAbonelik(checked);
+                    if (checked) setIsTaksitli(false);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-gray-300 text-xs font-medium">
+                  Taksitli Alışveriş
+                </span>
+                <Switch
+                  size="small"
                   checked={isTaksitli}
-                  onChange={(e) => {
-                    setIsTaksitli(e.target.checked);
-                    if (e.target.checked) {
-                      setIsAbonelik(false);
+                  onChange={(checked) => {
+                    setIsTaksitli(checked);
+                    if (checked) {
                       form.setFieldsValue({ taksitSayisi: "2" });
                       setCurrentTaksitSayisi("2");
                     }
                   }}
-                  className="text-gray-300 text-[11px] font-medium"
-                >
-                  Taksitli
-                </Checkbox>
-                <Checkbox
-                  checked={isAbonelik}
-                  onChange={(e) => {
-                    setIsAbonelik(e.target.checked);
-                    if (e.target.checked) {
-                      setIsTaksitli(false);
-                    }
-                  }}
-                  className="text-gray-300 text-[11px] font-medium"
-                >
-                  Aylık Düzenli (Oto)
-                </Checkbox>
-              </>
-            ) : selectedCategory === "Fatura" ? (
-              <Checkbox
-                checked={isAbonelik}
-                onChange={(e) => {
-                  setIsAbonelik(e.target.checked);
-                  if (e.target.checked) {
-                    setIsTaksitli(false);
-                  }
-                }}
-                className="text-gray-300 text-[11px] font-medium"
-              >
-                Aylık Düzenli Ödeme (Otomatik)
-              </Checkbox>
-            ) : (
-              <Checkbox
-                checked={isTaksitli}
-                onChange={(e) => {
-                  setIsTaksitli(e.target.checked);
-                  if (e.target.checked) {
-                    form.setFieldsValue({ taksitSayisi: "2" });
-                    setCurrentTaksitSayisi("2");
-                  }
-                }}
-                className="text-gray-300 text-[11px] font-medium"
-              >
-                Taksitli Alışveriş
-              </Checkbox>
+                />
+              </div>
             )}
 
+            {/* 🎯 Kancalanmış Taksit Menüsü (Açıldığında Layout Bozmaz) */}
             {isTaksitli && selectedCategory !== "Fatura" && (
-              <Form.Item
-                name="taksitSayisi"
-                className="mb-0"
-                rules={[{ required: true, message: "Seç" }]}
-              >
-                <Select
-                  style={{ width: 90, height: "28px" }}
-                  dropdownStyle={{ borderRadius: "8px" }}
-                  onChange={(val) => setCurrentTaksitSayisi(val)}
+              <div className="flex items-center justify-between border-t border-slate-800/60 pt-2.5 animate-fade-in">
+                <span className="text-gray-400 text-[11px]">
+                  Taksit Sayısı Seçin
+                </span>
+                <Form.Item
+                  name="taksitSayisi"
+                  className="mb-0"
+                  rules={[{ required: true, message: "Seç" }]}
                 >
-                  {[2, 3, 4, 5, 6, 9, 12].map((m) => (
-                    <Option key={m} value={m.toString()}>
-                      {m} T.
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
+                  <Select
+                    style={{ width: 110, height: "32px" }}
+                    dropdownStyle={{ borderRadius: "10px" }}
+                    listHeight={140}
+                    getPopupContainer={(triggerNode) => triggerNode.parentNode}
+                    onChange={(val) => setCurrentTaksitSayisi(val)}
+                    className="modern-sub-select"
+                  >
+                    {[2, 3, 4, 5, 6, 9, 12].map((m) => (
+                      <Option key={m} value={m.toString()}>
+                        {m} Taksit
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </div>
             )}
           </div>
 
-          <NumericNumpad value={amount} onChange={setAmount} />
-          
+          {/* 🔢 NUMPAD ALANI */}
+          <div className="mb-4">
+            <NumericNumpad value={amount} onChange={setAmount} />
+          </div>
+
+          {/* 📝 NOT ALANI */}
           {showNote ? (
-            <Form.Item name="not" className="mt-1 mb-0">
+            <Form.Item name="not" className="mb-4 animate-fade-in">
               <Input.TextArea
                 rows={2}
                 placeholder="Not ekleyin..."
                 autoFocus
-                className="bg-slate-800 border-slate-700 text-white rounded-xl"
-                style={{ color: "#ffffff", backgroundColor: "#1e293b", padding: "4px 8px" }}
+                className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl placeholder-slate-500 text-sm focus:border-blue-500"
+                style={{
+                  color: "#ffffff",
+                  padding: "8px 12px",
+                  resize: "none",
+                }}
               />
             </Form.Item>
           ) : (
             <Button
               type="text"
               onClick={() => setShowNote(true)}
-              icon={<MessageCircle size={13} />}
-              className="w-full mt-1 text-slate-400 text-[11px] h-6 flex items-center justify-center"
+              icon={<MessageCircle size={14} />}
+              className="w-full mb-4 text-slate-400 hover:text-slate-300 text-xs h-8 flex items-center justify-center gap-1 bg-slate-900/20 rounded-xl border border-dashed border-slate-800"
             >
               Not Ekle
             </Button>
           )}
-          
+
+          {/* 🚀 AKSİYON BUTONU */}
           <Button
             type="primary"
             htmlType="submit"
             block
             loading={isSubmitting}
             disabled={isSubmitting}
-            className="mt-2 h-10 text-base font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl flex items-center justify-center"
+            className="h-12 text-sm font-bold bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all border-none rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 tracking-wider"
           >
             KAYDET
           </Button>
