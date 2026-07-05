@@ -762,10 +762,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         </div>
       </div>
 
-      <Modal
+<Modal
         title={
           <div
-            className="text-lg font-bold font-mono tracking-widest uppercase"
+            className="text-base font-bold font-mono tracking-widest uppercase"
             style={{ color: CATEGORY_CONFIG[selectedCategory]?.color }}
           >
             {selectedCategory === "EvEsyasi" ? "Ev Eşyası" : selectedCategory}
@@ -775,55 +775,58 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         onCancel={handleModalCancel}
         footer={null}
         centered
-        width={380}
+        width={360}
         className="space-modal"
         styles={{
-          body: { padding: "12px 16px", maxHeight: "520px", overflowY: "auto" },
+          body: { 
+            padding: "8px 12px", 
+            maxHeight: "calc(100vh - 120px)", 
+            overflowY: "auto" 
+          },
         }}
       >
         {/* 🚀 GELECEK TAKSİTLER DETAY BUTONU VE AKORDİYON PANEL */}
         {categoryFutureTaksits.length > 0 && (
-          <div className="mb-3 rounded-2xl overflow-hidden border border-amber-500/20 bg-amber-950/10 transition-all duration-300">
+          <div className="mb-2 rounded-xl overflow-hidden border border-amber-500/20 bg-amber-950/10 transition-all duration-300">
             <button
               type="button"
               onClick={() => setShowFutureTaksits(!showFutureTaksits)}
-              className="w-full px-3 py-2.5 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-amber-900/10"
+              className="w-full px-2.5 py-2 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-amber-900/10"
             >
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
-                <CreditCard size={13} className="animate-pulse" />
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[10px] uppercase tracking-wider">
+                <CreditCard size={12} className="animate-pulse" />
                 <span>
                   Gelecek Dönem Taksitleri ({categoryFutureTaksits.length})
                 </span>
               </div>
               <div
-                className={`text-amber-400 font-bold text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/10 flex items-center gap-1 transition-transform duration-300 ${showFutureTaksits ? "rotate-180" : ""}`}
+                className={`text-amber-400 font-bold text-[10px] font-mono px-1 py-0.5 rounded bg-amber-500/10 flex items-center gap-1 transition-transform duration-300 ${showFutureTaksits ? "rotate-180" : ""}`}
               >
                 ▼
               </div>
             </button>
 
             {showFutureTaksits && (
-              <div className="px-2.5 pb-2.5 space-y-1.5 max-h-[160px] overflow-y-auto border-t border-amber-500/10 pt-2 animate-fadeIn">
+              <div className="px-2 pb-2 space-y-1 max-h-[120px] overflow-y-auto border-t border-amber-500/10 pt-1.5 animate-fadeIn">
                 {categoryFutureTaksits.map((taksit) => (
                   <div
                     key={taksit._id}
-                    className="flex items-center justify-between bg-slate-950/60 p-2 rounded-xl border border-slate-800/60 gap-2"
+                    className="flex items-center justify-between bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/60 gap-1.5"
                   >
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-[11px] text-gray-200 font-medium truncate">
+                      <span className="text-[10px] text-gray-200 font-medium truncate">
                         {taksit.not || taksit.altKategori || taksit.kategori}
                       </span>
-                      <span className="text-[9px] text-gray-400/80 font-mono mt-0.5">
+                      <span className="text-[8px] text-gray-400/80 font-mono mt-0.5">
                         {dayjs(taksit.createdAt).format("DD MMM YYYY")}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/10">
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-[10px] font-mono font-bold px-1 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/10">
                         -{taksit.miktar.toFixed(2)}€
                       </span>
 
-                      {/* Sadece Bu Taksiti Sil */}
                       <Popconfirm
                         title="Sadece bu taksit silinsin mi?"
                         onConfirm={() => handleTaksitDelete(taksit, false)}
@@ -837,12 +840,11 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                           type="text"
                           danger
                           size="small"
-                          icon={<Trash2 size={12} />}
-                          className="p-0 h-6 w-6 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border-none transition-all active:scale-90"
+                          icon={<Trash2 size={11} />}
+                          className="p-0 h-5 w-5 flex items-center justify-center rounded bg-red-500/10 hover:bg-red-500/20 border-none transition-all active:scale-90"
                         />
                       </Popconfirm>
 
-                      {/* Tüm Zinciri Sil (iPhone 15 ekranında taşma yapmaması için kompakt ikonlu buton) */}
                       <Popconfirm
                         title="Tüm Taksit Zinciri Silinsin Mi?"
                         description="Gelecekteki tüm taksitler tek hamlede silinecektir!"
@@ -861,8 +863,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                           type="primary"
                           danger
                           size="small"
-                          icon={<Layers size={11} />}
-                          className="h-6 w-6 p-0 rounded-lg flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
+                          icon={<Layers size={10} />}
+                          className="h-5 w-5 p-0 rounded flex items-center justify-center bg-red-600 border-none active:scale-90 transition-all shadow-md hover:bg-red-700"
                         />
                       </Popconfirm>
                     </div>
@@ -873,13 +875,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
         )}
 
-        <div className="bg-slate-900/80 backdrop-blur-xl p-3 rounded-2xl mb-3 text-center border border-blue-500/20">
-          <div className="text-4xl font-black text-white tracking-tight">
+        <div className="bg-slate-900/80 backdrop-blur-xl p-2.5 rounded-xl mb-2 text-center border border-blue-500/20">
+          <div className="text-3xl font-black text-white tracking-tight">
             {amount || "0"}
-            <span className="text-xl ml-2 text-blue-500/50">€</span>
+            <span className="text-lg ml-1 text-blue-500/50">€</span>
           </div>
           {isTaksitli && (
-            <div className="text-xs text-slate-400 mt-1 font-semibold flex flex-col gap-0.5">
+            <div className="text-[11px] text-slate-400 mt-0.5 font-semibold flex flex-col gap-0.5">
               <div>
                 Aylık Ödeme:{" "}
                 {(
@@ -890,7 +892,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                   .replace(".", ",")}{" "}
                 €
               </div>
-              <div className="text-blue-400 text-[11px]">
+              <div className="text-blue-400 text-[10px]">
                 Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan:{" "}
                 {parseInt(currentTaksitSayisi, 10) - 1})
               </div>
@@ -898,7 +900,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           )}
           {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
             isAbonelik && (
-              <div className="text-xs text-emerald-400 mt-1 font-semibold">
+              <div className="text-[11px] text-emerald-400 mt-0.5 font-semibold">
                 🔄 Her ay otomatik olarak tekrarlanacak.
               </div>
             )}
@@ -907,41 +909,41 @@ const MainContent = ({ radius = 42, center = 50 }) => {
         {/* 🚀 AKTİF OTOMATİK ÖDEMELER DETAY BUTONU VE AKORDİYON PANEL */}
         {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
           filteredSubscriptions.length > 0 && (
-            <div className="mb-3 rounded-2xl overflow-hidden border border-emerald-500/20 bg-emerald-950/10 transition-all duration-300">
+            <div className="mb-2 rounded-xl overflow-hidden border border-emerald-500/20 bg-emerald-950/10 transition-all duration-300">
               <button
                 type="button"
                 onClick={() => setShowActiveSubs(!showActiveSubs)}
-                className="w-full px-3 py-2.5 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-emerald-900/10"
+                className="w-full px-2.5 py-2 flex items-center justify-between text-left bg-transparent border-none outline-none cursor-pointer active:bg-emerald-900/10"
               >
-                <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px] uppercase tracking-wider">
-                  <span className="relative flex h-2 w-2">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[10px] uppercase tracking-wider">
+                  <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
                   <span>
                     Aktif Otomatik Ödemeler ({filteredSubscriptions.length})
                   </span>
                 </div>
                 <div
-                  className={`text-emerald-400 font-bold text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/10 flex items-center gap-1 transition-transform duration-300 ${showActiveSubs ? "rotate-180" : ""}`}
+                  className={`text-emerald-400 font-bold text-[10px] font-mono px-1 py-0.5 rounded bg-emerald-500/10 flex items-center gap-1 transition-transform duration-300 ${showActiveSubs ? "rotate-180" : ""}`}
                 >
                   ▼
                 </div>
               </button>
 
               {showActiveSubs && (
-                <div className="px-2.5 pb-2.5 space-y-1.5 max-h-[140px] overflow-y-auto border-t border-emerald-500/10 pt-2">
+                <div className="px-2 pb-2 space-y-1 max-h-[110px] overflow-y-auto border-t border-emerald-500/10 pt-1.5">
                   {filteredSubscriptions.map((sub) => (
                     <div
                       key={sub.id}
-                      className="flex items-center justify-between bg-slate-950/60 p-2 rounded-xl border border-slate-800/60 gap-2"
+                      className="flex items-center justify-between bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/60 gap-1.5"
                     >
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[11px] text-gray-200 font-mono font-bold">
+                        <span className="text-[10px] text-gray-200 font-mono font-bold">
                           {sub.miktar.toFixed(2).replace(".", ",")} €
                         </span>
                         {sub.not && (
-                          <span className="text-[9px] text-gray-400/80 truncate mt-0.5">
+                          <span className="text-[8px] text-gray-400/80 truncate mt-0.5">
                             {sub.not}
                           </span>
                         )}
@@ -961,8 +963,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                           type="text"
                           danger
                           size="small"
-                          icon={<XCircle size={13} />}
-                          className="h-6 px-2 text-[10px] font-bold bg-red-500/10 hover:bg-red-500/20 border-none rounded-lg flex items-center gap-1 active:scale-90 transition-all"
+                          icon={<XCircle size={12} />}
+                          className="h-5 px-1.5 text-[9px] font-bold bg-red-500/10 hover:bg-red-500/20 border-none rounded flex items-center gap-0.5 active:scale-90 transition-all"
                         >
                           İptal Et
                         </Button>
@@ -976,7 +978,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
 
         <Form form={form} layout="vertical" onFinish={onHarcamaFinish}>
           <div
-            className="grid gap-1.5 items-end"
+            className="grid gap-1 items-end"
             style={{
               gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
             }}
@@ -999,7 +1001,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             >
               <Select
                 className="w-full"
-                style={{ height: "38px" }}
+                style={{ height: "34px" }}
                 dropdownStyle={{ borderRadius: "12px" }}
               >
                 {HARCAMA_KAYNAKLARI.map((i) => (
@@ -1022,7 +1024,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 <Select
                   placeholder="Hesap"
                   className="w-full"
-                  style={{ height: "38px" }}
+                  style={{ height: "34px" }}
                   dropdownStyle={{ borderRadius: "12px" }}
                 >
                   {BIRIKIM_HESAPLARI.map((i) => (
@@ -1048,7 +1050,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 <Select
                   placeholder="Seç"
                   className="w-full"
-                  style={{ height: "38px" }}
+                  style={{ height: "34px" }}
                   dropdownStyle={{ borderRadius: "12px" }}
                 >
                   {(selectedCategory === "Market"
@@ -1070,7 +1072,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between mt-3 px-1 gap-2">
+          <div className="flex items-center justify-between mt-1.5 px-1 gap-2">
             {selectedCategory === "İletisim" ? (
               <>
                 <Checkbox
@@ -1083,9 +1085,9 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                       setCurrentTaksitSayisi("2");
                     }
                   }}
-                  className="text-gray-300 text-xs font-medium"
+                  className="text-gray-300 text-[11px] font-medium"
                 >
-                  Taksitli Alışveriş
+                  Taksitli
                 </Checkbox>
                 <Checkbox
                   checked={isAbonelik}
@@ -1095,9 +1097,9 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                       setIsTaksitli(false);
                     }
                   }}
-                  className="text-gray-300 text-xs font-medium"
+                  className="text-gray-300 text-[11px] font-medium"
                 >
-                  Aylık Düzenli Ödeme (Otomatik)
+                  Aylık Düzenli (Oto)
                 </Checkbox>
               </>
             ) : selectedCategory === "Fatura" ? (
@@ -1109,7 +1111,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                     setIsTaksitli(false);
                   }
                 }}
-                className="text-gray-300 text-xs font-medium"
+                className="text-gray-300 text-[11px] font-medium"
               >
                 Aylık Düzenli Ödeme (Otomatik)
               </Checkbox>
@@ -1123,7 +1125,7 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                     setCurrentTaksitSayisi("2");
                   }
                 }}
-                className="text-gray-300 text-xs font-medium"
+                className="text-gray-300 text-[11px] font-medium"
               >
                 Taksitli Alışveriş
               </Checkbox>
@@ -1136,13 +1138,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 rules={[{ required: true, message: "Seç" }]}
               >
                 <Select
-                  style={{ width: 100, height: "32px" }}
+                  style={{ width: 90, height: "28px" }}
                   dropdownStyle={{ borderRadius: "8px" }}
                   onChange={(val) => setCurrentTaksitSayisi(val)}
                 >
                   {[2, 3, 4, 5, 6, 9, 12].map((m) => (
                     <Option key={m} value={m.toString()}>
-                      {m} Taksit
+                      {m} T.
                     </Option>
                   ))}
                 </Select>
@@ -1151,33 +1153,35 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
 
           <NumericNumpad value={amount} onChange={setAmount} />
+          
           {showNote ? (
-            <Form.Item name="not" className="mt-2 mb-0">
+            <Form.Item name="not" className="mt-1 mb-0">
               <Input.TextArea
                 rows={2}
                 placeholder="Not ekleyin..."
                 autoFocus
                 className="bg-slate-800 border-slate-700 text-white rounded-xl"
-                style={{ color: "#ffffff", backgroundColor: "#1e293b" }}
+                style={{ color: "#ffffff", backgroundColor: "#1e293b", padding: "4px 8px" }}
               />
             </Form.Item>
           ) : (
             <Button
               type="text"
               onClick={() => setShowNote(true)}
-              icon={<MessageCircle size={14} />}
-              className="w-full mt-2 text-slate-400 text-xs"
+              icon={<MessageCircle size={13} />}
+              className="w-full mt-1 text-slate-400 text-[11px] h-6 flex items-center justify-center"
             >
               Not Ekle
             </Button>
           )}
+          
           <Button
             type="primary"
             htmlType="submit"
             block
             loading={isSubmitting}
             disabled={isSubmitting}
-            className="mt-4 h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl"
+            className="mt-2 h-10 text-base font-bold bg-blue-600 hover:bg-blue-500 border-none rounded-xl flex items-center justify-center"
           >
             KAYDET
           </Button>
