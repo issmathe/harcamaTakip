@@ -1208,17 +1208,18 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           {/* 📝 NOT ALANI */}
           {showNote ? (
             <Form.Item name="not" className="mb-4 animate-fade-in">
-              <Input.TextArea
-                rows={2}
-                placeholder="Not ekleyin..."
-                autoFocus
-                className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl placeholder-slate-500 text-sm focus:border-blue-500"
-                style={{
-                  color: "#ffffff",
-                  padding: "8px 12px",
-                  resize: "none",
-                }}
-              />
+<Input.TextArea
+  rows={2}
+  placeholder="Not ekleyin..."
+  autoFocus
+  className="w-full border border-slate-800 text-white rounded-xl placeholder-slate-500 text-sm focus:border-blue-500"
+  style={{
+    backgroundColor: "#0f172a", // slate-900 karşılığı
+    color: "#ffffff",
+    padding: "8px 12px",
+    resize: "none",
+  }}
+/>
             </Form.Item>
           ) : (
             <Button
