@@ -157,6 +157,23 @@ const EV_ESYASI_TURLERI = [
 
 const HARCAMA_KAYNAKLARI = ["Gelir", "Ekstra Gelir", "Birikim"];
 const BIRIKIM_HESAPLARI = ["Nakit", "Wise", "Trade Republic"];
+const LAST_EXPENSE_SELECTIONS_KEY = "lastExpenseSelections";
+
+const getLastExpenseSelections = () => {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_EXPENSE_SELECTIONS_KEY)) || {};
+  } catch {
+    return {};
+  }
+};
+
+const saveLastExpenseSelections = (selections) => {
+  try {
+    localStorage.setItem(LAST_EXPENSE_SELECTIONS_KEY, JSON.stringify(selections));
+  } catch {
+    // Tarayıcı depolaması kullanılamıyorsa form normal başlangıç değerleriyle çalışır.
+  }
+};
 
 const SpaceBackground = () => {
   const canvasRef = useRef(null);
@@ -550,9 +567,17 @@ const MainContent = ({ radius = 42, center = 50 }) => {
     setCurrentTaksitSayisi("2");
     setIsSubmitting(false);
     form.resetFields();
+    const lastSelections = getLastExpenseSelections();
     form.setFieldsValue({
       tarih: dayjs().toDate(),
-      harcamaKaynagi: "Gelir",
+      harcamaKaynagi:
+        HARCAMA_KAYNAKLARI.includes(lastSelections.harcamaKaynagi)
+          ? lastSelections.harcamaKaynagi
+          : "Gelir",
+      birikimHesabi: BIRIKIM_HESAPLARI.includes(lastSelections.birikimHesabi)
+        ? lastSelections.birikimHesabi
+        : undefined,
+      altKategori: lastSelections.categoryDetails?.[category],
       taksitSayisi: "2",
     });
     setShowNote(false);
@@ -660,6 +685,20 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           ? `${taksitSayisi} Taksit başarıyla planlandı ve eklendi!`
           : "Harcama eklendi!",
       );
+      const lastSelections = getLastExpenseSelections();
+      saveLastExpenseSelections({
+        harcamaKaynagi: values.harcamaKaynagi || "Gelir",
+        birikimHesabi:
+          values.harcamaKaynagi === "Birikim"
+            ? values.birikimHesabi || ""
+            : lastSelections.birikimHesabi || "",
+        categoryDetails: {
+          ...(lastSelections.categoryDetails || {}),
+          ...(isAltKategoriRequired
+            ? { [selectedCategory]: values.altKategori || "" }
+            : {}),
+        },
+      });
       await refetch();
       handleModalCancel();
     } catch (err) {
