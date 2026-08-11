@@ -119,7 +119,7 @@ const CustomDayPicker = ({ value, onChange, disabledDate, isIncome, ...rest }) =
                             onClick={() => setPickerModalVisible(false)}
                             className="text-gray-600 font-semibold border-none hover:bg-gray-100"
                         >
-                            İptal
+                            İptalet
                         </Button>
                         <Button 
                             type="primary"
