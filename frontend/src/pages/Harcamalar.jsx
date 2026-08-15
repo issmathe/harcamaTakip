@@ -225,12 +225,20 @@ const HarcamalarContent = () => {
     };
   }, [harcamalar, selectedMonth, selectedYear, selectedCategory, searchTerm, now, sortByAmount]);
 
-  const kategoriToplam = useMemo(
-    () => normalHarcamalar
-      .filter(h => !h.harcamaKaynagi || h.harcamaKaynagi === "Gelir")
-      .reduce((sum, h) => sum + Number(h.miktar || 0), 0),
-    [normalHarcamalar]
-  );
+  // DEĞİŞİKLİK: Filtre kaldırıldı, artık tüm harcamalar (Gelir + Birikim) toplanıyor.
+  const { genelToplam, birikimToplam } = useMemo(() => {
+    return normalHarcamalar.reduce(
+      (acc, h) => {
+        const m = Number(h.miktar || 0);
+        acc.genelToplam += m;
+        if (h.harcamaKaynagi === "Birikim" || h.harcamaKaynagi === "Tasarruf") {
+          acc.birikimToplam += m;
+        }
+        return acc;
+      },
+      { genelToplam: 0, birikimToplam: 0 }
+    );
+  }, [normalHarcamalar]);
 
   const changeMonth = useCallback((direction) => {
     const current = dayjs().year(selectedYear).month(selectedMonth);
@@ -286,7 +294,7 @@ const HarcamalarContent = () => {
               <Text className="text-[10px] font-bold uppercase text-gray-400">Dönem Toplamı</Text>
               <div className="flex items-center gap-2">
                 <Text className="text-lg font-black text-red-500">
-                  €{kategoriToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  €{genelToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
                 {tumGelecekTaksitler.length > 0 && (
                   <Button 
@@ -299,6 +307,11 @@ const HarcamalarContent = () => {
                   />
                 )}
               </div>
+              {birikimToplam > 0 && (
+                <Text className="text-[10px] font-semibold text-blue-500 mt-0.5">
+                  (Birikimden: €{birikimToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </Text>
+              )}
             </div>
 
             <Button
