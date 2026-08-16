@@ -39,8 +39,9 @@ export const TotalsProvider = ({ children }) => {
       .filter(g => {
         const d = dayjs(g.createdAt);
         const kat = g.kategori?.toLowerCase();
+        const isTransfer = g.not && g.not.includes("TRF_");
         return d.isSame(now, "month") && d.isSame(now, "year") && 
-               kat !== "tasarruf" && kat !== "birikim" && 
+               kat !== "tasarruf" && kat !== "birikim" && !isTransfer &&
                isPastOrPresent(g.createdAt);
       })
       .reduce((sum, g) => sum + Number(g.miktar || 0), 0);

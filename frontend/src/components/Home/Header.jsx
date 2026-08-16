@@ -95,9 +95,10 @@ const Header = () => {
           const isCorrectMonth = d.isSame(lastMonth, "month") && d.isSame(lastMonth, "year");
           const isNotTasarruf = isExpense ? item.kategori?.toLowerCase() !== "tasarruf" : true;
           const isGelir = !isExpense ? item.kategori?.toLowerCase() === "gelir" : true;
+          const isTransfer = !isExpense && item.not?.includes("TRF_");
           const isWithinDay = untilToday ? d.date() <= todayNum : true;
 
-          return isCorrectMonth && isNotTasarruf && isGelir && isWithinDay;
+          return isCorrectMonth && isNotTasarruf && isGelir && !isTransfer && isWithinDay;
         })
         .reduce((sum, i) => sum + Number(i.miktar || 0), 0);
     };
