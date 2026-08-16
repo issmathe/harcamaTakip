@@ -17,3 +17,15 @@ root.render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+// Service worker yalnızca üretim derlemesinde etkinleştirilir. Böylece
+// geliştirme sunucusundaki dosyalar eski önbellekten okunmaz.
+if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register(`${process.env.PUBLIC_URL}/service-worker.js`)
+      .catch((error) => {
+        console.error("PWA service worker kaydedilemedi:", error);
+      });
+  });
+}

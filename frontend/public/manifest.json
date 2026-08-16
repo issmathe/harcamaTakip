@@ -1,7 +1,9 @@
 {
   "name": "MERN Bütçe Takip Uygulaması",
   "short_name": "Bütçem", 
-  "start_url": ".",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
@@ -17,12 +19,7 @@
       "src": "/icons/anamenu512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/anamenu192.png", 
-      "sizes": "180x180",
-      "type": "image/png"
+      "purpose": "any maskable"
     }
   ]
 }
