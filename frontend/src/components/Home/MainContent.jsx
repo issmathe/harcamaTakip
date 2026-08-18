@@ -43,6 +43,7 @@ import {
   CreditCard,
   Trash2,
   Layers,
+  CalendarDays,
 } from "lucide-react";
 
 import axios from "axios";
@@ -723,9 +724,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
   ].includes(selectedCategory);
   const isBirikimSelected = watchHarcamaKaynagi === "Birikim";
 
-  let gridCols = 2;
-  if (isBirikimSelected) gridCols += 1;
-  if (isAltKategoriRequired) gridCols += 1;
+  // 🎨 Üst seçim alanı artık 2 kolonlu, daha ferah bir grid kullanıyor.
+  // Tarih alanı bu gridden çıkıp tutar kartının içine taşındığı için
+  // burada sadece Ödeme Hesabı / Hesap Detay / Kategori Detay hesaplanıyor.
+  const topFieldsCount =
+    1 + (isBirikimSelected ? 1 : 0) + (isAltKategoriRequired ? 1 : 0);
+  const isOdemeHesabiSolo = topFieldsCount === 1;
+  const isKategoriDetayFullWidth = topFieldsCount === 3;
 
   return (
     <main className="relative flex-1 px-4 pt-4 pb-4 overflow-hidden">
@@ -929,37 +934,6 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           </div>
         )}
 
-        <div className="bg-slate-900/80 backdrop-blur-xl p-2.5 rounded-xl mb-2 text-center border border-blue-500/20">
-          <div className="text-3xl font-black text-white tracking-tight">
-            {amount || "0"}
-            <span className="text-lg ml-1 text-blue-500/50">€</span>
-          </div>
-          {isTaksitli && (
-            <div className="text-[11px] text-slate-400 mt-0.5 font-semibold flex flex-col gap-0.5">
-              <div>
-                Aylık Ödeme:{" "}
-                {(
-                  parseFloat(amount.replace(",", ".")) /
-                    parseInt(currentTaksitSayisi || 1, 10) || 0
-                )
-                  .toFixed(2)
-                  .replace(".", ",")}{" "}
-                €
-              </div>
-              <div className="text-blue-400 text-[10px]">
-                Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan:{" "}
-                {parseInt(currentTaksitSayisi, 10) - 1})
-              </div>
-            </div>
-          )}
-          {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
-            isAbonelik && (
-              <div className="text-[11px] text-emerald-400 mt-0.5 font-semibold">
-                🔄 Her ay otomatik olarak tekrarlanacak.
-              </div>
-            )}
-        </div>
-
         {/* 🚀 AKTİF OTOMATİK ÖDEMELER DETAY BUTONU VE AKORDİYON PANEL */}
         {(selectedCategory === "Fatura" || selectedCategory === "İletisim") &&
           filteredSubscriptions.length > 0 && (
@@ -1037,25 +1011,10 @@ const MainContent = ({ radius = 42, center = 50 }) => {
           initialValues={{ tarih: dayjs() }} // Tarihin direkt seçili gelmesi için
           className="w-full max-w-md mx-auto p-1"
         >
-          {/* 👑 ÜST SEÇİM ALANI (Tam Simetrik Grid) */}
-          <div
-            className="grid gap-2 items-end mb-3"
-            style={{
-              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-            }}
-          >
-            <Form.Item
-              name="tarih"
-              label={
-                <span className="text-gray-400 text-[10px] font-semibold tracking-wide uppercase">
-                  Tarih
-                </span>
-              }
-              className="mb-0"
-            >
-              <CustomDayPicker />
-            </Form.Item>
-
+          {/* 👑 ÜST SEÇİM ALANI — artık 2 kolonlu, ferah bir grid.
+              Tek alan varsa tam genişlik, 3 alan varsa Kategori Detay
+              alt satırda tam genişlikte gösteriliyor. */}
+          <div className="grid grid-cols-2 gap-3 items-end mb-3">
             <Form.Item
               name="harcamaKaynagi"
               label={
@@ -1064,12 +1023,12 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 </span>
               }
               rules={[{ required: true }]}
-              className="mb-0"
+              className={`mb-0 ${isOdemeHesabiSolo ? "col-span-2" : ""}`}
             >
               <Select
                 className="w-full custom-select-modern"
-                style={{ height: "38px" }}
-                dropdownStyle={{ borderRadius: "12px" }}
+                style={{ height: "42px" }}
+                dropdownStyle={{ borderRadius: "14px" }}
               >
                 {HARCAMA_KAYNAKLARI.map((i) => (
                   <Option key={i} value={i}>
@@ -1093,8 +1052,8 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 <Select
                   placeholder="Hesap"
                   className="w-full"
-                  style={{ height: "38px" }}
-                  dropdownStyle={{ borderRadius: "12px" }}
+                  style={{ height: "42px" }}
+                  dropdownStyle={{ borderRadius: "14px" }}
                 >
                   {BIRIKIM_HESAPLARI.map((i) => (
                     <Option key={i} value={i}>
@@ -1114,13 +1073,13 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                   </span>
                 }
                 rules={[{ required: true, message: "Seç" }]}
-                className="mb-0 animate-fade-in"
+                className={`mb-0 animate-fade-in ${isKategoriDetayFullWidth ? "col-span-2" : ""}`}
               >
                 <Select
                   placeholder="Seç"
                   className="w-full"
-                  style={{ height: "38px" }}
-                  dropdownStyle={{ borderRadius: "12px" }}
+                  style={{ height: "42px" }}
+                  dropdownStyle={{ borderRadius: "14px" }}
                 >
                   {(selectedCategory === "Market"
                     ? MARKETLER
@@ -1237,6 +1196,62 @@ const MainContent = ({ radius = 42, center = 50 }) => {
                 </Form.Item>
               </div>
             )}
+          </div>
+
+          {/* 💳 ÖDEME KARTI (Tutar + gömülü Tarih seçici) — artık numpad'ın
+              hemen üstünde, cam/gradient estetiğinde modern bir kart. */}
+          <div className="relative overflow-hidden rounded-2xl mb-4 border border-blue-500/20 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-950/90 backdrop-blur-xl shadow-[0_0_25px_rgba(59,130,246,0.10)]">
+            <div
+              className="absolute inset-x-0 top-0 h-px opacity-60"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)",
+              }}
+            />
+
+{/* Üst satır: gömülü Tarih seçici */}
+<div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-white/5">
+  <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-slate-500 font-semibold">
+    <CalendarDays size={11} className="text-blue-400/70" />
+    İşlem Tarihi
+  </span>
+  <Form.Item name="tarih" className="mb-0 leading-none">
+    <CustomDayPicker />
+  </Form.Item>
+</div>
+
+            {/* Tutar Alanı */}
+            <div className="text-center py-3.5 px-3">
+              <div className="text-3xl font-black text-white tracking-tight">
+                {amount || "0"}
+                <span className="text-lg ml-1 text-blue-400/60">€</span>
+              </div>
+              {isTaksitli && (
+                <div className="text-[11px] text-slate-400 mt-0.5 font-semibold flex flex-col gap-0.5">
+                  <div>
+                    Aylık Ödeme:{" "}
+                    {(
+                      parseFloat(amount.replace(",", ".")) /
+                        parseInt(currentTaksitSayisi || 1, 10) || 0
+                    )
+                      .toFixed(2)
+                      .replace(".", ",")}{" "}
+                    €
+                  </div>
+                  <div className="text-blue-400 text-[10px]">
+                    Kayıt Türü: [1/{currentTaksitSayisi} Taksit] (Kalan:{" "}
+                    {parseInt(currentTaksitSayisi, 10) - 1})
+                  </div>
+                </div>
+              )}
+              {(selectedCategory === "Fatura" ||
+                selectedCategory === "İletisim") &&
+                isAbonelik && (
+                  <div className="text-[11px] text-emerald-400 mt-0.5 font-semibold">
+                    🔄 Her ay otomatik olarak tekrarlanacak.
+                  </div>
+                )}
+            </div>
           </div>
 
           {/* 🔢 NUMPAD ALANI */}
